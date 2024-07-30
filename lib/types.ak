@@ -20,10 +20,12 @@ pub type PerpetualDatum {
   total_ratio_feed: PolicyId,
   orcfax_price_feed: PolicyId,
   leverage: Int,
+  position_asset: AssetClass,
   current_funding_round_entry_price: LovelaceAmount,
   current_funding_round_entry_time: POSIXTime,
   current_funding_round_distribute_time: POSIXTime,
   owner_address_hash: AddressHash,
+  onwer_bech32_address: String,
 }
 
 pub type Statement<t> {
