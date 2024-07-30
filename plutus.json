@@ -1,0 +1,119 @@
+{
+  "preamble": {
+    "title": "strike-finance/perpetuals",
+    "description": "Aiken contracts for project 'strike-finance/perpetuals'",
+    "version": "0.0.0",
+    "plutusVersion": "v2",
+    "compiler": {
+      "name": "Aiken",
+      "version": "v1.0.25-alpha+4e8042f"
+    },
+    "license": "Apache-2.0"
+  },
+  "validators": [
+    {
+      "title": "perpetuals.spend",
+      "datum": {
+        "title": "datum",
+        "schema": {
+          "$ref": "#/definitions/types~1PerpetualDatum"
+        }
+      },
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/perpetuals~1Redeemer"
+        }
+      },
+      "compiledCode": "5901d40100003232323232322323223232253330083232533300a300800114a22a666014600a00229444c94ccc02ccc88c8cc00400400c894ccc048004528099299980819b8f375c602800400829444cc00c00c004c050004dd618079808180818081808180818081808180818069baa3003300d37540086eb8c03cc040c040c040c040c040c040c034dd500508008a503371064a666016600c60186ea80044dd6980798069baa001163002300c3754600460186ea8c038c03cc03cc03cc03cc03cc03cc03cc030dd5180118061baa003375a601c601e601e601e601e601e60186ea8024c028dd5180098059baa0052300d00114984d9594ccc018c010c01cdd5001099192999805980680109924c64a666012600e0022a66601860166ea8008526161533300930040011533300c300b37540042930b0a99980499b874801000454ccc030c02cdd50010a4c2c2c60126ea800458c02c004c020dd50010b1b87480094ccc00cc004c010dd500109919191919191919191919191919299980a180b0010a4c2c6eb8c050004c050008dd6980900098090011bad30100013010002375a601c002601c0046eb4c030004c030008dd7180500098050011bae3008001300537540042c6e1d20005734aae7555cf2ab9f5742ae89",
+      "hash": "6050199887ff89c592dfd70fe91b869f52758e54ef8865d7c52eb9bb"
+    }
+  ],
+  "definitions": {
+    "ByteArray": {
+      "dataType": "bytes"
+    },
+    "Int": {
+      "dataType": "integer"
+    },
+    "perpetuals/PerpetualsRedeemer": {
+      "title": "PerpetualsRedeemer",
+      "anyOf": [
+        {
+          "title": "UpdateNewFundingRound",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "LiquidateCollateral",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": []
+        },
+        {
+          "title": "ClosePosition",
+          "dataType": "constructor",
+          "index": 2,
+          "fields": []
+        }
+      ]
+    },
+    "perpetuals/Redeemer": {
+      "title": "Redeemer",
+      "anyOf": [
+        {
+          "title": "Redeemer",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "action",
+              "$ref": "#/definitions/perpetuals~1PerpetualsRedeemer"
+            }
+          ]
+        }
+      ]
+    },
+    "types/PerpetualDatum": {
+      "title": "PerpetualDatum",
+      "anyOf": [
+        {
+          "title": "PerpetualDatum",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "total_ratio_feed",
+              "$ref": "#/definitions/ByteArray"
+            },
+            {
+              "title": "orcfax_price_feed",
+              "$ref": "#/definitions/ByteArray"
+            },
+            {
+              "title": "leverage",
+              "$ref": "#/definitions/Int"
+            },
+            {
+              "title": "current_funding_round_entry_price",
+              "$ref": "#/definitions/Int"
+            },
+            {
+              "title": "current_funding_round_entry_time",
+              "$ref": "#/definitions/Int"
+            },
+            {
+              "title": "current_funding_round_distribute_time",
+              "$ref": "#/definitions/Int"
+            },
+            {
+              "title": "owner_address_hash",
+              "$ref": "#/definitions/ByteArray"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}
