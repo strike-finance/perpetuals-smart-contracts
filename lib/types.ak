@@ -19,29 +19,44 @@ pub type LovelaceAmount =
 pub type PerpetualDatum {
   total_ratio_feed: PolicyId,
   orcfax_price_feed: PolicyId,
-  leverage: Int,
+  leverage_amount: Int,
   position_asset: AssetClass,
   current_funding_round_entry_price: LovelaceAmount,
   current_funding_round_entry_time: POSIXTime,
   current_funding_round_distribute_time: POSIXTime,
   owner_address_hash: AddressHash,
-  onwer_bech32_address: String,
+  owner_bech32_address: String,
+}
+
+pub type OrcfaxDatum<t> {
+  statement: Statement<t>,
+  context: Context,
 }
 
 pub type Statement<t> {
   feed_id: ByteArray,
-  created_at: Int,
+  created_at: POSIXTime,
   body: t,
 }
 
-/// Used by orcfax validator
 pub type Context {
-  collect_after: Int,
+  collect_after: POSIXTime,
   collector: ByteArray,
 }
 
-// Pkh
 pub type Price {
   num: Int,
   denom: Int,
+}
+
+pub type ComparePerpetualInfo {
+  total_ratio_feed: PolicyId,
+  orcfax_price_feed: PolicyId,
+  position_asset: AssetClass,
+  leverage_amount: Int,
+  expected_new_round_entry_price: LovelaceAmount,
+  expected_new_round_entry_time: POSIXTime,
+  expected_new_balance: Int,
+  owner_address_hash: AddressHash,
+  owner_bech32_address: String,
 }
