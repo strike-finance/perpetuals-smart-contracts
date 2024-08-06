@@ -1,0 +1,1 @@
+// script that locks up earnings and distributes them to the winners 

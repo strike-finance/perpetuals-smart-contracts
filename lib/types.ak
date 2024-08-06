@@ -1,11 +1,6 @@
 use aiken/hash.{Blake2b_224, Hash}
 use aiken/transaction/credential.{VerificationKey}
-use aiken/transaction/value.{AssetName, PolicyId}
-
-pub type AssetClass {
-  policy_id: PolicyId,
-  asset_name: AssetName,
-}
+use aiken/transaction/value.{PolicyId}
 
 pub type AddressHash =
   Hash<Blake2b_224, VerificationKey>
@@ -20,12 +15,12 @@ pub type PerpetualDatum {
   total_ratio_feed: PolicyId,
   orcfax_price_feed: PolicyId,
   leverage_amount: Int,
-  position_asset: AssetClass,
-  current_funding_round_entry_price: LovelaceAmount,
+  current_funding_round_entry_price: Int,
   current_funding_round_entry_time: POSIXTime,
   current_funding_round_distribute_time: POSIXTime,
   owner_address_hash: AddressHash,
   owner_bech32_address: String,
+  position: Int,
 }
 
 pub type OrcfaxDatum<t> {
@@ -49,14 +44,17 @@ pub type Price {
   denom: Int,
 }
 
+pub type RationalDatum {
+  numerator: Int,
+  denominator: Int,
+}
+
 pub type ComparePerpetualInfo {
   total_ratio_feed: PolicyId,
   orcfax_price_feed: PolicyId,
-  position_asset: AssetClass,
   leverage_amount: Int,
-  expected_new_round_entry_price: LovelaceAmount,
-  expected_new_round_entry_time: POSIXTime,
-  expected_new_balance: Int,
+  new_balance: Int,
   owner_address_hash: AddressHash,
   owner_bech32_address: String,
+  funds_to_distribute: Int,
 }
