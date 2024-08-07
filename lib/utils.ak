@@ -17,6 +17,11 @@ pub fn get_lower_bound(range: ValidityRange) -> Int {
   lower_bound
 }
 
+pub fn get_upper_bound(range: ValidityRange) -> Int {
+  expect Finite(upper_bound) = range.upper_bound.bound_type
+  upper_bound
+}
+
 pub fn get_asset_to_address(
   outputs: List<Output>,
   address: Address,
@@ -214,5 +219,6 @@ pub fn validate_token_mint(
 fn only_one_token_in_policy_minted(mints, expected_minting) {
   let (policy_id, _, _) = expected_minting
   let policy_id: PolicyId = policy_id
+
   list.length(dict.keys(tokens(mints, policy_id))) == 1
 }

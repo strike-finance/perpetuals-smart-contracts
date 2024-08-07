@@ -65,6 +65,13 @@ fn validate_update_new_funding_round(
       asset_name,
     )
 
+  let redeem_asset_to_distribute_validator: Int =
+    quantity_of(
+      output_to_distribute_validator.value,
+      distribute_datum.redeem_asset.policy_id,
+      distribute_datum.redeem_asset.asset_name,
+    )
+
   let info_difference: List<ComparePerpetualInfo> =
     list.difference(inputs_from_script_info, outputs_back_to_script_info)
 
@@ -84,19 +91,10 @@ fn validate_update_new_funding_round(
   let inputs_outputs_length_matches: Bool =
     list.length(inputs_from_script) == list.length(outputs_back_to_script)
 
-  let burnt_amount = expected_total_funds_to_distribute * -1
+  let redeem_asset_in_distribute_utxo_valid =
+    redeem_asset_to_distribute_validator == expected_total_funds_to_distribute
 
-  let token_burnt_valid: Bool =
-    validate_token_mint(
-      from_minted_value(ctx.transaction.mint),
-      (
-        distribute_datum.redeem_asset.policy_id,
-        distribute_datum.redeem_asset.asset_name,
-        burnt_amount,
-      ),
-    )
-
-  info_matches && inputs_outputs_length_matches && total_expected_funds_to_distribute_valid && ratio_policy_not_altered && token_burnt_valid
+  info_matches && inputs_outputs_length_matches && total_expected_funds_to_distribute_valid && ratio_policy_not_altered && redeem_asset_in_distribute_utxo_valid
 }
 
 fn validate_close_position(

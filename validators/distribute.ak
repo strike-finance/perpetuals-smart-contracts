@@ -1,9 +1,7 @@
-use aiken/list
 use aiken/transaction.{ScriptContext}
-use types.{DistributeDatum, POSIXTime}
-use utils.{get_lower_bound}
+use types.{DistributeDatum}
 
-validator(time: POSIXTime) {
+validator {
   fn spend(datum: DistributeDatum, _redeemer: Int, ctx: ScriptContext) -> Bool {
     True
   }
