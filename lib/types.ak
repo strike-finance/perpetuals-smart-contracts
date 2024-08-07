@@ -26,11 +26,13 @@ pub type PerpetualDatum {
   owner_address_hash: AddressHash,
   owner_bech32_address: String,
   redeem_asset: AssetClass,
+  position_asset: AssetClass,
   position: Int,
 }
 
 pub type DistributeDatum {
   total_ratio_feed: PolicyId,
+  redeem_asset: AssetClass,
 }
 
 pub type OrcfaxDatum<t> {

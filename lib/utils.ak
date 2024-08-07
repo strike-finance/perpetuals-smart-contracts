@@ -1,3 +1,4 @@
+use aiken/dict
 use aiken/interval.{Finite}
 use aiken/list
 use aiken/transaction.{
@@ -6,7 +7,9 @@ use aiken/transaction.{
 use aiken/transaction/credential.{
   Address, Credential, ScriptCredential, VerificationKeyCredential,
 }
-use aiken/transaction/value.{AssetName, PolicyId, policies, quantity_of}
+use aiken/transaction/value.{
+  AssetName, PolicyId, Value, flatten, policies, quantity_of, tokens,
+}
 use types.{ComparePerpetualInfo, DistributeDatum, PerpetualDatum, RationalDatum}
 
 pub fn get_lower_bound(range: ValidityRange) -> Int {
@@ -137,14 +140,12 @@ pub fn get_inputs_from_script_info(
   list.map(
     inputs,
     fn(input) {
-      let output: Output = input.output
-      expect InlineDatum(perpetual_datum) = output.datum
-      expect perpetual_datum_typed: PerpetualDatum = perpetual_datum
+      let perpetual_datum: PerpetualDatum = get_perpetual_datum(input.output)
 
-      let asset_in_input =
+      let asset_in_input: Int =
         quantity_of(input.output.value, policy_id, asset_name)
 
-      calculate_perpetual_info(ctx, perpetual_datum_typed, asset_in_input)
+      calculate_perpetual_info(ctx, perpetual_datum, asset_in_input)
     },
   )
 }
@@ -158,31 +159,60 @@ pub fn get_outputs_back_to_script_info(
   list.map(
     outputs_back_to_script,
     fn(output: Output) {
-      expect InlineDatum(collateral_datum) = output.datum
-      expect perpetual_datum_typed: PerpetualDatum = collateral_datum
+      let perpetual_datum: PerpetualDatum = get_perpetual_datum(output)
 
-      let asset_in_output = quantity_of(output.value, policy_id, asset_name)
+      let asset_in_output: Int =
+        quantity_of(output.value, policy_id, asset_name)
 
-      calculate_perpetual_info(ctx, perpetual_datum_typed, asset_in_output)
+      calculate_perpetual_info(ctx, perpetual_datum, asset_in_output)
     },
   )
 }
 
-pub fn get_output_to_distribute(
+pub fn get_output_to_validator(
   outputs: List<Output>,
-  distribute_validator_hash: ByteArray,
+  validator_hash: ByteArray,
 ) -> Output {
-  let output_to_distribute =
-    find_script_outputs(outputs, distribute_validator_hash)
+  let output_to_validator: List<Output> =
+    find_script_outputs(outputs, validator_hash)
 
-  expect Some(output_to_distribute) = list.head(output_to_distribute)
+  expect Some(output_to_validator) = list.head(output_to_validator)
 
-  output_to_distribute
+  output_to_validator
 }
 
 pub fn get_output_to_distribute_ratio_policy(output: Output) -> PolicyId {
-  expect InlineDatum(collateral_datum) = output.datum
-  expect distribute_datum_typed: DistributeDatum = collateral_datum
+  let distribute_datum: DistributeDatum = get_distribute_datum(output)
 
-  distribute_datum_typed.total_ratio_feed
+  distribute_datum.total_ratio_feed
+}
+
+pub fn get_distribute_datum(output: Output) -> DistributeDatum {
+  expect InlineDatum(distribute_datum) = output.datum
+  expect distribute_datum_typed: DistributeDatum = distribute_datum
+
+  distribute_datum_typed
+}
+
+pub fn get_perpetual_datum(output: Output) -> PerpetualDatum {
+  expect InlineDatum(perpetual_datum) = output.datum
+  expect perpetual_datum_typed: PerpetualDatum = perpetual_datum
+
+  perpetual_datum_typed
+}
+
+pub fn validate_token_mint(
+  mints: Value,
+  expected_minting: (ByteArray, ByteArray, Int),
+) -> Bool {
+  when list.find(flatten(mints), fn(mint) { mint == expected_minting }) is {
+    Some(_) -> only_one_token_in_policy_minted(mints, expected_minting)
+    None -> False
+  }
+}
+
+fn only_one_token_in_policy_minted(mints, expected_minting) {
+  let (policy_id, _, _) = expected_minting
+  let policy_id: PolicyId = policy_id
+  list.length(dict.keys(tokens(mints, policy_id))) == 1
 }

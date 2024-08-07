@@ -5,13 +5,14 @@ use aiken/transaction.{
 use aiken/transaction/credential.{
   Address, Inline, ScriptCredential, from_verification_key,
 }
-use aiken/transaction/value.{PolicyId, quantity_of}
-use types.{ComparePerpetualInfo, PerpetualDatum}
+use aiken/transaction/value.{PolicyId, from_minted_value, quantity_of}
+use types.{ComparePerpetualInfo, DistributeDatum, PerpetualDatum}
 use utils.{
   calculate_total_expected_funds_to_distribute, get_asset_to_address,
-  get_inputs_from_script, get_inputs_from_script_info, get_lower_bound,
-  get_output_to_distribute, get_output_to_distribute_ratio_policy,
-  get_outputs_back_to_script_info, get_validators_inputs,
+  get_distribute_datum, get_inputs_from_script, get_inputs_from_script_info,
+  get_lower_bound, get_output_to_distribute_ratio_policy,
+  get_output_to_validator, get_outputs_back_to_script_info,
+  get_validators_inputs, validate_token_mint,
 }
 
 // based on the script, and based on their portportion of the total ratio, subtract or add to their balance
@@ -45,17 +46,24 @@ fn validate_update_new_funding_round(
       asset_name,
     )
 
-  let output_to_distribute: Output =
-    get_output_to_distribute(ctx.transaction.outputs, distribute_validator_hash)
+  let output_to_distribute_validator: Output =
+    get_output_to_validator(ctx.transaction.outputs, distribute_validator_hash)
+
+  let distribute_datum: DistributeDatum =
+    get_distribute_datum(output_to_distribute_validator)
 
   let output_to_distribute_ratio_policy: PolicyId =
-    get_output_to_distribute_ratio_policy(output_to_distribute)
+    get_output_to_distribute_ratio_policy(output_to_distribute_validator)
 
   let expected_total_funds_to_distribute: Int =
     calculate_total_expected_funds_to_distribute(inputs_from_script_info)
 
   let total_funds_to_distribute_validator: Int =
-    quantity_of(output_to_distribute.value, asset_policy_id, asset_name)
+    quantity_of(
+      output_to_distribute_validator.value,
+      asset_policy_id,
+      asset_name,
+    )
 
   let info_difference: List<ComparePerpetualInfo> =
     list.difference(inputs_from_script_info, outputs_back_to_script_info)
@@ -76,7 +84,19 @@ fn validate_update_new_funding_round(
   let inputs_outputs_length_matches: Bool =
     list.length(inputs_from_script) == list.length(outputs_back_to_script)
 
-  info_matches && inputs_outputs_length_matches && total_expected_funds_to_distribute_valid && ratio_policy_not_altered
+  let burnt_amount = expected_total_funds_to_distribute * -1
+
+  let token_burnt_valid: Bool =
+    validate_token_mint(
+      from_minted_value(ctx.transaction.mint),
+      (
+        distribute_datum.redeem_asset.policy_id,
+        distribute_datum.redeem_asset.asset_name,
+        burnt_amount,
+      ),
+    )
+
+  info_matches && inputs_outputs_length_matches && total_expected_funds_to_distribute_valid && ratio_policy_not_altered && token_burnt_valid
 }
 
 fn validate_close_position(
@@ -119,9 +139,19 @@ fn validate_close_position(
   let one_hour_after_distribute_time: Bool =
     get_lower_bound(ctx.transaction.validity_range) + 3_600_000 > datum.distribute_time
 
+  let token_burnt_valid: Bool =
+    validate_token_mint(
+      from_minted_value(ctx.transaction.mint),
+      (
+        datum.redeem_asset.policy_id,
+        datum.redeem_asset.asset_name,
+        asset_amount_in_input,
+      ),
+    )
+
   ( amount_to_owner_valid || must_be_signed_by_owner ) && (
     before_distribute_fund || one_hour_after_distribute_time
-  ) && only_one_validator_input
+  ) && only_one_validator_input && token_burnt_valid
 }
 
 validator(
