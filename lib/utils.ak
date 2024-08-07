@@ -113,8 +113,7 @@ fn calculate_perpetual_info(
 ) -> ComparePerpetualInfo {
   let price = get_orcfax_price(ctx, datum)
 
-  let price_percentage_difference =
-    price / datum.current_funding_round_entry_price - 1
+  let price_percentage_difference = price / datum.entry_price - 1
 
   let funds_send_to_distribute = asset_amount * price_percentage_difference
 

@@ -114,11 +114,14 @@ fn validate_close_position(
     list.has(ctx.transaction.extra_signatories, datum.owner_address_hash)
 
   let before_distribute_fund: Bool =
-    datum.current_funding_round_distribute_time > get_lower_bound(
-      ctx.transaction.validity_range,
-    )
+    datum.distribute_time > get_lower_bound(ctx.transaction.validity_range)
 
-  ( amount_to_owner_valid || must_be_signed_by_owner ) && only_one_validator_input && before_distribute_fund
+  let one_hour_after_distribute_time: Bool =
+    get_lower_bound(ctx.transaction.validity_range) + 3_600_000 > datum.distribute_time
+
+  ( amount_to_owner_valid || must_be_signed_by_owner ) && (
+    before_distribute_fund || one_hour_after_distribute_time
+  ) && only_one_validator_input
 }
 
 validator(
@@ -130,7 +133,7 @@ validator(
     validate_close_position(datum, ctx, asset_policy_id, asset_name)
   }
 
-  fn withdraw(_redeemer: Int, ctx: ScriptContext) {
+  fn withdraw(_redeemer: Int, ctx: ScriptContext) -> Bool {
     expect ScriptContext { transaction: _tx, purpose: WithdrawFrom(stake_cred) } =
       ctx
 
