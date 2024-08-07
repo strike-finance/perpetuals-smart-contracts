@@ -10,7 +10,9 @@ use aiken/transaction/credential.{
 use aiken/transaction/value.{
   AssetName, PolicyId, Value, flatten, policies, quantity_of, tokens,
 }
-use types.{ComparePerpetualInfo, DistributeDatum, PerpetualDatum, RationalDatum}
+use types.{
+  ComparePerpetualInfo, DistributeDatum, PerpetualDatum, Ratio, RationalDatum,
+}
 
 pub fn get_lower_bound(range: ValidityRange) -> Int {
   expect Finite(lower_bound) = range.lower_bound.bound_type
@@ -114,6 +116,37 @@ pub fn get_orcfax_price(ctx: ScriptContext, datum: PerpetualDatum) -> Int {
   rational_datum_typed.numerator / rational_datum_typed.denominator
 }
 
+pub fn get_ratio(ctx: ScriptContext, datum: PerpetualDatum) -> Ratio {
+  let ratio_script_token = #"01"
+
+  expect Some(ratio_script_token_utxo) =
+    list.find(
+      ctx.transaction.reference_inputs,
+      fn(input) {
+        list.has(policies(input.output.value), datum.total_ratio_feed)
+      },
+    )
+
+  expect InlineDatum(ratio_hash) = ratio_script_token_utxo.output.datum
+  expect ratio_hash_datum_typed: ByteArray = ratio_hash
+
+  expect Some(orc_fs_utxo) =
+    list.find(
+      ctx.transaction.reference_inputs,
+      fn(input) {
+        value.quantity_of(
+          input.output.value,
+          ratio_hash_datum_typed,
+          ratio_script_token,
+        ) == 1
+      },
+    )
+  expect InlineDatum(ratio_datum) = orc_fs_utxo.output.datum
+  expect ratio_datum_typed: Ratio = ratio_datum
+
+  ratio_datum_typed
+}
+
 fn calculate_perpetual_info(
   ctx: ScriptContext,
   datum: PerpetualDatum,
@@ -139,6 +172,30 @@ fn calculate_perpetual_info(
   }
 }
 
+pub fn calculate_distribute_info(
+  ctx: ScriptContext,
+  datum: PerpetualDatum,
+  asset_amount: Int,
+) -> ComparePerpetualInfo {
+  let ratio = get_ratio(ctx, datum)
+
+  let rewards =
+    asset_amount / ratio.total_winning_amount * ratio.total_losing_amount
+
+  ComparePerpetualInfo {
+    total_ratio_feed: datum.total_ratio_feed,
+    orcfax_price_feed: datum.orcfax_price_feed,
+    leverage_amount: datum.leverage_amount,
+    owner_address_hash: datum.owner_address_hash,
+    owner_bech32_address: datum.owner_bech32_address,
+    new_balance: asset_amount + rewards,
+    funds_to_distribute: rewards,
+    redeem_asset: datum.redeem_asset,
+    position_asset: datum.position_asset,
+    position: datum.position,
+  }
+}
+
 pub fn get_inputs_from_script_info(
   inputs: List<Input>,
   ctx: ScriptContext,
@@ -154,6 +211,48 @@ pub fn get_inputs_from_script_info(
         quantity_of(input.output.value, policy_id, asset_name)
 
       calculate_perpetual_info(ctx, perpetual_datum, asset_in_input)
+    },
+  )
+}
+
+pub fn get_input_from_distribute_info(
+  inputs: List<Input>,
+  ctx: ScriptContext,
+) -> List<ComparePerpetualInfo> {
+  list.map(
+    inputs,
+    fn(input: Input) {
+      let perpetual_datum: PerpetualDatum = get_perpetual_datum(input.output)
+
+      let asset_in_output: Int =
+        quantity_of(
+          input.output.value,
+          perpetual_datum.redeem_asset.policy_id,
+          perpetual_datum.redeem_asset.asset_name,
+        )
+
+      calculate_distribute_info(ctx, perpetual_datum, asset_in_output)
+    },
+  )
+}
+
+pub fn get_output_to_distribute_info(
+  outputs: List<Output>,
+  ctx: ScriptContext,
+) -> List<ComparePerpetualInfo> {
+  list.map(
+    outputs,
+    fn(output: Output) {
+      let perpetual_datum: PerpetualDatum = get_perpetual_datum(output)
+
+      let asset_in_output: Int =
+        quantity_of(
+          output.value,
+          perpetual_datum.redeem_asset.policy_id,
+          perpetual_datum.redeem_asset.asset_name,
+        )
+
+      calculate_distribute_info(ctx, perpetual_datum, asset_in_output)
     },
   )
 }
@@ -224,4 +323,14 @@ fn only_one_token_in_policy_minted(mints, expected_minting) {
   let policy_id: PolicyId = policy_id
 
   list.length(dict.keys(tokens(mints, policy_id))) == 1
+}
+
+pub fn perpetuals_info_list_matches(
+  perpetuals_info: List<ComparePerpetualInfo>,
+  expected_perpetuals_info: List<ComparePerpetualInfo>,
+) -> Bool {
+  let info_difference: List<ComparePerpetualInfo> =
+    list.difference(perpetuals_info, expected_perpetuals_info)
+
+  list.length(info_difference) == 0
 }

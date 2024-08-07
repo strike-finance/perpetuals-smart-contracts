@@ -73,3 +73,8 @@ pub type RationalDatum {
   numerator: Int,
   denominator: Int,
 }
+
+pub type Ratio {
+  total_winning_amount: Int,
+  total_losing_amount: Int,
+}

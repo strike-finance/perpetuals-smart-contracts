@@ -12,7 +12,7 @@ use utils.{
   get_distribute_datum, get_inputs_from_script, get_inputs_from_script_info,
   get_lower_bound, get_output_to_distribute_ratio_policy,
   get_output_to_validator, get_outputs_back_to_script_info,
-  get_validators_inputs, validate_token_mint,
+  get_validators_inputs, perpetuals_info_list_matches, validate_token_mint,
 }
 
 type PerpetualRedeemer {
@@ -81,9 +81,6 @@ fn validate_update_new_funding_round(
       distribute_datum.redeem_asset.asset_name,
     )
 
-  let info_difference: List<ComparePerpetualInfo> =
-    list.difference(inputs_from_script_info, outputs_back_to_script_info)
-
   let ratio_policy_not_altered: Bool =
     list.all(
       outputs_back_to_script_info,
@@ -95,13 +92,17 @@ fn validate_update_new_funding_round(
   let total_expected_funds_to_distribute_valid: Bool =
     expected_total_funds_to_distribute == total_funds_to_distribute_validator
 
-  let info_matches: Bool = list.length(info_difference) == 0
-
   let inputs_outputs_length_matches: Bool =
     list.length(inputs_from_script) == list.length(outputs_back_to_script)
 
   let redeem_asset_in_distribute_utxo_valid =
     redeem_asset_to_distribute_validator == expected_total_funds_to_distribute
+
+  let info_matches: Bool =
+    perpetuals_info_list_matches(
+      inputs_from_script_info,
+      outputs_back_to_script_info,
+    )
 
   info_matches && inputs_outputs_length_matches && total_expected_funds_to_distribute_valid && ratio_policy_not_altered && redeem_asset_in_distribute_utxo_valid
 }
