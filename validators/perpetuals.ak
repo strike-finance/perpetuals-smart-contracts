@@ -5,11 +5,12 @@ use aiken/transaction.{
 use aiken/transaction/credential.{
   Address, Inline, ScriptCredential, from_verification_key,
 }
-use aiken/transaction/value.{quantity_of}
+use aiken/transaction/value.{PolicyId, quantity_of}
 use types.{ComparePerpetualInfo, PerpetualDatum}
 use utils.{
   calculate_total_expected_funds_to_distribute, get_asset_to_address,
   get_inputs_from_script, get_inputs_from_script_info, get_lower_bound,
+  get_output_to_distribute, get_output_to_distribute_ratio_policy,
   get_outputs_back_to_script_info, get_validators_inputs,
 }
 
@@ -19,7 +20,7 @@ fn validate_update_new_funding_round(
   ctx: ScriptContext,
   perpetual_validator_hash: ByteArray,
   distribute_validator_hash: ByteArray,
-  policy_id: ByteArray,
+  asset_policy_id: ByteArray,
   asset_name: ByteArray,
 ) {
   let inputs_from_script: List<Input> =
@@ -29,37 +30,53 @@ fn validate_update_new_funding_round(
     find_script_outputs(ctx.transaction.outputs, perpetual_validator_hash)
 
   let inputs_from_script_info: List<ComparePerpetualInfo> =
-    get_inputs_from_script_info(inputs_from_script, ctx, policy_id, asset_name)
+    get_inputs_from_script_info(
+      inputs_from_script,
+      ctx,
+      asset_policy_id,
+      asset_name,
+    )
 
   let outputs_back_to_script_info: List<ComparePerpetualInfo> =
     get_outputs_back_to_script_info(
       outputs_back_to_script,
       ctx,
-      policy_id,
+      asset_policy_id,
       asset_name,
     )
 
-  let output_to_distribute =
-    find_script_outputs(ctx.transaction.outputs, distribute_validator_hash)
+  let output_to_distribute: Output =
+    get_output_to_distribute(ctx.transaction.outputs, distribute_validator_hash)
 
-  expect Some(output_to_distribute) = list.head(output_to_distribute)
+  let output_to_distribute_ratio_policy: PolicyId =
+    get_output_to_distribute_ratio_policy(output_to_distribute)
 
-  let expected_total_funds_to_distribute =
+  let expected_total_funds_to_distribute: Int =
     calculate_total_expected_funds_to_distribute(inputs_from_script_info)
 
-  let total_funds_to_distribute_validator =
-    quantity_of(output_to_distribute.value, policy_id, asset_name)
+  let total_funds_to_distribute_validator: Int =
+    quantity_of(output_to_distribute.value, asset_policy_id, asset_name)
 
-  let total_expected_funds_to_distribute_valid =
+  let info_difference: List<ComparePerpetualInfo> =
+    list.difference(inputs_from_script_info, outputs_back_to_script_info)
+
+  let ratio_policy_not_altered: Bool =
+    list.all(
+      outputs_back_to_script_info,
+      fn(info: ComparePerpetualInfo) -> Bool {
+        info.total_ratio_feed == output_to_distribute_ratio_policy
+      },
+    )
+
+  let total_expected_funds_to_distribute_valid: Bool =
     expected_total_funds_to_distribute == total_funds_to_distribute_validator
 
-  let info_difference =
-    list.difference(inputs_from_script_info, outputs_back_to_script_info)
-  let info_matches = list.length(info_difference) == 0
-  let length_matches =
+  let info_matches: Bool = list.length(info_difference) == 0
+
+  let inputs_outputs_length_matches: Bool =
     list.length(inputs_from_script) == list.length(outputs_back_to_script)
 
-  info_matches && length_matches && total_expected_funds_to_distribute_valid
+  info_matches && inputs_outputs_length_matches && total_expected_funds_to_distribute_valid && ratio_policy_not_altered
 }
 
 fn validate_close_position(
@@ -93,10 +110,10 @@ fn validate_close_position(
   let only_one_validator_input: Bool =
     list.length(get_validators_inputs(ctx)) == 1
 
-  let must_be_signed_by_owner =
+  let must_be_signed_by_owner: Bool =
     list.has(ctx.transaction.extra_signatories, datum.owner_address_hash)
 
-  let before_distribute_fund =
+  let before_distribute_fund: Bool =
     datum.current_funding_round_distribute_time > get_lower_bound(
       ctx.transaction.validity_range,
     )
@@ -106,11 +123,11 @@ fn validate_close_position(
 
 validator(
   distribute_validator_hash: ByteArray,
-  policy_id: ByteArray,
+  asset_policy_id: ByteArray,
   asset_name: ByteArray,
 ) {
   fn spend(datum: PerpetualDatum, _redeemer: Int, ctx: ScriptContext) -> Bool {
-    validate_close_position(datum, ctx, policy_id, asset_name)
+    validate_close_position(datum, ctx, asset_policy_id, asset_name)
   }
 
   fn withdraw(_redeemer: Int, ctx: ScriptContext) {
@@ -122,7 +139,7 @@ validator(
       ctx,
       perpetual_validator_hash,
       distribute_validator_hash,
-      policy_id,
+      asset_policy_id,
       asset_name,
     )
   }

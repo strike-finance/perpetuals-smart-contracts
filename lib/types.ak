@@ -23,6 +23,10 @@ pub type PerpetualDatum {
   position: Int,
 }
 
+pub type DistributeDatum {
+  total_ratio_feed: PolicyId,
+}
+
 pub type OrcfaxDatum<t> {
   statement: Statement<t>,
   context: Context,

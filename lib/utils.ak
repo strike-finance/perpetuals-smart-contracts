@@ -1,11 +1,13 @@
 use aiken/interval.{Finite}
 use aiken/list
-use aiken/transaction.{InlineDatum, Input, Output, ScriptContext, ValidityRange}
+use aiken/transaction.{
+  InlineDatum, Input, Output, ScriptContext, ValidityRange, find_script_outputs,
+}
 use aiken/transaction/credential.{
   Address, Credential, ScriptCredential, VerificationKeyCredential,
 }
 use aiken/transaction/value.{AssetName, PolicyId, policies, quantity_of}
-use types.{ComparePerpetualInfo, PerpetualDatum, RationalDatum}
+use types.{ComparePerpetualInfo, DistributeDatum, PerpetualDatum, RationalDatum}
 
 pub fn get_lower_bound(range: ValidityRange) -> Int {
   expect Finite(lower_bound) = range.lower_bound.bound_type
@@ -165,4 +167,23 @@ pub fn get_outputs_back_to_script_info(
       calculate_perpetual_info(ctx, perpetual_datum_typed, asset_in_output)
     },
   )
+}
+
+pub fn get_output_to_distribute(
+  outputs: List<Output>,
+  distribute_validator_hash: ByteArray,
+) -> Output {
+  let output_to_distribute =
+    find_script_outputs(outputs, distribute_validator_hash)
+
+  expect Some(output_to_distribute) = list.head(output_to_distribute)
+
+  output_to_distribute
+}
+
+pub fn get_output_to_distribute_ratio_policy(output: Output) -> PolicyId {
+  expect InlineDatum(collateral_datum) = output.datum
+  expect distribute_datum_typed: DistributeDatum = collateral_datum
+
+  distribute_datum_typed.total_ratio_feed
 }
