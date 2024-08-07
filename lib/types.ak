@@ -16,6 +16,19 @@ pub type POSIXTime =
 pub type LovelaceAmount =
   Int
 
+pub type ComparePerpetualInfo {
+  total_ratio_feed: PolicyId,
+  orcfax_price_feed: PolicyId,
+  leverage_amount: Int,
+  new_balance: Int,
+  owner_address_hash: AddressHash,
+  owner_bech32_address: String,
+  funds_to_distribute: Int,
+  redeem_asset: AssetClass,
+  position_asset: AssetClass,
+  position: Int,
+}
+
 pub type PerpetualDatum {
   total_ratio_feed: PolicyId,
   orcfax_price_feed: PolicyId,
@@ -59,14 +72,4 @@ pub type Price {
 pub type RationalDatum {
   numerator: Int,
   denominator: Int,
-}
-
-pub type ComparePerpetualInfo {
-  total_ratio_feed: PolicyId,
-  orcfax_price_feed: PolicyId,
-  leverage_amount: Int,
-  new_balance: Int,
-  owner_address_hash: AddressHash,
-  owner_bech32_address: String,
-  funds_to_distribute: Int,
 }

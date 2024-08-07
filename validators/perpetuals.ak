@@ -15,6 +15,15 @@ use utils.{
   get_validators_inputs, validate_token_mint,
 }
 
+type PerpetualRedeemer {
+  UpdateFundingRound
+  CollectRewards
+}
+
+type Redeemer {
+  action: PerpetualRedeemer,
+}
+
 // based on the script, and based on their portportion of the total ratio, subtract or add to their balance
 // only after the distribute time
 fn validate_update_new_funding_round(
@@ -97,6 +106,22 @@ fn validate_update_new_funding_round(
   info_matches && inputs_outputs_length_matches && total_expected_funds_to_distribute_valid && ratio_policy_not_altered && redeem_asset_in_distribute_utxo_valid
 }
 
+fn validate_collect_rewards(
+  ctx: ScriptContext,
+  perpetual_validator_hash: ByteArray,
+) {
+  let inputs_from_validator: List<Input> =
+    get_inputs_from_script(ctx.transaction.inputs, perpetual_validator_hash)
+
+  let outputs_back_to_script: List<Output> =
+    find_script_outputs(ctx.transaction.outputs, perpetual_validator_hash)
+
+  let inputs_and_outputs_length_match: Bool =
+    list.length(inputs_from_validator) == list.length(outputs_back_to_script)
+
+  inputs_and_outputs_length_match
+}
+
 fn validate_close_position(
   datum: PerpetualDatum,
   ctx: ScriptContext,
@@ -161,17 +186,22 @@ validator(
     validate_close_position(datum, ctx, asset_policy_id, asset_name)
   }
 
-  fn withdraw(_redeemer: Int, ctx: ScriptContext) -> Bool {
+  fn withdraw(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
     expect ScriptContext { transaction: _tx, purpose: WithdrawFrom(stake_cred) } =
       ctx
 
     expect Inline(ScriptCredential(perpetual_validator_hash)) = stake_cred
-    validate_update_new_funding_round(
-      ctx,
-      perpetual_validator_hash,
-      distribute_validator_hash,
-      asset_policy_id,
-      asset_name,
-    )
+
+    when redeemer.action is {
+      UpdateFundingRound ->
+        validate_update_new_funding_round(
+          ctx,
+          perpetual_validator_hash,
+          distribute_validator_hash,
+          asset_policy_id,
+          asset_name,
+        )
+      CollectRewards -> validate_collect_rewards(ctx, perpetual_validator_hash)
+    }
   }
 }

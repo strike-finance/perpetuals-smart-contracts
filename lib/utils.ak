@@ -133,6 +133,9 @@ fn calculate_perpetual_info(
     owner_bech32_address: datum.owner_bech32_address,
     new_balance: asset_amount - funds_send_to_distribute,
     funds_to_distribute: funds_send_to_distribute,
+    redeem_asset: datum.redeem_asset,
+    position_asset: datum.position_asset,
+    position: datum.position,
   }
 }
 
