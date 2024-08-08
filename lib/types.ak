@@ -26,21 +26,23 @@ pub type ComparePerpetualInfo {
   funds_to_distribute: Int,
   redeem_asset: AssetClass,
   position_asset: AssetClass,
-  position: Int,
+  position_code: Int,
 }
 
 pub type PerpetualDatum {
-  total_ratio_feed: PolicyId,
-  orcfax_price_feed: PolicyId,
-  leverage_amount: Int,
-  entry_price: Int,
-  entry_time: POSIXTime,
-  distribute_time: POSIXTime,
   owner_address_hash: AddressHash,
   owner_bech32_address: String,
+  total_ratio_feed: PolicyId,
+  orcfax_price_feed: PolicyId,
+  entry_price: Int,
+  entry_time: POSIXTime,
   redeem_asset: AssetClass,
   position_asset: AssetClass,
-  position: Int,
+  position_asset_amount: Int,
+  position_code: Int,
+  stop_loss: Int,
+  leverage_amount: Int,
+  distribute_time: POSIXTime,
 }
 
 pub type DistributeDatum {
