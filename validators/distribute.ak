@@ -1,7 +1,7 @@
 use aiken/transaction.{Input, Output, ScriptContext, find_script_outputs}
 use types.{ComparePerpetualInfo}
 use utils.{
-  get_input_from_distribute_info, get_inputs_from_script,
+  check_spend, get_input_from_distribute_info, get_inputs_from_script,
   get_output_to_distribute_info, perpetuals_info_list_matches,
 }
 
@@ -10,6 +10,10 @@ type Redeemer {
 }
 
 validator {
+  fn spend(_datum, _redeemer, ctx: ScriptContext) -> Bool {
+    check_spend(ctx)
+  }
+
   fn withdraw(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
     let inputs_from_perpetual_validator: List<Input> =
       get_inputs_from_script(

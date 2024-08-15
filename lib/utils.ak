@@ -1,11 +1,13 @@
+use aiken/builtin
 use aiken/dict
 use aiken/interval.{Finite}
 use aiken/list
 use aiken/transaction.{
-  InlineDatum, Input, Output, ScriptContext, ValidityRange, find_script_outputs,
+  InlineDatum, Input, Output, OutputReference, ScriptContext, Spend, Transaction,
+  ValidityRange, find_script_outputs,
 }
 use aiken/transaction/credential.{
-  Address, Credential, ScriptCredential, VerificationKeyCredential,
+  Address, Credential, Inline, ScriptCredential, VerificationKeyCredential,
 }
 use aiken/transaction/value.{
   AssetName, PolicyId, Value, flatten, policies, quantity_of, tokens,
@@ -333,4 +335,30 @@ pub fn perpetuals_info_list_matches(
     list.difference(perpetuals_info, expected_perpetuals_info)
 
   list.length(info_difference) == 0
+}
+
+pub fn check_spend(ctx: ScriptContext) -> Bool {
+  expect ScriptContext { transaction: tx, purpose: Spend(own_ref) } = ctx
+
+  let Transaction { inputs, withdrawals, .. } = tx
+
+  let Output { address: own_addr, .. } =
+    resolve_output_reference(inputs, own_ref)
+
+  let own_withdrawal = Inline(own_addr.payment_credential)
+
+  dict.has_key(withdrawals, own_withdrawal)
+}
+
+pub fn resolve_output_reference(
+  inputs: List<Input>,
+  output_ref: OutputReference,
+) -> Output {
+  expect [input, ..] = inputs
+
+  if input.output_reference == output_ref {
+    input.output
+  } else {
+    resolve_output_reference(builtin.tail_list(inputs), output_ref)
+  }
 }

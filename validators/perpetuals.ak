@@ -8,20 +8,30 @@ use aiken/transaction/credential.{
 use aiken/transaction/value.{PolicyId, from_minted_value, quantity_of}
 use types.{ComparePerpetualInfo, DistributeDatum, PerpetualDatum}
 use utils.{
-  calculate_total_expected_funds_to_distribute, get_asset_to_address,
-  get_distribute_datum, get_inputs_from_script, get_inputs_from_script_info,
-  get_lower_bound, get_output_to_distribute_ratio_policy,
-  get_output_to_validator, get_outputs_back_to_script_info,
-  get_validators_inputs, perpetuals_info_list_matches, validate_token_mint,
+  calculate_total_expected_funds_to_distribute, check_spend,
+  get_asset_to_address, get_distribute_datum, get_inputs_from_script,
+  get_inputs_from_script_info, get_lower_bound,
+  get_output_to_distribute_ratio_policy, get_output_to_validator,
+  get_outputs_back_to_script_info, get_validators_inputs,
+  perpetuals_info_list_matches, validate_token_mint,
 }
 
-type PerpetualRedeemer {
+type WithdrawPerpetualRedeemer {
   UpdateFundingRound
   CollectRewards
 }
 
-type Redeemer {
-  action: PerpetualRedeemer,
+type WithdrawRedeemer {
+  action: WithdrawPerpetualRedeemer,
+}
+
+type SpendPerpetualRedeemer {
+  ClosePosition
+  Others
+}
+
+type SpendRedeemer {
+  action: SpendPerpetualRedeemer,
 }
 
 // based on the script, and based on their portportion of the total ratio, subtract or add to their balance
@@ -183,11 +193,19 @@ validator(
   asset_policy_id: ByteArray,
   asset_name: ByteArray,
 ) {
-  fn spend(datum: PerpetualDatum, _redeemer: Int, ctx: ScriptContext) -> Bool {
-    validate_close_position(datum, ctx, asset_policy_id, asset_name)
+  fn spend(
+    datum: PerpetualDatum,
+    redeemer: SpendRedeemer,
+    ctx: ScriptContext,
+  ) -> Bool {
+    when redeemer.action is {
+      ClosePosition ->
+        validate_close_position(datum, ctx, asset_policy_id, asset_name)
+      Others -> check_spend(ctx)
+    }
   }
 
-  fn withdraw(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
+  fn withdraw(redeemer: WithdrawRedeemer, ctx: ScriptContext) -> Bool {
     expect ScriptContext { transaction: _tx, purpose: WithdrawFrom(stake_cred) } =
       ctx
 
