@@ -123,12 +123,6 @@ E = \min(\$80,000, \$20,000) = \$20,000
 ```
 <br>
 
-**Unmatched Long Positions**:
-```math
-\text{Unmatched Longs} = \$80,000 - \$20,000 = \$60,000
-```
-<br>
-
 ### Price Increase Scenario Calculations
 
 **Price at End (P₁)**: \$1,050 (5% increase)
