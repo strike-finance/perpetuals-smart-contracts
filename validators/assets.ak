@@ -9,12 +9,12 @@ type Redeemer {
   perpetual_validator_hash: ByteArray,
 }
 
-validator {
-  fn spend(_datum, _redeemer, ctx: ScriptContext) -> Bool {
+validator pooled_assets {
+  spend(_datum, redeemer: Int, ctx: ScriptContext) {
     check_spend(ctx)
   }
 
-  fn withdraw(redeemer: Redeemer, ctx: ScriptContext) -> Bool {
+  withdraw(redeemer: Redeemer, ctx: ScriptContext) {
     let inputs_from_perpetual_validator: List<Input> =
       get_inputs_from_script(
         ctx.transaction.inputs,
@@ -40,5 +40,9 @@ validator {
       )
 
     info_matches
+  }
+
+  else(_) {
+    fail
   }
 }
