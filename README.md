@@ -64,13 +64,16 @@ Ensures significant payouts each funding round.
 
 - **Total Payout**:
 Total payout from losing position to winning position
+```math
+\text{Total Payout} = \text{Funding Payout} + \text{Fixed Fee}
+```
 
-![](https://quicklatex.com/cache3/28/ql_efe8354648b84f751141e01b0293b428_l3.png)
 <br>
 
 - **Individual Contributor Payout**:
 
   Depending on whether you are on the winning or losing side, your individual payout is calculated as follows:
+<br>
 
   - **For Winners**:
  ```math
@@ -149,7 +152,6 @@ E = \min(\$80,000, \$20,000) = \$20,000
 1. **Percentage Price Change**:
 ```math
    \frac{\Delta P}{P_0} = \frac{\$1,050 - \$1,000}{\$1,000} = 5\%
-   \]
 ```
 <br>
 
