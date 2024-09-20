@@ -38,8 +38,6 @@ Since there are no margin requirements. Your position will simply close once it 
 ### Payout Calculation Components
 - **Matched Exposure *(E)***:
 The portion of positions that can be directly offset between longs and shorts.
-
-
 ```math
 E = \min(\text{Total Long Positions}, \text{Total Short Positions})
 ```
@@ -48,9 +46,8 @@ E = \min(\text{Total Long Positions}, \text{Total Short Positions})
 - **Funding Rate Payout**:
 Reflects gains or losses based on price movements and leverage.
 
-
 ```math
-\text{Funding Payout} = E \times \lambda \times \left| \frac{\Delta P}{P_0} \right|
+\text{Funding Payout} = E \times \left| \frac{\Delta P}{P_0} \right|
 ```
 <br>
 
@@ -72,29 +69,17 @@ Total payout from losing position to winning position
 
 - **Individual Contributor Payout**:
 
-  Depending on whether you are on the winning or losing side, your individual payout is calculated as follows:
+  Individual payout is calculated as follows:
 <br>
 
-  - **For Winners**:
  ```math
-    \text{Individual Gain} = \left( \frac{\text{Participant's Matched Position}}{E} \right) \times \text{Total Payout}
+    \text{Individual Gain/Loss} = \left( \frac{\text{Participant's Notional Value}}\text{Total Winning Notional Value} \right) \times \text{Total Payout}
  ```
 <br>
-
-  - **For Losers**:
-  ```math
-    \text{Individual Loss} = \left( \frac{\text{Participant's Matched Position}}{E} \right) \times \text{Total Payout}
-  ```
-<br>
-  Where:
-  
-  - **Participant's Matched Position**: The portion of the participant's notional position that is part of the matched exposure.
-    <br>
-  - **Leverage Factor λ**: Already factored into the Total Payout calculation.
   
   **Example**:
   
-  If a participant has a matched position of \$10,000, and the total position is \$20,000 and the total payout is \$6,000, their individual gain or loss would be:
+  If a participant has a notional position of \$10,000, and the total notional position is \$20,000 and the total payout is \$6,000, their individual gain or loss would be:
 ```math
   \text{Individual Gain/Loss} = \left( \frac{\$10,000}{\$20,000} \right) \times \$6,000 = \$3,000
 ```
