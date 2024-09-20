@@ -73,14 +73,6 @@ E = \min(\text{Total Long Positions}, \text{Total Short Positions})
  ```
 <br>
   
-  **Example**:
-  
-  If a participant has a notional position of \$10,000, and the total notional position is \$20,000 and the total payout is \$6,000, their individual gain or loss would be:
-```math
-  \text{Individual Gain/Loss} = \left( \frac{\$10,000}{\$20,000} \right) \times \$6,000 = \$3,000
-```
-<br>
-
 ## Example Scenario
 
 ### Setup
