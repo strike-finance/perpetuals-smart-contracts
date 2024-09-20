@@ -19,7 +19,7 @@
 ## Introduction
 Perpetuals on STRIKE are less risky than traditional perpetual futures while keeping the same benefits. Users will still be able to gain profits in perpetuity whilst utilizing leverage to amplify their gains. There are no mark prices, funding rates, and no margin requirements. 
 
-Every 1 hour there the price of the underlying asset will be recorded. After one hour the price of the asset is compared. If during this 1 hour period the asset has moved up in price, the long side wins, if the asset has moved down in price, the short side wins. 
+Every 1 hour there the price of the underlying asset will be recorded. After one hour the price of the asset is compared. If during this 1 hour period the asset has moved up in price, the long side wins, if the asset has moved down in price, the short side wins. No positions can be entered or closed within 20 minutes of the current funding period ending.
 
 Since there are no margin requirements. Your position will simply close once it reaches 0. 
 
@@ -34,6 +34,8 @@ Since there are no margin requirements. Your position will simply close once it 
 3. **Percentage Price Change (ΔP / P₀)**: The change in the asset's price over the trading period, expressed as a percentage.
 
 4. **Fixed Minimum Fee (20%)**: An additional fee that the losing side pays to the winning side in each funding round, ensuring significant payouts even during low volatility.
+
+5. **Locked Last 20 Minutes**: To prevent people from gaming the system and closing their positions right before the funding period ends. No positions can be entered or closed within the last 20 minutes of the funding period ends. Traders will be able to place their positions for the next funding period during this 20 minutes lockdown. 
 
 ### Payout Calculation Components
 - **Matched Exposure *(E)***:
