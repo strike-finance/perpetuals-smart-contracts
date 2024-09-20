@@ -58,42 +58,33 @@ Ensures significant payouts each funding round.
   Depending on whether you are on the winning or losing side, your individual payout is calculated as follows:
 
   - **For Winners**:
-    \[
+ ```math
     \text{Individual Gain} = \left( \frac{\text{Participant's Matched Position}}{E} \right) \times \text{Total Payout}
-    \]
-  
+ ```
   - **For Losers**:
-    \[
+  ```math
     \text{Individual Loss} = \left( \frac{\text{Participant's Matched Position}}{E} \right) \times \text{Total Payout}
-    \]
+  ```
   
   Where:
   
   - **Participant's Matched Position**: The portion of the participant's notional position that is part of the matched exposure.
-  - **Leverage Factor (\( \lambda \))**: Already factored into the Total Payout calculation.
+  - **Leverage Factor λ**: Already factored into the Total Payout calculation.
   
   **Example**:
   
-  If a participant has a matched position of \$10,000 and the total payout is \$6,000, their individual gain or loss would be:
-  \[
+  If a participant has a matched position of \$10,000, and the total position is \$20,000 and the total payout is \$6,000, their individual gain or loss would be:
+```math
   \text{Individual Gain/Loss} = \left( \frac{\$10,000}{\$20,000} \right) \times \$6,000 = \$3,000
-  \]
-
-### Important Notes
-
-- **Leverage Amplifies Outcomes**: Both gains and losses are magnified by the leverage factor.
-
-- **Unmatched Positions**: Positions exceeding the matched exposure do not earn gains or incur losses from price movements or the fixed fee in that funding round.
-
-- **Risk Management**: Effective risk management is essential due to the amplified effects of leverage and the fixed fee.
+```
 
 ## Example Scenario
 
 ### Setup
 
-**Asset**: Cryptocurrency XYZ  
-**Initial Price (\( P_0 \))**: \$1,000  
-**Leverage Factor (\( \lambda \))**: 5x
+**Asset**: ADA 
+**Initial Price (P₀)**: \$1,000  
+**Leverage Factor λ**: 5x
 
 **Participants and Positions**
 
@@ -120,153 +111,78 @@ Ensures significant payouts each funding round.
    - Notional Position: \$1,000 × 5 = \$5,000
 
 **Matched Exposure (\( E \))**:
-\[
+```math
 E = \min(\$80,000, \$20,000) = \$20,000
-\]
+```
 
 **Unmatched Long Positions**:
-\[
+```math
 \text{Unmatched Longs} = \$80,000 - \$20,000 = \$60,000
-\]
+```
 
 ### Price Increase Scenario
 
-**Price at End (\( P_1 \))**: \$1,050 (5% increase)
+**Price at End (P₁)**: \$1,050 (5% increase)
 
 #### Calculations
 
 1. **Percentage Price Change**:
-   \[
+```math
    \frac{\Delta P}{P_0} = \frac{\$1,050 - \$1,000}{\$1,000} = 5\%
    \]
+```
 
-2. **Funding Rate Payout**:
-   \[
+3. **Funding Rate Payout**:
+```math
    \text{Funding Payout} = \$20,000 \times 5 \times 5\% = \$5,000
-   \]
+```
 
-3. **Fixed 5% Fee**:
-   \[
+4. **Fixed 5% Fee**:
+```math
    \text{Fixed Fee} = \$20,000 \times 5\% = \$1,000
-   \]
+```
 
-4. **Total Payout**:
-   \[
+5. **Total Payout**:
+```math
    \text{Total Payout} = \$5,000 + \$1,000 = \$6,000
-   \]
+```
 
 #### Allocation of Gains and Losses
 
 ##### Long Side (Winning Side)
 
 - **Alice's Matched Position**:
-  \[
+```math
   \text{Alice's Matched Position} = \left( \frac{\$50,000}{\$80,000} \right) \times \$20,000 = \$12,500
-  \]
+```
 
 - **Alice's Total Gain**:
-  \[
+```math
   \text{Alice's Gain} = \left( \frac{\$12,500}{\$20,000} \right) \times \$6,000 = \$3,750
-  \]
+```
 
 - **Bob's Matched Position**:
-  \[
+```math
   \text{Bob's Matched Position} = \$20,000 - \$12,500 = \$7,500
-  \]
+```
 
 - **Bob's Total Gain**:
-  \[
+```math
   \text{Bob's Gain} = \left( \frac{\$7,500}{\$20,000} \right) \times \$6,000 = \$2,250
-  \]
+```
 
 ##### Short Side (Losing Side)
 
 - **Charlie's Loss**:
-  \[
+```math
   \text{Charlie's Loss} = \left( \frac{\$15,000}{\$20,000} \right) \times \$6,000 = \$4,500
-  \]
+```
 
 - **Dave's Loss**:
-  \[
+```math
   \text{Dave's Loss} = \$6,000 - \$4,500 = \$1,500
-  \]
+```
 
-#### Unmatched Positions
-
-- **Unmatched Long Positions**: Do not earn gains or incur losses in this round.
-
----
-
-### Price Decrease Scenario
-
-**Price at End (\( P_1 \))**: \$950 (5% decrease)
-
-#### Calculations
-
-1. **Percentage Price Change**:
-   \[
-   \frac{\Delta P}{P_0} = \frac{\$950 - \$1,000}{\$1,000} = -5\%
-   \]
-
-2. **Funding Rate Payout**:
-   \[
-   \text{Funding Payout} = \$20,000 \times 5 \times 5\% = \$5,000
-   \]
-
-3. **Fixed 5% Fee**:
-   \[
-   \text{Fixed Fee} = \$20,000 \times 5\% = \$1,000
-   \]
-
-4. **Total Payout**:
-   \[
-   \text{Total Payout} = \$5,000 + \$1,000 = \$6,000
-   \]
-
-#### Allocation of Gains and Losses
-
-##### Short Side (Winning Side)
-
-- **Charlie's Gain**:
-  \[
-  \text{Charlie's Gain} = \left( \frac{\$15,000}{\$20,000} \right) \times \$6,000 = \$4,500
-  \]
-
-- **Dave's Gain**:
-  \[
-  \text{Dave's Gain} = \$6,000 - \$4,500 = \$1,500
-  \]
-
-##### Long Side (Losing Side)
-
-- **Alice's Loss**:
-  \[
-  \text{Alice's Loss} = \left( \frac{\$12,500}{\$20,000} \right) \times \$6,000 = \$3,750
-  \]
-
-- **Bob's Loss**:
-  \[
-  \text{Bob's Loss} = \$6,000 - \$3,750 = \$2,250
-  \]
-
-#### Unmatched Positions
-
-- **Unmatched Long Positions**: Do not incur losses in this round.
-
-## Comparison with Holding the Asset
-
-### Price Increase Scenario
-
-**Participant Gains from Holding the Asset**
-
-- **Alice**:
-  \[
-  \text{Alice's Gain} = \$50,000 \times 5\% = \$2,500
-  \]
-- **Bob**:
-  \[
-  \text{Bob's Gain} = \$30,000 \times 5\% = \$1,500
-  \]
 
 **Comparison Table**
 
@@ -275,25 +191,6 @@ E = \min(\$80,000, \$20,000) = \$20,000
 | **Alice**   | \$3,750       | \$2,500      | **+\$1,250** | 37.5%        | 5%          |
 | **Bob**     | \$2,250       | \$1,500      | **+\$750**   | 37.5%        | 5%          |
 
-### Price Decrease Scenario
-
-**Participant Losses from Holding the Asset**
-
-- **Alice**:
-  \[
-  \text{Alice's Loss} = \$50,000 \times 5\% = -\$2,500
-  \]
-- **Bob**:
-  \[
-  \text{Bob's Loss} = \$30,000 \times 5\% = -\$1,500
-  \]
-
-**Comparison Table**
-
-| Participant | Platform Loss | Holding Loss | Difference   | Platform ROI | Holding ROI |
-| ----------- | ------------- | ------------ | ------------ | ------------ | ----------- |
-| **Alice**   | -\$3,750      | -\$2,500     | **-\$1,250** | -37.5%       | -5%         |
-| **Bob**     | -\$2,250      | -\$1,500     | **-\$750**   | -37.5%       | -5%         |
 
 ## Key Observations
 
