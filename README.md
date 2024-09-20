@@ -38,44 +38,38 @@ Since there are no margin requirements. Your position will simply close once it 
 5. **Locked Last 20 Minutes**: To prevent people from gaming the system and closing their positions right before the funding period ends. No positions can be entered or closed within the last 20 minutes of the funding period ends. Traders will be able to place their positions for the next funding period during this 20 minutes lockdown. 
 
 ### Payout Calculation Components
-- **Matched Exposure *(E)***:
-The portion of positions that can be directly offset between longs and shorts.
+- **Matched Exposure *(E)***: The portion of positions that can be directly offset between longs and shorts.
 ```math
 E = \min(\text{Total Long Positions}, \text{Total Short Positions})
 ```
 <br>
 
-- **Funding Rate Payout**:
-Reflects gains or losses based on price movements and leverage.
+- **Funding Rate Payout**: Reflects gains or losses based on price movements and leverage.
 
 ```math
 \text{Funding Payout} = E \times \left| \frac{\Delta P}{P_0} \right|
 ```
 <br>
 
-- **Fixed 20% Fee**:
-Ensures significant payouts each funding round.
+- **Fixed 20% Fee**: Ensures significant payouts each funding round.
 
 ```math
 \text{Fixed Fee} = E \times 20\%
 ```
 <br>
 
-- **Total Payout**:
-Total payout from losing position to winning position
+- **Total Payout**: Total payout from losing position to winning position
 ```math
 \text{Total Payout} = \text{Funding Payout} + \text{Fixed Fee}
 ```
 
 <br>
 
-- **Individual Contributor Payout**:
-
-  Individual payout is calculated as follows:
+- **Individual Contributor Payout**: Individual payout is calculated as follows:
 <br>
 
  ```math
-\text{Individual Gain/Loss} = \left( \frac{\text{Participant's Notional Value}}{\text{Total Winning Notional Value}} \right) \times \text{Total Payout}
+\text{Individual Gain/Loss} = \left( \frac{\text{Participant's Notional Value}}{\text{Total Winning/Losing Notional Value}} \right) \times \text{Total Payout}
  ```
 <br>
   
