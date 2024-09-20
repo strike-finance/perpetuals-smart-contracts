@@ -33,7 +33,7 @@ Since there are no margin requirements. Your position will simply close once it 
 
 3. **Percentage Price Change (ΔP / P₀)**: The change in the asset's price over the trading period, expressed as a percentage.
 
-4. **Fixed Minimum Fee (5%)**: An additional fee that the losing side pays to the winning side in each funding round, ensuring significant payouts even during low volatility.
+4. **Fixed Minimum Fee (20%)**: An additional fee that the losing side pays to the winning side in each funding round, ensuring significant payouts even during low volatility.
 
 ### Payout Calculation Components
 - **Matched Exposure *(E)***:
@@ -51,11 +51,11 @@ Reflects gains or losses based on price movements and leverage.
 ```
 <br>
 
-- **Fixed 5% Fee**:
+- **Fixed 20% Fee**:
 Ensures significant payouts each funding round.
 
 ```math
-\text{Fixed Fee} = E \times 5\%
+\text{Fixed Fee} = E \times 20\%
 ```
 <br>
 
@@ -73,7 +73,7 @@ Total payout from losing position to winning position
 <br>
 
  ```math
-    \text{Individual Gain/Loss} = \left( \frac{\text{Participant's Notional Value}}\text{Total Winning Notional Value} \right) \times \text{Total Payout}
+\text{Individual Gain/Loss} = \left( \frac{\text{Participant's Notional Value}}{\text{Total Winning Notional Value}} \right) \times \text{Total Payout}
  ```
 <br>
   
@@ -139,19 +139,19 @@ E = \min(\$80,000, \$20,000) = \$20,000
 
 3. **Funding Rate Payout**:
 ```math
-   \text{Funding Payout} = \$20,000 \times 5 \times 5\% = \$5,000
+   \text{Funding Payout} = \$20,000 \times 5\% = \$1,000
 ```
 <br>
 
-4. **Fixed 5% Fee**:
+4. **Fixed 20% Fee**:
 ```math
-   \text{Fixed Fee} = \$20,000 \times 5\% = \$1,000
+   \text{Fixed Fee} = \$20,000 \times 20\% = \$4,000
 ```
 <br>
 
 5. **Total Payout**:
 ```math
-   \text{Total Payout} = \$5,000 + \$1,000 = \$6,000
+   \text{Total Payout} = \$1,000 + \$4,000 = \$5,000
 ```
 <br>
 
@@ -161,7 +161,7 @@ E = \min(\$80,000, \$20,000) = \$20,000
 
 - **Alice's Gain**:
 ```math
-  \text{Alice's Matched Position} = \left( \frac{\$50,000}{\$80,000} \right) \times \$6,000 = \$3,750 
+  \text{Alice's Matched Position} = \left( \frac{\$50,000}{\$80,000} \right) \times \$5,000 = \$3,750 
 ```
 <br>
 
