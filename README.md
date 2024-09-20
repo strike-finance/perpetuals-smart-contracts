@@ -39,16 +39,23 @@ Since there are no margin requirements. Your position will simply close once it 
 - **Matched Exposure *(E)***:
 The portion of positions that can be directly offset between longs and shorts.
 
- ![Equation: E equals the minimum of Total Long Positions and Total Short Positions](https://quicklatex.com/cache3/92/ql_fbe6cc1d0baaf71191f5c80666c87492_l3.png)
+
+```math
+E = \min(\text{Total Long Positions}, \text{Total Short Positions})
+```
 - **Funding Rate Payout**:
 Reflects gains or losses based on price movements and leverage.
 
-![](https://quicklatex.com/cache3/58/ql_1e189373278b4e2bdae66397b9715a58_l3.png)
 
+```math
+\text{Funding Payout} = E \times \lambda \times \left| \frac{\Delta P}{P_0} \right|
+```
 - **Fixed 5% Fee**:
 Ensures significant payouts each funding round.
 
-![](https://quicklatex.com/cache3/83/ql_9078c12f37f991537844f2e882083283_l3.png)
+```math
+\text{Fixed Fee} = E \times 5\%
+```
 
 - **Total Payout**:
 ![](https://quicklatex.com/cache3/28/ql_efe8354648b84f751141e01b0293b428_l3.png)
