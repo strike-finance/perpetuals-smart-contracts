@@ -89,6 +89,7 @@ Total payout from losing position to winning position
   Where:
   
   - **Participant's Matched Position**: The portion of the participant's notional position that is part of the matched exposure.
+    <br>
   - **Leverage Factor λ**: Already factored into the Total Payout calculation.
   
   **Example**:
@@ -106,8 +107,6 @@ Total payout from losing position to winning position
 **Asset**: ADA <br>
 **Initial Price (P₀)**: \$1,000  
 **Leverage Factor λ**: 5x
-
-**Participants and Positions**
 
 #### Long Side (Total Notional Positions: \$80,000)
 
@@ -131,7 +130,7 @@ Total payout from losing position to winning position
    - Initial Margin: \$1,000
    - Notional Position: \$1,000 × 5 = \$5,000
 
-**Matched Exposure (\( E \))**:
+**Matched Exposure *(E)***:
 ```math
 E = \min(\$80,000, \$20,000) = \$20,000
 ```
@@ -143,11 +142,9 @@ E = \min(\$80,000, \$20,000) = \$20,000
 ```
 <br>
 
-### Price Increase Scenario
+### Price Increase Scenario Calculations
 
 **Price at End (P₁)**: \$1,050 (5% increase)
-
-#### Calculations
 
 1. **Percentage Price Change**:
 ```math
