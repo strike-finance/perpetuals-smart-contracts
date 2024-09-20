@@ -161,13 +161,13 @@ E = \min(\$80,000, \$20,000) = \$20,000
 
 - **Alice's Gain**:
 ```math
-  \text{Alice's Matched Position} = \left( \frac{\$50,000}{\$80,000} \right) \times \$5,000 = \$3,750 
+  \text{Alice's Matched Position} = \left( \frac{\$50,000}{\$80,000} \right) \times \$5,000 = \$3,125 
 ```
 <br>
 
 - **Bob's Total Gain**:
 ```math
-  \text{Bob's Gain} = \left( \frac{\$30,000}{\$80,000} \right) \times \$6,000 = \$2,250
+  \text{Bob's Gain} = \left( \frac{\$30,000}{\$80,000} \right) \times \$5,000 = \$1,875
 ```
 <br>
 
@@ -175,13 +175,13 @@ E = \min(\$80,000, \$20,000) = \$20,000
 
 - **Charlie's Loss**:
 ```math
-  \text{Charlie's Loss} = \left( \frac{\$15,000}{\$20,000} \right) \times \$6,000 = \$4,500
+  \text{Charlie's Loss} = \left( \frac{\$15,000}{\$20,000} \right) \times \$5,000 = \$3,750
 ```
 <br>
 
 - **Dave's Loss**:
 ```math
-  \text{Dave's Loss} = \left( \frac{\$5,000}{\$20,000} \right) \times \$6,000 = \$1,500
+  \text{Dave's Loss} = \left( \frac{\$5,000}{\$20,000} \right) \times \$5,000 = \$1,250
 ```
 <br>
 
@@ -189,21 +189,16 @@ E = \min(\$80,000, \$20,000) = \$20,000
 
 | Participant | Platform Gain/Loss | Holding Gain/Loss | Difference   | Platform ROI | Holding ROI |
 | ----------- | ------------------ | ----------------- | ------------ | ------------ | ----------- |
-| **Alice**   | +\$3,750           | +\$500            | **+\$3,250** | 37.5%        | 5%          |
-| **Bob**     | +\$2,250           | +\$300            | **+\$1,950** | 37.5%        | 5%          |
-| **Charlie** | -\$4,500           | -\$150            | **-\$4,350** | -150%        | -5%         |
-| **Dave**    | -\$1,500           | -\$50             | **-\$1,450** | -150%        | -5%         | 
+| **Alice**   | +\$3,125           | +\$500            | **+\$2,625** | 31.25%        | 5%          |
+| **Bob**     | +\$1,875           | +\$300            | **+\$1,575** | 31.25%        | 5%          |
 ## Key Points
 
-1. **Amplified Returns**: The platform offers higher potential returns due to leverage and the fixed 5% fee, resulting in higher ROIs compared to simply holding the asset.
+1. **Amplified Return And Loses**: The platform offers higher potential returns due to leverage and the fixed 20% fee, resulting in higher ROIs compared to simply holding the asset. Losses are also greater on the platform when the market moves against a trader's position.
 
-2. **Amplified Losses**: Losses are also greater on the platform when the market moves against a trader's position.
+2. **Fixed Fee Impact**: The 20% fixed fee ensures significant payouts each funding round, enhancing both gains and losses.
 
-3. **Fixed Fee Impact**: The 5% fixed fee ensures significant payouts each funding round, enhancing both gains and losses.
+3.  **Frequent Funding Periods**: With a funding period happening every 1 hour, traders will be able to gain rewards consistently.
 
-4. **Unmatched Positions**: Traders with unmatched positions do not earn gains or incur losses in that funding round, which can result in missed opportunities.
-
-5. **Risk Management**: Effective risk management is crucial due to the amplified effects of leverage and the fixed fee.
 
 ## Technical High-Level Overview
 
