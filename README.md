@@ -44,6 +44,7 @@ The portion of positions that can be directly offset between longs and shorts.
 E = \min(\text{Total Long Positions}, \text{Total Short Positions})
 ```
 <br>
+
 - **Funding Rate Payout**:
 Reflects gains or losses based on price movements and leverage.
 
@@ -52,6 +53,7 @@ Reflects gains or losses based on price movements and leverage.
 \text{Funding Payout} = E \times \lambda \times \left| \frac{\Delta P}{P_0} \right|
 ```
 <br>
+
 - **Fixed 5% Fee**:
 Ensures significant payouts each funding round.
 
@@ -59,11 +61,13 @@ Ensures significant payouts each funding round.
 \text{Fixed Fee} = E \times 5\%
 ```
 <br>
+
 - **Total Payout**:
 Total payout from losing position to winning position
 
 ![](https://quicklatex.com/cache3/28/ql_efe8354648b84f751141e01b0293b428_l3.png)
 <br>
+
 - **Individual Contributor Payout**:
 
   Depending on whether you are on the winning or losing side, your individual payout is calculated as follows:
@@ -73,6 +77,7 @@ Total payout from losing position to winning position
     \text{Individual Gain} = \left( \frac{\text{Participant's Matched Position}}{E} \right) \times \text{Total Payout}
  ```
 <br>
+
   - **For Losers**:
   ```math
     \text{Individual Loss} = \left( \frac{\text{Participant's Matched Position}}{E} \right) \times \text{Total Payout}
@@ -90,6 +95,7 @@ Total payout from losing position to winning position
   \text{Individual Gain/Loss} = \left( \frac{\$10,000}{\$20,000} \right) \times \$6,000 = \$3,000
 ```
 <br>
+
 ## Example Scenario
 
 ### Setup
@@ -126,11 +132,13 @@ Total payout from losing position to winning position
 ```math
 E = \min(\$80,000, \$20,000) = \$20,000
 ```
+<br>
 
 **Unmatched Long Positions**:
 ```math
 \text{Unmatched Longs} = \$80,000 - \$20,000 = \$60,000
 ```
+<br>
 
 ### Price Increase Scenario
 
@@ -144,21 +152,25 @@ E = \min(\$80,000, \$20,000) = \$20,000
    \]
 ```
 <br>
+
 3. **Funding Rate Payout**:
 ```math
    \text{Funding Payout} = \$20,000 \times 5 \times 5\% = \$5,000
 ```
 <br>
+
 4. **Fixed 5% Fee**:
 ```math
    \text{Fixed Fee} = \$20,000 \times 5\% = \$1,000
 ```
 <br>
+
 5. **Total Payout**:
 ```math
    \text{Total Payout} = \$5,000 + \$1,000 = \$6,000
 ```
 <br>
+
 #### Allocation of Gains and Losses
 
 ##### Long Side (Winning Side)
@@ -168,21 +180,25 @@ E = \min(\$80,000, \$20,000) = \$20,000
   \text{Alice's Matched Position} = \left( \frac{\$50,000}{\$80,000} \right) \times \$20,000 = \$12,500
 ```
 <br>
+
 - **Alice's Total Gain**:
 ```math
   \text{Alice's Gain} = \left( \frac{\$12,500}{\$20,000} \right) \times \$6,000 = \$3,750
 ```
 <br>
+
 - **Bob's Matched Position**:
 ```math
   \text{Bob's Matched Position} = \$20,000 - \$12,500 = \$7,500
 ```
 <br>
+
 - **Bob's Total Gain**:
 ```math
   \text{Bob's Gain} = \left( \frac{\$7,500}{\$20,000} \right) \times \$6,000 = \$2,250
 ```
 <br>
+
 ##### Short Side (Losing Side)
 
 - **Charlie's Loss**:
@@ -190,11 +206,13 @@ E = \min(\$80,000, \$20,000) = \$20,000
   \text{Charlie's Loss} = \left( \frac{\$15,000}{\$20,000} \right) \times \$6,000 = \$4,500
 ```
 <br>
+
 - **Dave's Loss**:
 ```math
   \text{Dave's Loss} = \$6,000 - \$4,500 = \$1,500
 ```
 <br>
+
 **Comparison Table**
 
 | Participant | Platform Gain | Holding Gain | Difference   | Platform ROI | Holding ROI |
