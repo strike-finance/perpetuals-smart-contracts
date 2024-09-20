@@ -25,28 +25,6 @@ Since there are no margin requirements. Your position will simply close once it 
 
 ## How the Platform Works
 
-### Payout Calculation Components
-- **Matched Exposure *(E)***:
-The portion of positions that can be directly offset between longs and shorts.
-
-
- ![Equation: E equals the minimum of Total Long Positions and Total Short Positions](https://quicklatex.com/cache3/92/ql_fbe6cc1d0baaf71191f5c80666c87492_l3.png)
-- **Funding Rate Payout**:
-  Reflects gains or losses based on price movements and leverage.
-
-  (https://quicklatex.com/cache3/58/ql_1e189373278b4e2bdae66397b9715a58_l3.png)
-
-- **Fixed 5% Fee**:
-  \[
-  \text{Fixed Fee} = E \times 5\%
-  \]
-  Ensures significant payouts each funding round.
-
-- **Total Payout**:
-  \[
-  \text{Total Payout} = \text{Funding Payout} + \text{Fixed Fee}
-  \]
-
 ### Key Features
 
 1. **Leverage Factor λ**: Amplify your exposure to price movements without committing the full notional amount. Leverage magnifies both gains and losses.
@@ -56,6 +34,50 @@ The portion of positions that can be directly offset between longs and shorts.
 3. **Percentage Price Change (ΔP / P₀)**: The change in the asset's price over the trading period, expressed as a percentage.
 
 4. **Fixed Minimum Fee (5%)**: An additional fee that the losing side pays to the winning side in each funding round, ensuring significant payouts even during low volatility.
+
+### Payout Calculation Components
+- **Matched Exposure *(E)***:
+The portion of positions that can be directly offset between longs and shorts.
+
+ ![Equation: E equals the minimum of Total Long Positions and Total Short Positions](https://quicklatex.com/cache3/92/ql_fbe6cc1d0baaf71191f5c80666c87492_l3.png)
+- **Funding Rate Payout**:
+Reflects gains or losses based on price movements and leverage.
+
+![](https://quicklatex.com/cache3/58/ql_1e189373278b4e2bdae66397b9715a58_l3.png)
+
+- **Fixed 5% Fee**:
+Ensures significant payouts each funding round.
+
+![](https://quicklatex.com/cache3/83/ql_9078c12f37f991537844f2e882083283_l3.png)
+
+- **Total Payout**:
+![](https://quicklatex.com/cache3/28/ql_efe8354648b84f751141e01b0293b428_l3.png)
+
+- **Individual Contributor Payout**:
+
+  Depending on whether you are on the winning or losing side, your individual payout is calculated as follows:
+
+  - **For Winners**:
+    \[
+    \text{Individual Gain} = \left( \frac{\text{Participant's Matched Position}}{E} \right) \times \text{Total Payout}
+    \]
+  
+  - **For Losers**:
+    \[
+    \text{Individual Loss} = \left( \frac{\text{Participant's Matched Position}}{E} \right) \times \text{Total Payout}
+    \]
+  
+  Where:
+  
+  - **Participant's Matched Position**: The portion of the participant's notional position that is part of the matched exposure.
+  - **Leverage Factor (\( \lambda \))**: Already factored into the Total Payout calculation.
+  
+  **Example**:
+  
+  If a participant has a matched position of \$10,000 and the total payout is \$6,000, their individual gain or loss would be:
+  \[
+  \text{Individual Gain/Loss} = \left( \frac{\$10,000}{\$20,000} \right) \times \$6,000 = \$3,000
+  \]
 
 ### Important Notes
 
