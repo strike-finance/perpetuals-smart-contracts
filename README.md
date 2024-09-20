@@ -12,41 +12,29 @@
   - [Enter Position](#enter-position)
   - [Close Position](#close-position)
   - [Stop Loss](#stop-loss)
-  - [Liquidation](#liquidation)
-  - [Collect Losses](#collect-losses)
-  - [Distribute Gains](#distribute-gains)
+  - [Fold](#fold)
 - [Links](#links)
 - [Disclaimers](#disclaimers)
 
 ## Introduction
+Perpetuals on STRIKE are less risky than traditional perpetual futures while keeping the same benefits. Users will still be able to gain profits in perpetuity whilst utilizing leverage to amplify their gains. There are no mark prices, funding rates, and no margin requirements. 
 
-Our perpetual futures trading platform offers a unique opportunity for traders to amplify their profits through leverage while maintaining a balance between risk and reward. Whether you're a seasoned trader or new to futures trading, our platform provides the tools and mechanisms to maximize your trading potential.
+Every 1 hour there the price of the underlying asset will be recorded. After one hour the price of the asset is compared. If during this 1 hour period the asset has moved up in price, the long side wins, if the asset has moved down in price, the short side wins. 
+
+Since there are no margin requirements. Your position will simply close once it reaches 0. 
 
 ## How the Platform Works
 
-### Key Features
-
-1. **Leverage Factor λ **: Amplify your exposure to price movements without committing the full notional amount. Leverage magnifies both gains and losses.
-
-2. **Notional Value**: The total value of your position, calculated as the initial margin (your invested capital) multiplied by the leverage factor.
-
-3. **Percentage Price Change (ΔP / P₀)**: The change in the asset's price over the trading period, expressed as a percentage.
-
-4. **Fixed Minimum Fee (5%)**: An additional fee that the losing side pays to the winning side in each funding round, ensuring significant payouts even during low volatility.
-
 ### Payout Calculation Components
+- **Matched Exposure *(E)***:
+The portion of positions that can be directly offset between longs and shorts.
 
-- **Matched Exposure (\( E \))**:
-  \[
-  E = \min(\text{Total Long Positions}, \text{Total Short Positions})
-  \]
-  The portion of positions that can be directly offset between longs and shorts.
 
+ ![Equation: E equals the minimum of Total Long Positions and Total Short Positions](https://quicklatex.com/cache3/92/ql_fbe6cc1d0baaf71191f5c80666c87492_l3.png)
 - **Funding Rate Payout**:
-  \[
-  \text{Funding Payout} = E \times \lambda \times \left| \frac{\Delta P}{P_0} \right|
-  \]
   Reflects gains or losses based on price movements and leverage.
+
+  (https://quicklatex.com/cache3/58/ql_1e189373278b4e2bdae66397b9715a58_l3.png)
 
 - **Fixed 5% Fee**:
   \[
@@ -58,6 +46,16 @@ Our perpetual futures trading platform offers a unique opportunity for traders t
   \[
   \text{Total Payout} = \text{Funding Payout} + \text{Fixed Fee}
   \]
+
+### Key Features
+
+1. **Leverage Factor λ**: Amplify your exposure to price movements without committing the full notional amount. Leverage magnifies both gains and losses.
+
+2. **Notional Value**: The total value of your position, calculated as the initial margin (your invested capital) multiplied by the leverage factor.
+
+3. **Percentage Price Change (ΔP / P₀)**: The change in the asset's price over the trading period, expressed as a percentage.
+
+4. **Fixed Minimum Fee (5%)**: An additional fee that the losing side pays to the winning side in each funding round, ensuring significant payouts even during low volatility.
 
 ### Important Notes
 
