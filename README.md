@@ -174,27 +174,15 @@ E = \min(\$80,000, \$20,000) = \$20,000
 
 ##### Long Side (Winning Side)
 
-- **Alice's Matched Position**:
+- **Alice's Gain**:
 ```math
-  \text{Alice's Matched Position} = \left( \frac{\$50,000}{\$80,000} \right) \times \$20,000 = \$12,500
-```
-<br>
-
-- **Alice's Total Gain**:
-```math
-  \text{Alice's Gain} = \left( \frac{\$12,500}{\$20,000} \right) \times \$6,000 = \$3,750
-```
-<br>
-
-- **Bob's Matched Position**:
-```math
-  \text{Bob's Matched Position} = \$20,000 - \$12,500 = \$7,500
+  \text{Alice's Matched Position} = \left( \frac{\$50,000}{\$80,000} \right) \times \$6,000 = \$3,750 
 ```
 <br>
 
 - **Bob's Total Gain**:
 ```math
-  \text{Bob's Gain} = \left( \frac{\$7,500}{\$20,000} \right) \times \$6,000 = \$2,250
+  \text{Bob's Gain} = \left( \frac{\$30,000}{\$80,000} \right) \times \$6,000 = \$2,250
 ```
 <br>
 
@@ -208,7 +196,7 @@ E = \min(\$80,000, \$20,000) = \$20,000
 
 - **Dave's Loss**:
 ```math
-  \text{Dave's Loss} = \$6,000 - \$4,500 = \$1,500
+  \text{Dave's Loss} = \left( \frac{\$5,000}{\$20,000} \right) \times \$6,000 = \$1,500
 ```
 <br>
 
