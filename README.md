@@ -202,12 +202,12 @@ E = \min(\$80,000, \$20,000) = \$20,000
 
 **Comparison Table**
 
-| Participant | Platform Gain/Loss | Notional Position | ROI (Based on Notional Position) | Holding Gain/Loss | Holding ROI (Based on Notional Position) |
-| ----------- | ------------------ | ----------------- | -------------------------------- | ----------------- | ---------------------------------------- |
-| **Alice**   | +\$3,750           | \$50,000          | **+7.5%**                        | +\$2,500          | +5%                                      |
-| **Bob**     | +\$2,250           | \$30,000          | **+7.5%**                        | +\$1,500          | +5%                                      |
-| **Charlie** | -\$4,500           | \$15,000          | **-30%**                         | -\$750            | -5%                                      |
-| **Dave**    | -\$1,500           | \$5,000           | **-30%**                         | -\$250            | -5%      
+| Participant | Platform Gain/Loss | Holding Gain/Loss | Difference   | Platform ROI | Holding ROI |
+| ----------- | ------------------ | ----------------- | ------------ | ------------ | ----------- |
+| **Alice**   | +\$3,750           | +\$500            | **+\$3,250** | 37.5%        | 5%          |
+| **Bob**     | +\$2,250           | +\$300            | **+\$1,950** | 37.5%        | 5%          |
+| **Charlie** | -\$4,500           | -\$150            | **-\$4,350** | -150%        | -5%         |
+| **Dave**    | -\$1,500           | -\$50             | **-\$1,450** | -150%        | -5%         | 
 ## Key Points
 
 1. **Amplified Returns**: The platform offers higher potential returns due to leverage and the fixed 5% fee, resulting in higher ROIs compared to simply holding the asset.
