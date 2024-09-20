@@ -6,7 +6,7 @@
 - [How the Platform Works](#how-the-platform-works)
 - [Example Scenario](#example-scenario)
 - [Comparison with Holding the Asset](#comparison-with-holding-the-asset)
-- [Key Observations](#key-observations)
+- [Key Points](#key-points)
 - [Technical High-Level Overview](#technical-high-level-overview)
 - [Smart Contract Implementation](#smart-contract-implementation)
   - [Enter Position](#enter-position)
@@ -208,7 +208,7 @@ E = \min(\$80,000, \$20,000) = \$20,000
 | **Bob**     | \$2,250       | \$1,500      | **+\$750**   | 37.5%        | 5%          |
 
 
-## Key Observations
+## Key Points
 
 1. **Amplified Returns**: The platform offers higher potential returns due to leverage and the fixed 5% fee, resulting in higher ROIs compared to simply holding the asset.
 
