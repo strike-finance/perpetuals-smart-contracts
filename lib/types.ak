@@ -1,5 +1,6 @@
-use aiken/crypto.{Blake2b_224, Hash, VerificationKey}
-use cardano/assets.{AssetName, PolicyId}
+use aiken/hash.{Blake2b_224, Hash}
+use aiken/transaction/credential.{VerificationKey}
+use aiken/transaction/value.{AssetName, PolicyId}
 
 pub type AssetClass {
   policy_id: PolicyId,
@@ -15,31 +16,67 @@ pub type POSIXTime =
 pub type LovelaceAmount =
   Int
 
-pub type PerpetualDatum {
-  long_position_amount: Int,
-  long_position_mint_amount: Int,
-  short_position_amount: Int,
-  short_position_mint_amount: Int,
-}
-
-pub type PositionDatum {
-  owner_address_hash: AddressHash,
-  position_amount: Int,
+pub type ComparePerpetualInfo {
+  total_ratio_feed: PolicyId,
+  orcfax_price_feed: PolicyId,
   leverage_amount: Int,
-  mint_policy_id: PolicyId,
-  mint_asset_name: AssetName,
-  perpetual_validator_hash: ByteArray,
+  new_balance: Int,
+  owner_address_hash: AddressHash,
+  owner_bech32_address: String,
+  funds_to_distribute: Int,
+  redeem_asset: AssetClass,
+  position_asset: AssetClass,
+  position_code: Int,
 }
 
-pub type LeverageDatum {
-  position_validator_hash: ByteArray,
+pub type PerpetualDatum {
+  owner_address_hash: AddressHash,
+  owner_bech32_address: String,
+  total_ratio_feed: PolicyId,
+  orcfax_price_feed: PolicyId,
+  entry_price: Int,
+  entry_time: POSIXTime,
+  redeem_asset: AssetClass,
+  position_asset: AssetClass,
+  position_asset_amount: Int,
+  position_code: Int,
+  stop_loss: Int,
+  leverage_amount: Int,
+  distribute_time: POSIXTime,
 }
 
-pub type PositionsRedeemer {
-  FoldPositions
+pub type DistributeDatum {
+  total_ratio_feed: PolicyId,
+  redeem_asset: AssetClass,
 }
 
-pub type PoolRedeemer {
-  OpenPosition
-  ClosePosition
+pub type OrcfaxDatum<t> {
+  statement: Statement<t>,
+  context: Context,
+}
+
+pub type Statement<t> {
+  feed_id: ByteArray,
+  created_at: POSIXTime,
+  body: t,
+}
+
+pub type Context {
+  collect_after: POSIXTime,
+  collector: ByteArray,
+}
+
+pub type Price {
+  num: Int,
+  denom: Int,
+}
+
+pub type RationalDatum {
+  numerator: Int,
+  denominator: Int,
+}
+
+pub type Ratio {
+  total_winning_amount: Int,
+  total_losing_amount: Int,
 }
