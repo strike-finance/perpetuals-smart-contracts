@@ -10,7 +10,7 @@
 
 
 ## Introduction
-Perpetuals on STRIKE are less risky than traditional perpetual futures while keeping the same benefits. Users will still be able to gain profits in perpetuity whilst utilizing leverage to amplify their gains. There are no mark prices, funding rates, and no margin requirements. 
+Perpetuals on STRIKE are a bit different than traditional perpetual futures while retaining the same benefits. Users will still be able to gain profits in perpetuity whilst utilizing leverage to amplify their gains. There are no mark prices, funding rates, and no margin requirements. 
 
 Every 4 hour there the price of the underlying asset will be recorded. After 4 hour the price of the asset is compared. If during this 4 hour period the asset has moved up in price, the long side wins, if the asset has moved down in price, the short side wins. No positions can be entered or closed within 30 minutes of the current funding period ending.
 
