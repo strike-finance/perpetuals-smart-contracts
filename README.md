@@ -32,7 +32,6 @@ Since there are no margin requirements. Your position will simply close once it 
 
 5. **Locked Last 30 Minutes**: To prevent people from gaming the system and closing their positions right before the funding period ends. No positions can be entered or closed within the last 30 minutes of the funding period ends. Traders will be able to place their positions for the next funding period during this 30 minutes lockdown. 
 
-6. **Position Price**:
 
 ### Payout Calculation Components
 - **Matched Exposure *(E)***: The portion of positions that can be directly offset between longs and shorts.
