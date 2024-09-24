@@ -5,14 +5,13 @@
 - [Introduction](#introduction)
 - [How the Platform Works](#how-the-platform-works)
 - [Example Scenario](#example-scenario)
-- [Comparison with Holding the Asset](#comparison-with-holding-the-asset)
 - [Key Points](#key-points)
 
 
 ## Introduction
 Perpetuals on STRIKE are a bit different than traditional perpetual futures while retaining the same benefits. Users will still be able to gain profits in perpetuity whilst utilizing leverage to amplify their gains.
 
-Every 4 hour there the price of the underlying asset will be recorded. After 4 hour the price of the asset is compared. If during this 4 hour period the asset has moved up in price, the long side wins, if the asset has moved down in price, the short side wins. No positions can be entered or closed within 30 minutes of the current funding period ending.
+Every 1 hour there the price of the underlying asset will be recorded. After 1 hour the price of the asset is compared. If during this 1 hour period the asset has moved up in price, the long side wins, if the asset has moved down in price, the short side wins. No positions can be entered or closed within 10 minutes of the current funding period ending.
 
 You are able to exit your position for a profit if more people enters the same position as you after the funding period starts. Your position will potentially be at a loss if people exited the position after the funding period starts. This does not affect the funding period payout, only the price of your current positions.
 ## How the Platform Works
@@ -27,7 +26,9 @@ You are able to exit your position for a profit if more people enters the same p
 
 4. **Fixed Minimum Fee (20%)**: An additional fee that the losing side pays to the winning side in each funding round, ensuring significant payouts even during low volatility.
 
-5. **Locked Last 30 Minutes**: To prevent people from gaming the system and closing their positions right before the funding period ends. No positions can be entered or closed within the last 30 minutes of the funding period ends. Traders will be able to place their positions for the next funding period during this 30 minutes lockdown. 
+5. **Locked Last 30 Minutes**: To prevent people from gaming the system and closing their positions right before the funding period ends. No positions can be entered or closed within the last 30 minutes of the funding period ends. Traders will be able to place their positions for the next funding period during this 10 minutes lockdown.
+
+6. **Exiting Position Prematurely** Traders can exit their position prematurely potentially for a profit without waiting for the funding period to end. 
 
 
 ### Payout Calculation Components
@@ -172,7 +173,7 @@ E = \min(\$80,000, \$20,000) = \$20,000
 
 2. **Fixed Fee Impact**: The 20% fixed fee ensures significant payouts each funding round, enhancing both gains and losses.
 
-3. **Frequent Funding Periods**: With a funding period happening every 4 hour, traders will be able to gain rewards consistently.
+3. **Frequent Funding Periods**: With a funding period happening every 1 hour, traders will be able to gain rewards consistently.
    
 5. **Buy/Sell Position Freely**: If you don't want to wait for the funding period, you can freely sell your position for a profit instead of waiting for the payout.
 
