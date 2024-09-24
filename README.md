@@ -17,7 +17,6 @@ Every 4 hour there the price of the underlying asset will be recorded. After 4 h
 You are able to exit your position for a profit if more people enters the same position as you after the funding period starts. Your position will potentially be at a loss if people exited the position after the funding period starts. This does not affect the funding period payout, only the price of your current positions.
 
 Since there are no margin requirements. Your position will simply close once it reaches 0. 
-
 ## How the Platform Works
 
 ### Key Features
