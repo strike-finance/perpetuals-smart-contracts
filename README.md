@@ -26,7 +26,7 @@ You are able to exit your position for a profit if more people enters the same p
 
 4. **Fixed Minimum Fee (20%)**: An additional fee that the losing side pays to the winning side in each funding round, ensuring significant payouts even during low volatility.
 
-5. **Locked Last 30 Minutes**: To prevent people from gaming the system and closing their positions right before the funding period ends. No positions can be entered or closed within the last 30 minutes of the funding period ends. Traders will be able to place their positions for the next funding period during this 10 minutes lockdown.
+5. **Locked Last 10 Minutes**: To prevent people from gaming the system and closing their positions right before the funding period ends. No positions can be entered or closed within the last 10 minutes of the funding period ends. Traders will still be able to place their positions for the next funding period during this 10 minutes lockdown, but can not enter their positions for the current funding period.
 
 6. **Exiting Position Prematurely** Traders can exit their position prematurely potentially for a profit without waiting for the funding period to end. 
 
