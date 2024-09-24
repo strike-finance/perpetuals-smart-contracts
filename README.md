@@ -172,7 +172,9 @@ E = \min(\$80,000, \$20,000) = \$20,000
 
 2. **Fixed Fee Impact**: The 20% fixed fee ensures significant payouts each funding round, enhancing both gains and losses.
 
-3. **Frequent Funding Periods**: With a funding period happening every 1 hour, traders will be able to gain rewards consistently.
+3. **Frequent Funding Periods**: With a funding period happening every 4 hour, traders will be able to gain rewards consistently.
+   
+5. **Buy/Sell Position Freely**: If you don't want to wait for the funding period, you can freely sell your position for a profit instead of waiting for the payout.
 
 
 
