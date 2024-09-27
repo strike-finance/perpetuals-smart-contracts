@@ -5,23 +5,18 @@
 - [Introduction](#introduction)
 - [How the Platform Works](#how-the-platform-works)
 - [Example Scenario](#example-scenario)
-- [Comparison with Holding the Asset](#comparison-with-holding-the-asset)
 - [Key Points](#key-points)
-- [Technical High-Level Overview](#technical-high-level-overview)
-- [Smart Contract Implementation](#smart-contract-implementation)
-  - [Enter Position](#enter-position)
-  - [Close Position](#close-position)
-  - [Stop Loss](#stop-loss)
-  - [Fold](#fold)
-- [Links](#links)
-- [Disclaimers](#disclaimers)
 
 ## Introduction
 
+Perpetuals on STRIKE are a bit different than traditional perpetual futures while retaining the same benefits. Users will still be able to gain profits in perpetuity whilst utilizing leverage to amplify their gains.
+
 Perpetuals on STRIKE are less risky than traditional perpetual futures while keeping the same benefits. Users will still be able to gain profits in perpetuity whilst utilizing leverage to amplify their gains. There are no mark prices, funding rates, and no margin requirements.
 
+Every 1 hour there the price of the underlying asset will be recorded. After 1 hour the price of the asset is compared. If during this 1 hour period the asset has moved up in price, the long side wins, if the asset has moved down in price, the short side wins. No positions can be entered or closed within 10 minutes of the current funding period ending.
 Every 1 hour there the price of the underlying asset will be recorded. After one hour the price of the asset is compared. If during this 1 hour period the asset has moved up in price, the long side wins, if the asset has moved down in price, the short side wins.
 
+You are able to exit your position for a profit if more people enters the same position as you after the funding period starts. Your position will potentially be at a loss if people exited the position after the funding period starts. This does not affect the funding period payout, only the price of your current positions.
 Since there are no margin requirements. Your position will simply close once it reaches 0.
 
 ## How the Platform Works
@@ -35,6 +30,10 @@ Since there are no margin requirements. Your position will simply close once it 
 3. **Percentage Price Change (ΔP / P₀)**: The change in the asset's price over the trading period, expressed as a percentage.
 
 4. **Fixed Minimum Fee (20%)**: An additional fee that the losing side pays to the winning side in each funding round, ensuring significant payouts even during low volatility.
+
+5. **Locked Last 10 Minutes**: To prevent people from gaming the system and closing their positions right before the funding period ends. No positions can be entered or closed within the last 10 minutes of the funding period ends. Traders will still be able to place their positions for the next funding period during this 10 minutes lockdown, but can not enter their positions for the current funding period.
+
+6. **Exiting Position Prematurely** Traders can exit their position prematurely potentially for a profit without waiting for the funding period to end.
 
 ### Payout Calculation Components
 
@@ -230,9 +229,12 @@ E = \min(\$80,000, \$20,000) = \$20,000
 
 3. **Fixed Fee Impact**: The 5% fixed fee ensures significant payouts each funding round, enhancing both gains and losses.
 
-4. **Unmatched Positions**: Traders with unmatched positions do not earn gains or incur losses in that funding round, which can result in missed opportunities.
+4. **Frequent Funding Periods**: With a funding period happening every 1 hour, traders will be able to gain rewards consistently.
+5. **Buy/Sell Position Freely**: If you don't want to wait for the funding period, you can freely sell your position for a profit instead of waiting for the payout.
 
-5. **Risk Management**: Effective risk management is crucial due to the amplified effects of leverage and the fixed fee.
+6. **Unmatched Positions**: Traders with unmatched positions do not earn gains or incur losses in that funding round, which can result in missed opportunities.
+
+7. **Risk Management**: Effective risk management is crucial due to the amplified effects of leverage and the fixed fee.
 
 ## Technical High-Level Overview
 
