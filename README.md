@@ -17,11 +17,12 @@
 - [Disclaimers](#disclaimers)
 
 ## Introduction
-Perpetuals on STRIKE are less risky than traditional perpetual futures while keeping the same benefits. Users will still be able to gain profits in perpetuity whilst utilizing leverage to amplify their gains. There are no mark prices, funding rates, and no margin requirements. 
 
-Every 1 hour there the price of the underlying asset will be recorded. After one hour the price of the asset is compared. If during this 1 hour period the asset has moved up in price, the long side wins, if the asset has moved down in price, the short side wins. No positions can be entered or closed within 20 minutes of the current funding period ending.
+Perpetuals on STRIKE are less risky than traditional perpetual futures while keeping the same benefits. Users will still be able to gain profits in perpetuity whilst utilizing leverage to amplify their gains. There are no mark prices, funding rates, and no margin requirements.
 
-Since there are no margin requirements. Your position will simply close once it reaches 0. 
+Every 1 hour there the price of the underlying asset will be recorded. After one hour the price of the asset is compared. If during this 1 hour period the asset has moved up in price, the long side wins, if the asset has moved down in price, the short side wins.
+
+Since there are no margin requirements. Your position will simply close once it reaches 0.
 
 ## How the Platform Works
 
@@ -35,44 +36,63 @@ Since there are no margin requirements. Your position will simply close once it 
 
 4. **Fixed Minimum Fee (20%)**: An additional fee that the losing side pays to the winning side in each funding round, ensuring significant payouts even during low volatility.
 
-5. **Locked Last 20 Minutes**: To prevent people from gaming the system and closing their positions right before the funding period ends. No positions can be entered or closed within the last 20 minutes of the funding period ends. Traders will be able to place their positions for the next funding period during this 20 minutes lockdown. 
-
 ### Payout Calculation Components
-- **Matched Exposure *(E)***: The portion of positions that can be directly offset between longs and shorts.
+
+- **Matched Exposure _(E)_**:
+  The portion of positions that can be directly offset between longs and shorts.
+
 ```math
 E = \min(\text{Total Long Positions}, \text{Total Short Positions})
 ```
+
 <br>
 
-- **Funding Rate Payout**: Reflects gains or losses based on price movements and leverage.
+- **Funding Rate Payout**:
+  Reflects gains or losses based on price movements and leverage.
 
 ```math
 \text{Funding Payout} = E \times \left| \frac{\Delta P}{P_0} \right|
 ```
+
 <br>
 
-- **Fixed 20% Fee**: Ensures significant payouts each funding round.
+- **Fixed 20% Fee**:
+  Ensures significant payouts each funding round.
 
 ```math
 \text{Fixed Fee} = E \times 20\%
 ```
+
 <br>
 
-- **Total Payout**: Total payout from losing position to winning position
+- **Total Payout**:
+  Total payout from losing position to winning position
+
 ```math
 \text{Total Payout} = \text{Funding Payout} + \text{Fixed Fee}
 ```
 
 <br>
 
-- **Individual Contributor Payout**: Individual payout is calculated as follows:
-<br>
+- **Individual Contributor Payout**:
 
- ```math
-\text{Individual Gain/Loss} = \left( \frac{\text{Participant's Notional Value}}{\text{Total Winning/Losing Notional Value}} \right) \times \text{Total Payout}
- ```
+  Individual payout is calculated as follows:
+  <br>
+
+```math
+\text{Individual Gain/Loss} = \left( \frac{\text{Participant's Notional Value}}{\text{Total Winning Notional Value}} \right) \times \text{Total Payout}
+```
+
 <br>
   
+  **Example**:
+  
+  If a participant has a notional position of \$10,000, and the total notional position is \$20,000 and the total payout is \$6,000, their individual gain or loss would be:
+```math
+  \text{Individual Gain/Loss} = \left( \frac{\$10,000}{\$20,000} \right) \times \$6,000 = \$3,000
+```
+<br>
+
 ## Example Scenario
 
 ### Setup
@@ -103,10 +123,20 @@ E = \min(\text{Total Long Positions}, \text{Total Short Positions})
    - Initial Margin: \$1,000
    - Notional Position: \$1,000 × 5 = \$5,000
 
-**Matched Exposure *(E)***:
+**Matched Exposure _(E)_**:
+
 ```math
 E = \min(\$80,000, \$20,000) = \$20,000
 ```
+
+<br>
+
+**Unmatched Long Positions**:
+
+```math
+\text{Unmatched Longs} = \$80,000 - \$20,000 = \$60,000
+```
+
 <br>
 
 ### Price Increase Scenario Calculations
@@ -114,27 +144,35 @@ E = \min(\$80,000, \$20,000) = \$20,000
 **Price at End (P₁)**: \$1,050 (5% increase)
 
 1. **Percentage Price Change**:
+
 ```math
    \frac{\Delta P}{P_0} = \frac{\$1,050 - \$1,000}{\$1,000} = 5\%
 ```
+
 <br>
 
 3. **Funding Rate Payout**:
+
 ```math
    \text{Funding Payout} = \$20,000 \times 5\% = \$1,000
 ```
+
 <br>
 
 4. **Fixed 20% Fee**:
+
 ```math
    \text{Fixed Fee} = \$20,000 \times 20\% = \$4,000
 ```
+
 <br>
 
 5. **Total Payout**:
+
 ```math
    \text{Total Payout} = \$1,000 + \$4,000 = \$5,000
 ```
+
 <br>
 
 #### Allocation of Gains and Losses
@@ -142,45 +180,59 @@ E = \min(\$80,000, \$20,000) = \$20,000
 ##### Long Side (Winning Side)
 
 - **Alice's Gain**:
+
 ```math
-  \text{Alice's Matched Position} = \left( \frac{\$50,000}{\$80,000} \right) \times \$5,000 = \$3,125 
+  \text{Alice's Matched Position} = \left( \frac{\$50,000}{\$80,000} \right) \times \$5,000 = \$3,750
 ```
+
 <br>
 
 - **Bob's Total Gain**:
+
 ```math
-  \text{Bob's Gain} = \left( \frac{\$30,000}{\$80,000} \right) \times \$5,000 = \$1,875
+  \text{Bob's Gain} = \left( \frac{\$30,000}{\$80,000} \right) \times \$6,000 = \$2,250
 ```
+
 <br>
 
 ##### Short Side (Losing Side)
 
 - **Charlie's Loss**:
+
 ```math
-  \text{Charlie's Loss} = \left( \frac{\$15,000}{\$20,000} \right) \times \$5,000 = \$3,750
+  \text{Charlie's Loss} = \left( \frac{\$15,000}{\$20,000} \right) \times \$6,000 = \$4,500
 ```
+
 <br>
 
 - **Dave's Loss**:
+
 ```math
-  \text{Dave's Loss} = \left( \frac{\$5,000}{\$20,000} \right) \times \$5,000 = \$1,250
+  \text{Dave's Loss} = \left( \frac{\$5,000}{\$20,000} \right) \times \$6,000 = \$1,500
 ```
+
 <br>
 
 **Comparison Table**
 
 | Participant | Platform Gain/Loss | Holding Gain/Loss | Difference   | Platform ROI | Holding ROI |
 | ----------- | ------------------ | ----------------- | ------------ | ------------ | ----------- |
-| **Alice**   | +\$3,125           | +\$500            | **+\$2,625** | 31.25%        | 5%          |
-| **Bob**     | +\$1,875           | +\$300            | **+\$1,575** | 31.25%        | 5%          |
+| **Alice**   | +\$3,750           | +\$500            | **+\$3,250** | 37.5%        | 5%          |
+| **Bob**     | +\$2,250           | +\$300            | **+\$1,950** | 37.5%        | 5%          |
+| **Charlie** | -\$4,500           | -\$150            | **-\$4,350** | -150%        | -5%         |
+| **Dave**    | -\$1,500           | -\$50             | **-\$1,450** | -150%        | -5%         |
+
 ## Key Points
 
-1. **Amplified Return And Loses**: The platform offers higher potential returns due to leverage and the fixed 20% fee, resulting in higher ROIs compared to simply holding the asset. Losses are also greater on the platform when the market moves against a trader's position.
+1. **Amplified Returns**: The platform offers higher potential returns due to leverage and the fixed 5% fee, resulting in higher ROIs compared to simply holding the asset.
 
-2. **Fixed Fee Impact**: The 20% fixed fee ensures significant payouts each funding round, enhancing both gains and losses.
+2. **Amplified Losses**: Losses are also greater on the platform when the market moves against a trader's position.
 
-3.  **Frequent Funding Periods**: With a funding period happening every 1 hour, traders will be able to gain rewards consistently.
+3. **Fixed Fee Impact**: The 5% fixed fee ensures significant payouts each funding round, enhancing both gains and losses.
 
+4. **Unmatched Positions**: Traders with unmatched positions do not earn gains or incur losses in that funding round, which can result in missed opportunities.
+
+5. **Risk Management**: Effective risk management is crucial due to the amplified effects of leverage and the fixed fee.
 
 ## Technical High-Level Overview
 
