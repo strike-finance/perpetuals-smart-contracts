@@ -44,6 +44,28 @@
       "hash": "23a7e1213a62960b69dc972ca67d7e4aeddd7a193721748fbdbee07a"
     },
     {
+      "title": "lend.positions.spend",
+      "datum": {
+        "title": "_datum",
+        "schema": {
+          "$ref": "#/definitions/types~1PositionDatum"
+        }
+      },
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/Int"
+        }
+      },
+      "compiledCode": "585d010100323232323225333002323232323253330073370e900118041baa0011323232324a26eb4014c030c034008c02c004c024dd50008a503009300a0023008001300800230060013004375400229309b2b2b9a5573aaae795d0aba201",
+      "hash": "48b89aee34c90a81d23f04ece73a90a1d6f07d6eb10ac3d5433ee3fd"
+    },
+    {
+      "title": "lend.positions.else",
+      "compiledCode": "585d010100323232323225333002323232323253330073370e900118041baa0011323232324a26eb4014c030c034008c02c004c024dd50008a503009300a0023008001300800230060013004375400229309b2b2b9a5573aaae795d0aba201",
+      "hash": "48b89aee34c90a81d23f04ece73a90a1d6f07d6eb10ac3d5433ee3fd"
+    },
+    {
       "title": "positions.positions.spend",
       "datum": {
         "title": "_datum",
@@ -73,9 +95,6 @@
     },
     "AssetName": {
       "title": "AssetName",
-      "dataType": "bytes"
-    },
-    "ByteArray": {
       "dataType": "bytes"
     },
     "Int": {
@@ -134,6 +153,14 @@
               "$ref": "#/definitions/AddressHash"
             },
             {
+              "title": "entered_at_price",
+              "$ref": "#/definitions/Int"
+            },
+            {
+              "title": "entered_asset",
+              "$ref": "#/definitions/types~1Asset"
+            },
+            {
               "title": "position_amount",
               "$ref": "#/definitions/Int"
             },
@@ -142,18 +169,48 @@
               "$ref": "#/definitions/Int"
             },
             {
-              "title": "mint_policy_id",
-              "$ref": "#/definitions/PolicyId"
+              "title": "position",
+              "$ref": "#/definitions/types~1PositionType"
             },
             {
-              "title": "mint_asset_name",
-              "$ref": "#/definitions/AssetName"
-            },
-            {
-              "title": "perpetual_validator_hash",
-              "$ref": "#/definitions/ByteArray"
+              "title": "side",
+              "$ref": "#/definitions/types~1PositionSide"
             }
           ]
+        }
+      ]
+    },
+    "types/PositionSide": {
+      "title": "PositionSide",
+      "anyOf": [
+        {
+          "title": "SideTrue",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "SideFalse",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": []
+        }
+      ]
+    },
+    "types/PositionType": {
+      "title": "PositionType",
+      "anyOf": [
+        {
+          "title": "BuyPos",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "RewardPos",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": []
         }
       ]
     }

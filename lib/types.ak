@@ -15,6 +15,16 @@ pub type POSIXTime =
 pub type LovelaceAmount =
   Int
 
+pub type PositionType {
+  BuyPos
+  RewardPos
+}
+
+pub type PositionSide {
+  SideTrue
+  SideFalse
+}
+
 pub type PerpetualDatum {
   long_position_amount: Int,
   long_position_mint_amount: Int,
@@ -24,11 +34,12 @@ pub type PerpetualDatum {
 
 pub type PositionDatum {
   owner_address_hash: AddressHash,
+  entered_at_price: Int,
+  entered_asset: Asset,
   position_amount: Int,
   leverage_amount: Int,
-  mint_policy_id: PolicyId,
-  mint_asset_name: AssetName,
-  perpetual_validator_hash: ByteArray,
+  position: PositionType,
+  side: PositionSide,
 }
 
 pub type LeverageDatum {
