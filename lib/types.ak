@@ -1,7 +1,7 @@
 use aiken/crypto.{Blake2b_224, Hash, VerificationKey}
 use cardano/assets.{AssetName, PolicyId}
 
-pub type AssetClass {
+pub type Asset {
   policy_id: PolicyId,
   asset_name: AssetName,
 }

@@ -8,7 +8,7 @@ pub type BatcherRedeemer {
   pred_in_idx: Int,
 }
 
-validator batcher(prediction_nft: Asset) {
+validator batcher(position_nft: Asset) {
   withdraw(
     redeemer: BatcherRedeemer,
     _own_credential: Credential,
@@ -18,8 +18,8 @@ validator batcher(prediction_nft: Asset) {
     expect Some(pred_input) = list.at(inputs, redeemer.pred_in_idx)
     assets.quantity_of(
       pred_input.output.value,
-      prediction_nft.policy_id,
-      prediction_nft.asset_name,
+      position_nft.policy_id,
+      position_nft.asset_name,
     ) == 1
   }
 
