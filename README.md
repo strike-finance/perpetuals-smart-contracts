@@ -33,6 +33,39 @@ All positions will be entered, bought, collateralized, and payed out in USDM.
 
 6. **Contract PNL** Traders can exit their position prematurely potentially for a profit without waiting for the funding period to end. The value of their contract will be the price of the `underlying asset x inital contract size x leverage`.
 
+### Example PNL Calculation
+
+**Scenario:**
+
+- Trader: Eve
+- Asset: ADA
+- Entry Asset Price ($P_e$): $1,000
+- Initial Contract Size ($S$): 10 ADA
+- Leverage ($\lambda$): 5x
+- Current Asset Price ($P_c$): $1,100
+
+**Calculation:**
+
+1. Contract Value at Entry:
+
+   ```math
+   \text{Entry Value} = P_e \times S \times \lambda = \$1,000 \times 10 \times 5 = \$50,000
+   ```
+
+2. Current Contract Value:
+
+   ```math
+   \text{Current Value} = P_c \times S \times \lambda = \$1,100 \times 10 \times 5 = \$55,000
+   ```
+
+3. PNL:
+   ```math
+   \begin{align*}
+   \text{PNL} &= \text{Current Value} - \text{Entry Value} \\
+               &= \$55,000 - \$50,000 = \$5,000
+   \end{align*}
+   ```
+
 ### Payout Calculation Components
 
 - **Matched Exposure _(E)_**:
@@ -218,36 +251,3 @@ E = \min(\$80,000, \$20,000) = \$20,000
 | **Bob**     | +\$2,250           | +\$300            | **+\$1,950** | 37.5%        | 5%          |
 | **Charlie** | -\$4,500           | -\$150            | **-\$4,350** | -150%        | -5%         |
 | **Dave**    | -\$1,500           | -\$50             | **-\$1,450** | -150%        | -5%         |
-
-### Example PNL Calculation
-
-**Scenario:**
-
-- Trader: Eve
-- Asset: ADA
-- Entry Asset Price ($P_e$): $1,000
-- Initial Contract Size ($S$): 10 ADA
-- Leverage ($\lambda$): 5x
-- Current Asset Price ($P_c$): $1,100
-
-**Calculation:**
-
-1. Contract Value at Entry:
-
-   ```math
-   \text{Entry Value} = P_e \times S \times \lambda = \$1,000 \times 10 \times 5 = \$50,000
-   ```
-
-2. Current Contract Value:
-
-   ```math
-   \text{Current Value} = P_c \times S \times \lambda = \$1,100 \times 10 \times 5 = \$55,000
-   ```
-
-3. PNL:
-   ```math
-   \begin{align*}
-   \text{PNL} &= \text{Current Value} - \text{Entry Value} \\
-               &= \$55,000 - \$50,000 = \$5,000
-   \end{align*}
-   ```
