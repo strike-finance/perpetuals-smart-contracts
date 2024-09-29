@@ -1,4 +1,4 @@
-use aiken/crypto.{Blake2b_224, Hash, VerificationKey}
+use aiken/crypto.{Blake2b_224, Hash, Script, VerificationKey}
 use cardano/assets.{AssetName, PolicyId}
 
 pub type Asset {
@@ -9,20 +9,18 @@ pub type Asset {
 pub type AddressHash =
   Hash<Blake2b_224, VerificationKey>
 
+pub type ScriptHash =
+  Hash<Blake2b_224, Script>
+
 pub type POSIXTime =
   Int
 
 pub type LovelaceAmount =
   Int
 
-pub type PositionType {
-  BuyPos
-  RewardPos
-}
-
 pub type PositionSide {
-  SideTrue
-  SideFalse
+  Long
+  Short
 }
 
 pub type PerpetualDatum {
@@ -35,7 +33,6 @@ pub type PerpetualDatum {
 pub type OrdersDatum {
   position_amount: Int,
   leverage_amount: Int,
-  position: PositionType,
   side: PositionSide,
 }
 
@@ -45,8 +42,17 @@ pub type PositionDatum {
   entered_asset: Asset,
   position_amount: Int,
   leverage_amount: Int,
-  position: PositionType,
   side: PositionSide,
+}
+
+pub type FundPeriodDatum {
+  current_long_position_amount: Int,
+  total_long_position_amount: Int,
+  current_short_position_amount: Int,
+  total_short_position_amount: Int,
+  start_time: POSIXTime,
+  end_time: POSIXTime,
+  start_price: Int,
 }
 
 pub type LeverageDatum {
