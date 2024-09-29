@@ -1,37 +1,29 @@
 use aiken/collection/list
-use cardano/address.{Credential}
+use aiken/collection/pairs
+use cardano/address.{Credential, Script}
 use cardano/assets
-use cardano/transaction.{OutputReference, Transaction}
+use cardano/transaction.{Input, OutputReference, Transaction, find_input}
 use types.{Asset, OrdersDatum}
-
-pub type BatcherRedeemer {
-  pred_in_idx: Int,
-}
+use utils.{is_withdrawal}
 
 // Users will be placing their orders here. The funds for their position will be here until the the batcher puts it into the pool.
 // When they close their position, their utxo will also be here. 
 validator orders(position_nft: Asset) {
   spend(
     _datum: Option<OrdersDatum>,
-    redeemer: Int,
-    _own_ref: OutputReference,
-    self: Transaction,
+    _redeemer: Int,
+    own_ref: OutputReference,
+    transaction: Transaction,
   ) {
-    True
+    is_withdrawal(transaction, own_ref)
   }
 
   withdraw(
-    redeemer: BatcherRedeemer,
-    _own_credential: Credential,
-    self: Transaction,
+    redeemer: List<(Int, Int)>,
+    credential: Credential,
+    transaction: Transaction,
   ) {
-    let Transaction { inputs, .. } = self
-    expect Some(pred_input) = list.at(inputs, redeemer.pred_in_idx)
-    assets.quantity_of(
-      pred_input.output.value,
-      position_nft.policy_id,
-      position_nft.asset_name,
-    ) == 1
+    True
   }
 
   else(_) {
