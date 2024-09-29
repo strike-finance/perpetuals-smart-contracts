@@ -33,7 +33,7 @@ Since there are no margin requirements. Your position will simply close once it 
 
 5. **Locked Last 10 Minutes**: To prevent people from gaming the system and closing their positions right before the funding period ends. No positions can be entered or closed within the last 10 minutes of the funding period ends. Traders will still be able to place their positions for the next funding period during this 10 minutes lockdown, but can not enter their positions for the current funding period.
 
-6. **Exiting Position Prematurely** Traders can exit their position prematurely potentially for a profit without waiting for the funding period to end.
+6. **Contract PNL** Traders can exit their position prematurely potentially for a profit without waiting for the funding period to end. The value of their contract will be the price of the `underlying asset x inital contract size x leverage`.
 
 ### Payout Calculation Components
 

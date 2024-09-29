@@ -1,6 +1,7 @@
 name = "strike-finance/perpetuals"
 version = "0.0.0"
 license = "Apache-2.0"
+compiler = "v1.1.3"
 description = "Aiken contracts for project 'strike-finance/perpetuals'"
 
 [repository]
@@ -10,5 +11,5 @@ platform = "github"
 
 [[dependencies]]
 name = "aiken-lang/stdlib"
-version = "2.0.0"
+version = "2.1.0"
 source = "github"

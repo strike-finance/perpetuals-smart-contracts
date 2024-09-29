@@ -32,6 +32,13 @@ pub type PerpetualDatum {
   short_position_mint_amount: Int,
 }
 
+pub type OrdersDatum {
+  position_amount: Int,
+  leverage_amount: Int,
+  position: PositionType,
+  side: PositionSide,
+}
+
 pub type PositionDatum {
   owner_address_hash: AddressHash,
   entered_at_price: Int,

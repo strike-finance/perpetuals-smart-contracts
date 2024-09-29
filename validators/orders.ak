@@ -1,14 +1,25 @@
 use aiken/collection/list
 use cardano/address.{Credential}
 use cardano/assets
-use cardano/transaction.{Transaction}
-use types.{Asset}
+use cardano/transaction.{OutputReference, Transaction}
+use types.{Asset, OrdersDatum}
 
 pub type BatcherRedeemer {
   pred_in_idx: Int,
 }
 
-validator batcher(position_nft: Asset) {
+// Users will be placing their orders here. The funds for their position will be here until the the batcher puts it into the pool.
+// When they close their position, their utxo will also be here. 
+validator orders(position_nft: Asset) {
+  spend(
+    _datum: Option<OrdersDatum>,
+    redeemer: Int,
+    _own_ref: OutputReference,
+    self: Transaction,
+  ) {
+    True
+  }
+
   withdraw(
     redeemer: BatcherRedeemer,
     _own_credential: Credential,
