@@ -1,7 +1,7 @@
 use aiken/collection/list
 use aiken/collection/pairs
 use cardano/address.{Credential, Script}
-use cardano/assets
+use cardano/assets.{PolicyId}
 use cardano/transaction.{Input, OutputReference, Transaction, find_input}
 use types.{Asset, OrdersDatum}
 use utils.{is_withdrawal}
@@ -23,6 +23,11 @@ validator orders {
     credential: Credential,
     transaction: Transaction,
   ) {
+    True
+  }
+
+  // check for valid orders or else it will be expensive to look through it all in the off-chain
+  mint(redeemer: Int, policy_id: PolicyId, transaction: Transaction) {
     True
   }
 

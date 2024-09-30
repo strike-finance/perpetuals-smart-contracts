@@ -23,9 +23,11 @@ pub type PositionSide {
   Short
 }
 
-pub type PositionAction {
-  Enter
-  Close
+pub type OrderAction {
+  OpenPosition
+  ClosePosition
+  ContributePool
+  WithdrawPool
 }
 
 pub type PerpetualDatum {
@@ -43,7 +45,7 @@ pub type OrdersDatum {
   position_amount: Int,
   leverage_amount: Int,
   side: PositionSide,
-  action: PositionAction,
+  action: OrderAction,
 }
 
 pub type PositionDatum {
@@ -71,5 +73,6 @@ pub type LeverageDatum {
 }
 
 pub type PositionsRedeemer {
-  FoldPositions
+  Close
+  StopLoss
 }
