@@ -50,11 +50,10 @@ pub type OrdersDatum {
 
 pub type PositionDatum {
   owner_address_hash: AddressHash,
-  entered_at_price: Int,
-  entered_at_timestamp: POSIXTime,
   entered_asset: Asset,
   position_amount: Int,
   leverage_amount: Int,
+  stop_loss_amount: Int,
   valid_position_asset: Asset,
   side: PositionSide,
   orders_validator_hash: ScriptHash,
@@ -76,5 +75,5 @@ pub type LeverageDatum {
 
 pub type PositionsRedeemer {
   Close
-  StopLoss
+  StopLoss(Int)
 }

@@ -1,7 +1,7 @@
 use cardano/address.{StakeCredential}
 use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
-use positions_utils.{validate_close_position}
+use positions_utils.{validate_close_position, validate_stop_loss}
 use types.{
   Close, ClosePosition, OpenPosition, PositionDatum, PositionsRedeemer, StopLoss,
 }
@@ -16,7 +16,8 @@ validator positions {
   ) {
     when redeemer is {
       Close -> validate_close_position(transaction, own_ref, datum)
-      StopLoss -> True
+      StopLoss(current_price) ->
+        validate_stop_loss(transaction, own_ref, datum, current_price)
     }
   }
 

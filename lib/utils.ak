@@ -20,6 +20,13 @@ pub fn get_upper_bound(range: ValidityRange) -> Int {
   upper_bound
 }
 
+pub fn get_all_validators_inputs(transaction: Transaction) -> List<Input> {
+  list.filter(
+    transaction.inputs,
+    fn(input) { is_script_credential(input.output.address.payment_credential) },
+  )
+}
+
 pub fn is_withdrawal(transaction: Transaction, own_ref: OutputReference) -> Bool {
   expect Some(input) = find_input(transaction.inputs, own_ref)
 
@@ -50,7 +57,7 @@ pub fn own_validator_script_address_hash(
     |> option.flatten()
 }
 
-pub fn is_script_credential(
+pub fn is_own_script_credential(
   credential: Credential,
   own_validator: ScriptHash,
 ) -> Bool {
@@ -60,14 +67,21 @@ pub fn is_script_credential(
   }
 }
 
-pub fn get_validators_inputs(
+pub fn is_script_credential(credential: Credential) -> Bool {
+  when credential is {
+    Script(_) -> True
+    _ -> False
+  }
+}
+
+pub fn get_own_validators_inputs(
   transaction: Transaction,
   own_validator: ScriptHash,
 ) -> List<Input> {
   list.filter(
     transaction.inputs,
     fn(input) {
-      is_script_credential(
+      is_own_script_credential(
         input.output.address.payment_credential,
         own_validator,
       )
@@ -86,7 +100,10 @@ pub fn validate_token_mint(
 }
 
 // Make sure only one token is minted from the asset tuple
-fn only_one_token_in_policy_minted(mints, expected_minting) {
+fn only_one_token_in_policy_minted(
+  mints: Value,
+  expected_minting: (ByteArray, ByteArray, Int),
+) -> Bool {
   let (policy_id, _, _) = expected_minting
   let policy_id: PolicyId = policy_id
   // Check for the policy mints

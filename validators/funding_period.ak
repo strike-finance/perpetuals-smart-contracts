@@ -5,7 +5,7 @@ use cardano/transaction.{
 use funding_period_utils.{new_funding_period_datum_valid}
 use types.{FundPeriodDatum}
 use utils.{
-  get_lower_bound, get_validators_inputs, own_validator_script_address_hash,
+  get_lower_bound, get_own_validators_inputs, own_validator_script_address_hash,
 }
 
 // This validator handles the logic of funding periods. It reallocates the losing sides postions to the winning sides positions every funding period. 
@@ -25,7 +25,8 @@ validator funding_period {
     let outputs_back_to_validator =
       find_script_outputs(transaction.outputs, validator_hash)
 
-    let validators_inputs = get_validators_inputs(transaction, validator_hash)
+    let validators_inputs =
+      get_own_validators_inputs(transaction, validator_hash)
 
     let only_one_input_and_output =
       list.length(outputs_back_to_validator) == 1 && list.length(
