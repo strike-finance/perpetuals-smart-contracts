@@ -6,7 +6,6 @@ use aiken/interval.{Finite}
 use aiken/option
 use cardano/address.{Address, Credential, Script}
 use cardano/assets.{PolicyId, Value, flatten, tokens}
-use cardano/script_context.{ScriptContext}
 use cardano/transaction.{
   Input, Output, OutputReference, Transaction, ValidityRange, find_input,
 }
@@ -19,17 +18,6 @@ pub fn get_lower_bound(range: ValidityRange) -> Int {
 pub fn get_upper_bound(range: ValidityRange) -> Int {
   expect Finite(upper_bound) = range.upper_bound.bound_type
   upper_bound
-}
-
-pub fn get_address_outputs(ctx: ScriptContext, address: Address) -> List<Output> {
-  list.filter(ctx.transaction.outputs, fn(output) { output.address == address })
-}
-
-pub fn get_address_input(ctx: ScriptContext, address: Address) -> List<Input> {
-  list.filter(
-    ctx.transaction.inputs,
-    fn(input) { input.output.address == address },
-  )
 }
 
 pub fn is_withdrawal(transaction: Transaction, own_ref: OutputReference) -> Bool {

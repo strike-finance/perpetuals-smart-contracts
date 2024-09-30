@@ -26,11 +26,6 @@ validator orders {
     True
   }
 
-  // check for valid orders or else it will be expensive to look through it all in the off-chain
-  mint(redeemer: Int, policy_id: PolicyId, transaction: Transaction) {
-    True
-  }
-
   else(_) {
     fail
   }

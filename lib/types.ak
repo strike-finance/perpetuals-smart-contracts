@@ -55,7 +55,9 @@ pub type PositionDatum {
   entered_asset: Asset,
   position_amount: Int,
   leverage_amount: Int,
+  valid_position_asset: Asset,
   side: PositionSide,
+  orders_validator_hash: ScriptHash,
 }
 
 pub type FundPeriodDatum {
