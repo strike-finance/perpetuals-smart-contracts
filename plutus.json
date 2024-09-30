@@ -36,13 +36,13 @@
     {
       "title": "orders.orders.spend",
       "datum": {
-        "title": "_datum",
+        "title": "datum",
         "schema": {
           "$ref": "#/definitions/types~1OrdersDatum"
         }
       },
       "redeemer": {
-        "title": "_redeemer",
+        "title": "redeemer",
         "schema": {
           "$ref": "#/definitions/Int"
         }
@@ -242,6 +242,22 @@
           "index": 0,
           "fields": [
             {
+              "title": "owner_address_hash",
+              "$ref": "#/definitions/AddressHash"
+            },
+            {
+              "title": "entered_at_price",
+              "$ref": "#/definitions/Int"
+            },
+            {
+              "title": "entered_at_timestamp",
+              "$ref": "#/definitions/POSIXTime"
+            },
+            {
+              "title": "entered_asset",
+              "$ref": "#/definitions/types~1Asset"
+            },
+            {
               "title": "position_amount",
               "$ref": "#/definitions/Int"
             },
@@ -252,8 +268,29 @@
             {
               "title": "side",
               "$ref": "#/definitions/types~1PositionSide"
+            },
+            {
+              "title": "action",
+              "$ref": "#/definitions/types~1PositionAction"
             }
           ]
+        }
+      ]
+    },
+    "types/PositionAction": {
+      "title": "PositionAction",
+      "anyOf": [
+        {
+          "title": "Enter",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": []
+        },
+        {
+          "title": "Close",
+          "dataType": "constructor",
+          "index": 1,
+          "fields": []
         }
       ]
     },
@@ -272,6 +309,10 @@
             {
               "title": "entered_at_price",
               "$ref": "#/definitions/Int"
+            },
+            {
+              "title": "entered_at_timestamp",
+              "$ref": "#/definitions/POSIXTime"
             },
             {
               "title": "entered_asset",

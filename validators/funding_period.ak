@@ -2,10 +2,10 @@ use aiken/collection/list
 use cardano/transaction.{
   InlineDatum, OutputReference, Transaction, find_script_outputs,
 }
+use funding_period_utils.{new_funding_period_datum_valid}
 use types.{FundPeriodDatum}
 use utils.{
-  get_lower_bound, get_validators_inputs, new_funding_period_datum_valid,
-  own_validator_script_address_hash,
+  get_lower_bound, get_validators_inputs, own_validator_script_address_hash,
 }
 
 // This validator handles the logic of funding periods. It reallocates the losing sides postions to the winning sides positions every funding period. 

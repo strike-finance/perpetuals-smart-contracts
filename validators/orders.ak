@@ -8,7 +8,7 @@ use utils.{is_withdrawal}
 
 // Users will be placing their orders here. The funds for their position will be here until the the batcher puts it into the pool.
 // When they close their position, their utxo will also be here. 
-validator orders(position_nft: Asset) {
+validator orders {
   spend(
     _datum: Option<OrdersDatum>,
     _redeemer: Int,

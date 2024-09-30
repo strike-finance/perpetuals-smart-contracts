@@ -23,6 +23,11 @@ pub type PositionSide {
   Short
 }
 
+pub type PositionAction {
+  Enter
+  Close
+}
+
 pub type PerpetualDatum {
   long_position_amount: Int,
   long_position_mint_amount: Int,
@@ -31,14 +36,20 @@ pub type PerpetualDatum {
 }
 
 pub type OrdersDatum {
+  owner_address_hash: AddressHash,
+  entered_at_price: Int,
+  entered_at_timestamp: POSIXTime,
+  entered_asset: Asset,
   position_amount: Int,
   leverage_amount: Int,
   side: PositionSide,
+  action: PositionAction,
 }
 
 pub type PositionDatum {
   owner_address_hash: AddressHash,
   entered_at_price: Int,
+  entered_at_timestamp: POSIXTime,
   entered_asset: Asset,
   position_amount: Int,
   leverage_amount: Int,
@@ -61,9 +72,4 @@ pub type LeverageDatum {
 
 pub type PositionsRedeemer {
   FoldPositions
-}
-
-pub type PoolRedeemer {
-  OpenPosition
-  ClosePosition
 }
