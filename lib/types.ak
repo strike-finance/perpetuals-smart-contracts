@@ -52,6 +52,8 @@ pub type OrdersDatum {
   stop_loss_amount: Int,
   side: PositionSide,
   action: OrderAction,
+  liquidity_asset: Asset,
+  liquidity_amount: Int,
 }
 
 pub type PositionDatum {
@@ -74,4 +76,5 @@ pub type PoolDatum {
   max_leverage_amount: Int,
   max_strike_holder_leverage_amount: Int,
   maintain_margin_amount: Int,
+  liquidity_asset: Asset,
 }

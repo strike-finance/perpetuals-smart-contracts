@@ -2,8 +2,7 @@ use aiken/collection/list
 use cardano/address.{Script}
 use cardano/assets.{quantity_of}
 use cardano/transaction.{
-  InlineDatum, Input, Output, OutputReference, Transaction, find_input,
-  find_script_outputs,
+  InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
   AddressHash, ClosePosition, ContributeLiquidity, OpenPosition, OrdersDatum,
@@ -152,11 +151,18 @@ pub fn cancel_close_position_order(
 }
 
 // assets are burned 
-pub fn cancel_contribute_liquidity_order(input: Output, output: Output) -> Bool {
-  todo
-}
+pub fn cancel_contribute_liquidity_order(
+  datum: OrdersDatum,
+  transaction: Transaction,
+) -> Bool {
+  let expected_mint =
+    (
+      datum.liquidity_asset.policy_id,
+      datum.liquidity_asset.asset_name,
+      -datum.liquidity_amount,
+    )
 
-// assets are send back to user 
-pub fn cancel_withdraw_liquidity_order(input: Output, output: Output) -> Bool {
-  todo
+  let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
+
+  mint_valid
 }

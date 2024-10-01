@@ -1,13 +1,13 @@
 use aiken/collection/list
-use aiken/collection/pairs
-use cardano/address.{Credential, Script}
-use cardano/assets.{PolicyId}
-use cardano/transaction.{Input, OutputReference, Transaction, find_input}
-use orders_utils.{cancel_open_position_order, valid_orders, validate_order}
+use cardano/address.{Credential}
+use cardano/transaction.{Input, OutputReference, Transaction}
+use orders_utils.{
+  cancel_close_position_order, cancel_contribute_liquidity_order,
+  cancel_open_position_order, valid_orders, validate_order,
+}
 use types.{
-  AddressHash, Asset, BatchOrders, CancelOrders, ClosePosition,
-  ContributeLiquidity, OpenPosition, OrdersDatum, OrdersRedeemer,
-  WithdrawLiquidity,
+  AddressHash, BatchOrders, CancelOrders, ClosePosition, ContributeLiquidity,
+  OpenPosition, OrdersDatum, OrdersRedeemer, WithdrawLiquidity,
 }
 use utils.{get_all_validators_inputs, is_withdrawal}
 
@@ -41,21 +41,10 @@ validator orders(admin_pkh: AddressHash) {
 
         when datum.action is {
           OpenPosition -> cancel_open_position_order(datum, transaction)
-          ClosePosition -> {
-            let signed_by_owner =
-              list.has(transaction.extra_signatories, datum.owner_address_hash)
-            signed_by_owner
-          }
-          ContributeLiquidity -> {
-            let signed_by_owner =
-              list.has(transaction.extra_signatories, datum.owner_address_hash)
-            signed_by_owner
-          }
-          WithdrawLiquidity -> {
-            let signed_by_owner =
-              list.has(transaction.extra_signatories, datum.owner_address_hash)
-            signed_by_owner
-          }
+          ClosePosition -> cancel_close_position_order(datum, transaction)
+          ContributeLiquidity ->
+            cancel_contribute_liquidity_order(datum, transaction)
+          WithdrawLiquidity -> True
         }
       }
     }

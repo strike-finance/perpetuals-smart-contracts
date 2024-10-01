@@ -1,9 +1,6 @@
 use aiken/collection/list
-use aiken/collection/pairs
-use cardano/address.{Credential}
-use cardano/assets.{AssetName, PolicyId, quantity_of}
-use cardano/transaction.{OutputReference, Transaction, find_script_outputs}
-use types.{PositionDatum}
+use cardano/assets.{PolicyId, quantity_of}
+use cardano/transaction.{Transaction, find_script_outputs}
 use utils.{validate_token_mint}
 
 validator positions_mint(
