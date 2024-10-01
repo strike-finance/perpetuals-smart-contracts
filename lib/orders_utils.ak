@@ -6,7 +6,7 @@ use types.{
   WithdrawPool,
 }
 
-pub fn withdraw(
+pub fn valid_orders(
   validation_logic: fn(Output, Output) -> Bool,
   redeemer: List<(Int, Int)>,
   tx: Transaction,
