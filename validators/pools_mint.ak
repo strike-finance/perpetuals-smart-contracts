@@ -5,10 +5,11 @@ use utils.{validate_token_mint}
 
 validator pools_mint(
   orders_validator: ByteArray,
+  asset_name: ByteArray,
   pool_asset_policy_id: PolicyId,
   pool_asset_name: ByteArray,
 ) {
-  mint(_redeemer: Int, _policy_id: PolicyId, transaction: Transaction) {
+  mint(_redeemer: Int, policy_id: PolicyId, transaction: Transaction) {
     let outputs_to_orders_address =
       find_script_outputs(transaction.outputs, orders_validator)
 
@@ -24,8 +25,7 @@ validator pools_mint(
         pool_asset_name,
       )
 
-    let expected_mint =
-      (pool_asset_policy_id, pool_asset_name, pool_asset_deposited_amount)
+    let expected_mint = (policy_id, asset_name, pool_asset_deposited_amount)
 
     let mint_valid = validate_token_mint(transaction.mint, expected_mint)
 

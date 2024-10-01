@@ -1,19 +1,38 @@
+use aiken/collection/list
 use aiken/collection/pairs
 use cardano/address.{Credential}
-use cardano/assets.{AssetName, PolicyId}
-use cardano/transaction.{OutputReference, Transaction}
+use cardano/assets.{AssetName, PolicyId, quantity_of}
+use cardano/transaction.{OutputReference, Transaction, find_script_outputs}
 use types.{PositionDatum}
+use utils.{validate_token_mint}
 
-// This validator will hold all the the funds for valuation of the users positions. When users close their positions, they will be withdrawing funds from this contract. This is different
-// from the funding period validator, which holds the funds for the users inital deposit. This validator is for the potential profit they will have made if their position rosed in value due
-// to the rise in the underlying asset. 
-validator positions_mint(orders_stake_cred: Credential) {
-  mint(
-    _datum: Option<PositionDatum>,
-    policy_id: PolicyId,
-    transaction: Transaction,
-  ) {
-    True
+validator positions_mint(
+  orders_validator: ByteArray,
+  asset_name: ByteArray,
+  position_asset_policy_id: PolicyId,
+  position_asset_name: ByteArray,
+) {
+  mint(_redeemer: Int, policy_id: PolicyId, transaction: Transaction) {
+    let outputs_to_orders_address =
+      find_script_outputs(transaction.outputs, orders_validator)
+
+    let only_one_output_to_orders = list.length(outputs_to_orders_address) == 1
+
+    expect Some(output_to_orders_validator) =
+      list.head(outputs_to_orders_address)
+
+    let position_asset_deposited_amount =
+      quantity_of(
+        output_to_orders_validator.value,
+        position_asset_policy_id,
+        position_asset_name,
+      )
+
+    let expected_mint = (policy_id, asset_name, position_asset_deposited_amount)
+
+    let mint_valid = validate_token_mint(transaction.mint, expected_mint)
+
+    only_one_output_to_orders && mint_valid
   }
 
   else(_) {

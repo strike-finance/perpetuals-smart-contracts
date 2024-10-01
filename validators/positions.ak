@@ -1,10 +1,6 @@
-use cardano/address.{StakeCredential}
-use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
 use positions_utils.{validate_close_position, validate_stop_loss}
-use types.{
-  Close, ClosePosition, OpenPosition, PositionDatum, PositionsRedeemer, StopLoss,
-}
+use types.{Close, PositionDatum, PositionsRedeemer, StopLoss}
 
 // This validator handles all logic regarding the users positions. They will be able to open and close their positions here. 
 validator positions {
