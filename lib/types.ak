@@ -1,8 +1,7 @@
-use aiken/hash.{Blake2b_224, Hash}
-use aiken/transaction/credential.{VerificationKey}
-use aiken/transaction/value.{AssetName, PolicyId}
+use aiken/crypto.{Blake2b_224, Hash, Script, VerificationKey}
+use cardano/assets.{AssetName, PolicyId}
 
-pub type AssetClass {
+pub type Asset {
   policy_id: PolicyId,
   asset_name: AssetName,
 }
@@ -10,73 +9,85 @@ pub type AssetClass {
 pub type AddressHash =
   Hash<Blake2b_224, VerificationKey>
 
+pub type ScriptHash =
+  Hash<Blake2b_224, Script>
+
 pub type POSIXTime =
   Int
 
 pub type LovelaceAmount =
   Int
 
-pub type ComparePerpetualInfo {
-  total_ratio_feed: PolicyId,
-  orcfax_price_feed: PolicyId,
-  leverage_amount: Int,
-  new_balance: Int,
-  owner_address_hash: AddressHash,
-  owner_bech32_address: String,
-  funds_to_distribute: Int,
-  redeem_asset: AssetClass,
-  position_asset: AssetClass,
-  position_code: Int,
+pub type PositionSide {
+  Long
+  Short
 }
 
-pub type PerpetualDatum {
+pub type OrderAction {
+  OpenPosition
+  ClosePosition
+  ContributeLiquidity
+  WithdrawLiquidity
+}
+
+pub type OrdersRedeemer {
+  BatchOrders
+  CancelOrders
+}
+
+pub type PositionsRedeemer {
+  Close
+  StopLoss(Int)
+}
+
+pub type OrdersDatum {
   owner_address_hash: AddressHash,
-  owner_bech32_address: String,
-  total_ratio_feed: PolicyId,
-  orcfax_price_feed: PolicyId,
-  entry_price: Int,
+  entered_at_price: Int,
+  underlying_asset: Asset,
+  position_amount: Int,
+  leverage_factor: Int,
+  positions_validator_hash: ScriptHash,
+  positions_asset: Asset,
+  orders_validator_hash: ScriptHash,
+  stop_loss_amount: Int,
+  side: PositionSide,
+  action: OrderAction,
+  liquidity_asset: Asset,
+  liquidity_amount: Int,
+  order_submission_time: POSIXTime,
+  collateral_asset: Asset,
+  collateral_amount: Int,
+}
+
+pub type PositionDatum {
+  owner_address_hash: AddressHash,
+  entered_at_price: Int,
+  underlying_asset: Asset,
+  position_amount: Int,
+  leverage_factor: Int,
+  stop_loss_amount: Int,
+  positions_asset: Asset,
+  side: PositionSide,
   entry_time: POSIXTime,
-  redeem_asset: AssetClass,
-  position_asset: AssetClass,
-  position_asset_amount: Int,
-  position_code: Int,
-  stop_loss: Int,
-  leverage_amount: Int,
-  distribute_time: POSIXTime,
+  collateral_asset: Asset,
+  collateral_amount: Int,
 }
 
-pub type DistributeDatum {
-  total_ratio_feed: PolicyId,
-  redeem_asset: AssetClass,
+pub type PoolDatum {
+  pool_asset: Asset,
+  pool_asset_amount: Int,
+  pooled_interest_rate: Int,
+  collateral_asset: Asset,
+  max_leverage_amount: Int,
+  max_strike_holder_leverage_amount: Int,
+  maintain_margin_amount: Int,
+  liquidity_asset: Asset,
 }
 
-pub type OrcfaxDatum<t> {
-  statement: Statement<t>,
-  context: Context,
-}
+pub type RedeemerIndexer =
+  List<(Int, Int)>
 
-pub type Statement<t> {
-  feed_id: ByteArray,
-  created_at: POSIXTime,
-  body: t,
-}
-
-pub type Context {
-  collect_after: POSIXTime,
-  collector: ByteArray,
-}
-
-pub type Price {
-  num: Int,
-  denom: Int,
-}
-
-pub type RationalDatum {
-  numerator: Int,
-  denominator: Int,
-}
-
-pub type Ratio {
-  total_winning_amount: Int,
-  total_losing_amount: Int,
+pub type OrdersWithdrawRedeemer {
+  indexer: RedeemerIndexer,
+  current_price: Int,
 }
