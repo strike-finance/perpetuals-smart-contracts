@@ -65,7 +65,6 @@ pub type PositionDatum {
   stop_loss_amount: Int,
   positions_asset: Asset,
   side: PositionSide,
-  orders_validator_hash: ScriptHash,
 }
 
 pub type PoolDatum {

@@ -80,17 +80,19 @@ pub fn validate_open_position(input: Output, output: Output) -> Bool {
   True
 }
 
-// asset is consumed 
+// correct asset is consumed, asset is sent to user, asset is burned
 pub fn validate_close_position(input: Output, output: Output) -> Bool {
   todo
 }
 
+// correct asset is consumed, asset is sent to user, asset is burned
 pub fn validate_withdraw_liquidity(input: Output, output: Output) -> Bool {
   todo
 }
 
-pub fn validate_contribute_liquidity(input: Output, output: Output) -> Bool {
-  todo
+// 
+pub fn validate_contribute_liquidity(_input: Output, _output: Output) -> Bool {
+  True
 }
 
 // assets are burned 
@@ -137,7 +139,6 @@ pub fn cancel_close_position_order(
       stop_loss_amount: datum.stop_loss_amount,
       positions_asset: datum.positions_asset,
       side: datum.side,
-      orders_validator_hash: datum.orders_validator_hash,
     }
 
   let quantity_of_positions_asset: Int =

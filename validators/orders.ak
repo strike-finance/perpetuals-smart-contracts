@@ -1,5 +1,6 @@
 use aiken/collection/list
 use cardano/address.{Credential}
+use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{Input, OutputReference, Transaction}
 use orders_utils.{
   cancel_close_position_order, cancel_contribute_liquidity_order,
@@ -13,7 +14,11 @@ use utils.{get_all_validators_inputs, is_withdrawal}
 
 // Users will be placing their orders here. The funds for their position will be here until the the batcher puts it into the pool.
 // When they close their position, their utxo will also be here. 
-validator orders(admin_pkh: AddressHash) {
+validator orders(
+  admin_pkh: AddressHash,
+  _underlying_asset_policy_id: PolicyId,
+  _underlying_asset_name: AssetName,
+) {
   spend(
     datum: Option<OrdersDatum>,
     redeemer: OrdersRedeemer,

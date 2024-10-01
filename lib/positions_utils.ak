@@ -10,6 +10,7 @@ pub fn validate_close_position(
   transaction: Transaction,
   own_ref: OutputReference,
   datum: Option<PositionDatum>,
+  orders_validator_hash: ByteArray,
 ) {
   expect Some(datum) = datum
   expect Some(input_from_script): Option<Input> =
@@ -26,7 +27,7 @@ pub fn validate_close_position(
     list.has(transaction.extra_signatories, datum.owner_address_hash)
 
   let outputs_to_orders_validator: List<Output> =
-    find_script_outputs(transaction.outputs, datum.orders_validator_hash)
+    find_script_outputs(transaction.outputs, orders_validator_hash)
 
   expect Some(output_to_orders_validator) =
     list.head(outputs_to_orders_validator)
@@ -49,6 +50,7 @@ pub fn validate_stop_loss(
   own_ref: OutputReference,
   datum: Option<PositionDatum>,
   current_price: Int,
+  orders_validator_hash: ByteArray,
 ) -> Bool {
   expect Some(datum) = datum
 
@@ -71,7 +73,7 @@ pub fn validate_stop_loss(
     current_price * datum.position_amount * datum.leverage_amount
 
   let outputs_to_orders_validator: List<Output> =
-    find_script_outputs(transaction.outputs, datum.orders_validator_hash)
+    find_script_outputs(transaction.outputs, orders_validator_hash)
 
   expect Some(output_to_orders_validator) =
     list.head(outputs_to_orders_validator)
