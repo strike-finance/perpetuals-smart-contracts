@@ -1,10 +1,13 @@
 use aiken/collection/list
 use cardano/address.{Script}
-use cardano/transaction.{InlineDatum, Input, Output, Transaction}
-use types.{
-  AddressHash, ClosePosition, ContributePool, OpenPosition, OrdersDatum,
-  WithdrawPool,
+use cardano/transaction.{
+  InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
+use types.{
+  AddressHash, ClosePosition, ContributeLiquidity, OpenPosition, OrdersDatum,
+  WithdrawLiquidity,
+}
+use utils.{validate_token_mint}
 
 pub fn valid_orders(
   validation_logic: fn(Output, Output) -> Bool,
@@ -64,27 +67,65 @@ pub fn validate_order(input: Output, output: Output) -> Bool {
   when input_datum_typed.action is {
     OpenPosition -> validate_open_position(input, output)
     ClosePosition -> validate_close_position(input, output)
-    ContributePool -> validate_contribute_pool(input, output)
-    WithdrawPool -> validate_withdraw_pool(input, output)
+    ContributeLiquidity -> validate_contribute_liquidity(input, output)
+    WithdrawLiquidity -> validate_withdraw_liquidity(input, output)
   }
 }
 
-pub fn validate_contribute_pool(input: Output, output: Output) -> Bool {
-  todo
-}
-
-pub fn validate_withdraw_pool(input: Output, output: Output) -> Bool {
-  todo
-}
-
+// asset is send to positions_contract, datum is not corruped
 pub fn validate_open_position(input: Output, output: Output) -> Bool {
-  todo
+  expect InlineDatum(input_datum) = input.datum
+
+  True
 }
 
+// asset is consumed 
 pub fn validate_close_position(input: Output, output: Output) -> Bool {
   todo
 }
 
-pub fn validate_pool_utxo_backing(input: Output, output: Output) -> Bool {
+pub fn validate_withdraw_liquidity(input: Output, output: Output) -> Bool {
+  todo
+}
+
+pub fn validate_contribute_liquidity(input: Output, output: Output) -> Bool {
+  todo
+}
+
+// assets are burned 
+pub fn cancel_open_position_order(
+  datum: OrdersDatum,
+  transaction: Transaction,
+) -> Bool {
+  let expected_mint =
+    (
+      datum.position_asset.policy_id,
+      datum.position_asset.asset_name,
+      datum.position_amount,
+    )
+
+  let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
+
+  mint_valid
+}
+
+// positions send back to positions utxo
+pub fn cancel_close_position_order(
+  datum: OrdersDatum,
+  transaction: Transaction,
+) -> Bool {
+  let output_to_positions =
+    find_script_outputs(transaction.outputs, datum.positions_validator)
+
+  True
+}
+
+// assets are burned 
+pub fn cancel_contribute_liquidity_order(input: Output, output: Output) -> Bool {
+  todo
+}
+
+// assets are send back to user 
+pub fn cancel_withdraw_liquidity_order(input: Output, output: Output) -> Bool {
   todo
 }

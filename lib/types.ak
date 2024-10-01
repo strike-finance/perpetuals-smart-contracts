@@ -26,8 +26,13 @@ pub type PositionSide {
 pub type OrderAction {
   OpenPosition
   ClosePosition
-  ContributePool
-  WithdrawPool
+  ContributeLiquidity
+  WithdrawLiquidity
+}
+
+pub type OrdersRedeemer {
+  BatchOrders
+  CancelOrders
 }
 
 pub type PerpetualDatum {
@@ -44,6 +49,7 @@ pub type OrdersDatum {
   entered_asset: Asset,
   position_amount: Int,
   leverage_amount: Int,
+  position_asset: Asset,
   side: PositionSide,
   action: OrderAction,
 }
