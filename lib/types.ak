@@ -35,51 +35,43 @@ pub type OrdersRedeemer {
   CancelOrders
 }
 
-pub type PerpetualDatum {
-  long_position_amount: Int,
-  long_position_mint_amount: Int,
-  short_position_amount: Int,
-  short_position_mint_amount: Int,
+pub type PositionsRedeemer {
+  Close
+  StopLoss(Int)
 }
 
 pub type OrdersDatum {
   owner_address_hash: AddressHash,
   entered_at_price: Int,
-  entered_at_timestamp: POSIXTime,
-  entered_asset: Asset,
+  underlying_asset: Asset,
   position_amount: Int,
   leverage_amount: Int,
-  position_asset: Asset,
+  positions_validator_hash: ScriptHash,
+  positions_asset: Asset,
+  orders_validator_hash: ScriptHash,
+  stop_loss_amount: Int,
   side: PositionSide,
   action: OrderAction,
 }
 
 pub type PositionDatum {
   owner_address_hash: AddressHash,
-  entered_asset: Asset,
+  entered_at_price: Int,
+  underlying_asset: Asset,
   position_amount: Int,
   leverage_amount: Int,
   stop_loss_amount: Int,
-  valid_position_asset: Asset,
+  positions_asset: Asset,
   side: PositionSide,
   orders_validator_hash: ScriptHash,
 }
 
-pub type FundPeriodDatum {
-  current_long_position_amount: Int,
-  total_long_position_amount: Int,
-  current_short_position_amount: Int,
-  total_short_position_amount: Int,
-  start_time: POSIXTime,
-  end_time: POSIXTime,
-  start_price: Int,
-}
-
-pub type LeverageDatum {
-  position_validator_hash: ByteArray,
-}
-
-pub type PositionsRedeemer {
-  Close
-  StopLoss(Int)
+pub type PoolDatum {
+  pool_asset: Asset,
+  pool_asset_amount: Int,
+  pooled_interest_rate: Int,
+  collateral_asset: Asset,
+  max_leverage_amount: Int,
+  max_strike_holder_leverage_amount: Int,
+  maintain_margin_amount: Int,
 }

@@ -18,8 +18,8 @@ pub fn validate_close_position(
   let assets_in_input: Int =
     quantity_of(
       input_from_script.output.value,
-      datum.entered_asset.policy_id,
-      datum.entered_asset.asset_name,
+      datum.underlying_asset.policy_id,
+      datum.underlying_asset.asset_name,
     )
 
   let signed_by_owner: Bool =
@@ -37,8 +37,8 @@ pub fn validate_close_position(
   let asset_in_output_to_orders_validator: Int =
     quantity_of(
       output_to_orders_validator.value,
-      datum.entered_asset.policy_id,
-      datum.entered_asset.asset_name,
+      datum.underlying_asset.policy_id,
+      datum.underlying_asset.asset_name,
     )
 
   signed_by_owner && only_one_output_to_orders_validator && asset_in_output_to_orders_validator == assets_in_input
@@ -63,8 +63,8 @@ pub fn validate_stop_loss(
   let assets_in_input: Int =
     quantity_of(
       input_from_script.output.value,
-      datum.entered_asset.policy_id,
-      datum.entered_asset.asset_name,
+      datum.underlying_asset.policy_id,
+      datum.underlying_asset.asset_name,
     )
 
   let current_price_volume =
@@ -82,8 +82,8 @@ pub fn validate_stop_loss(
   let asset_in_output_to_orders_validator: Int =
     quantity_of(
       output_to_orders_validator.value,
-      datum.entered_asset.policy_id,
-      datum.entered_asset.asset_name,
+      datum.underlying_asset.policy_id,
+      datum.underlying_asset.asset_name,
     )
 
   let stop_loss_valid: Bool = current_price_volume >= datum.stop_loss_amount

@@ -1,11 +1,13 @@
 use aiken/collection/list
 use cardano/address.{Script}
+use cardano/assets.{quantity_of}
 use cardano/transaction.{
-  InlineDatum, Input, Output, Transaction, find_script_outputs,
+  InlineDatum, Input, Output, OutputReference, Transaction, find_input,
+  find_script_outputs,
 }
 use types.{
   AddressHash, ClosePosition, ContributeLiquidity, OpenPosition, OrdersDatum,
-  WithdrawLiquidity,
+  PositionDatum, WithdrawLiquidity,
 }
 use utils.{validate_token_mint}
 
@@ -99,9 +101,9 @@ pub fn cancel_open_position_order(
 ) -> Bool {
   let expected_mint =
     (
-      datum.position_asset.policy_id,
-      datum.position_asset.asset_name,
-      datum.position_amount,
+      datum.positions_asset.policy_id,
+      datum.positions_asset.asset_name,
+      -datum.position_amount,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
@@ -109,15 +111,44 @@ pub fn cancel_open_position_order(
   mint_valid
 }
 
-// positions send back to positions utxo
+// positions send back to positions utxo, datum is not corrupted
 pub fn cancel_close_position_order(
   datum: OrdersDatum,
   transaction: Transaction,
 ) -> Bool {
-  let output_to_positions =
-    find_script_outputs(transaction.outputs, datum.positions_validator)
+  let outputs_to_positions: List<Output> =
+    find_script_outputs(transaction.outputs, datum.positions_validator_hash)
 
-  True
+  expect Some(output_to_positions) = list.head(outputs_to_positions)
+
+  let only_one_output_to_positions: Bool =
+    list.length(outputs_to_positions) == 1
+
+  expect InlineDatum(output_datum) = output_to_positions.datum
+
+  expect output_datum_typed: PositionDatum = output_datum
+
+  let expected_positions_datum =
+    PositionDatum {
+      owner_address_hash: datum.owner_address_hash,
+      underlying_asset: datum.underlying_asset,
+      entered_at_price: datum.entered_at_price,
+      position_amount: datum.position_amount,
+      leverage_amount: datum.leverage_amount,
+      stop_loss_amount: datum.stop_loss_amount,
+      positions_asset: datum.positions_asset,
+      side: datum.side,
+      orders_validator_hash: datum.orders_validator_hash,
+    }
+
+  let quantity_of_positions_asset: Int =
+    quantity_of(
+      output_to_positions.value,
+      datum.positions_asset.policy_id,
+      datum.positions_asset.asset_name,
+    )
+
+  only_one_output_to_positions && output_datum_typed == expected_positions_datum && quantity_of_positions_asset == datum.position_amount
 }
 
 // assets are burned 

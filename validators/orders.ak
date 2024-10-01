@@ -9,7 +9,7 @@ use types.{
   ContributeLiquidity, OpenPosition, OrdersDatum, OrdersRedeemer,
   WithdrawLiquidity,
 }
-use utils.{is_withdrawal}
+use utils.{get_all_validators_inputs, is_withdrawal}
 
 // Users will be placing their orders here. The funds for their position will be here until the the batcher puts it into the pool.
 // When they close their position, their utxo will also be here. 
@@ -23,11 +23,21 @@ validator orders(admin_pkh: AddressHash) {
     when redeemer is {
       BatchOrders -> {
         let signed_by_admin = list.has(transaction.extra_signatories, admin_pkh)
+
         is_withdrawal(transaction, own_ref) && signed_by_admin
       }
       CancelOrders -> {
         expect Some(datum) = datum
-        expect list.has(transaction.extra_signatories, datum.owner_address_hash)
+
+        let signed_by_owner: Bool =
+          list.has(transaction.extra_signatories, datum.owner_address_hash)
+
+        let all_validators_inputs: List<Input> =
+          get_all_validators_inputs(transaction)
+
+        let only_one_input_from_script: Bool =
+          list.length(all_validators_inputs) == 1
+        expect signed_by_owner && only_one_input_from_script
 
         when datum.action is {
           OpenPosition -> cancel_open_position_order(datum, transaction)
