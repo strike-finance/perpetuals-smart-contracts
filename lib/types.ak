@@ -45,7 +45,7 @@ pub type OrdersDatum {
   entered_at_price: Int,
   underlying_asset: Asset,
   position_amount: Int,
-  leverage_amount: Int,
+  leverage_factor: Int,
   positions_validator_hash: ScriptHash,
   positions_asset: Asset,
   orders_validator_hash: ScriptHash,
@@ -54,6 +54,9 @@ pub type OrdersDatum {
   action: OrderAction,
   liquidity_asset: Asset,
   liquidity_amount: Int,
+  order_submission_time: POSIXTime,
+  collateral_asset: Asset,
+  collateral_amount: Int,
 }
 
 pub type PositionDatum {
@@ -61,10 +64,13 @@ pub type PositionDatum {
   entered_at_price: Int,
   underlying_asset: Asset,
   position_amount: Int,
-  leverage_amount: Int,
+  leverage_factor: Int,
   stop_loss_amount: Int,
   positions_asset: Asset,
   side: PositionSide,
+  entry_time: POSIXTime,
+  collateral_asset: Asset,
+  collateral_amount: Int,
 }
 
 pub type PoolDatum {
@@ -76,4 +82,12 @@ pub type PoolDatum {
   max_strike_holder_leverage_amount: Int,
   maintain_margin_amount: Int,
   liquidity_asset: Asset,
+}
+
+pub type RedeemerIndexer =
+  List<(Int, Int)>
+
+pub type OrdersWithdrawRedeemer {
+  indexer: RedeemerIndexer,
+  current_price: Int,
 }

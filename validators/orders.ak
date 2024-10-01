@@ -8,7 +8,8 @@ use orders_utils.{
 }
 use types.{
   AddressHash, BatchOrders, CancelOrders, ClosePosition, ContributeLiquidity,
-  OpenPosition, OrdersDatum, OrdersRedeemer, WithdrawLiquidity,
+  OpenPosition, OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer,
+  WithdrawLiquidity,
 }
 use utils.{get_all_validators_inputs, is_withdrawal}
 
@@ -56,11 +57,17 @@ validator orders(
   }
 
   withdraw(
-    redeemer: List<(Int, Int)>,
+    redeemer: OrdersWithdrawRedeemer,
     _credential: Credential,
     transaction: Transaction,
   ) {
-    valid_orders(validate_order, redeemer, transaction, admin_pkh)
+    valid_orders(
+      validate_order,
+      redeemer.indexer,
+      transaction,
+      admin_pkh,
+      redeemer.current_price,
+    )
   }
 
   else(_) {

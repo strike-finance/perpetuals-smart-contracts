@@ -7,20 +7,13 @@ validator positions(orders_validator: ByteArray) {
   spend(
     datum: Option<PositionDatum>,
     redeemer: PositionsRedeemer,
-    own_ref: OutputReference,
+    _own_ref: OutputReference,
     transaction: Transaction,
   ) {
     when redeemer is {
-      Close ->
-        validate_close_position(transaction, own_ref, datum, orders_validator)
+      Close -> validate_close_position(transaction, datum, orders_validator)
       StopLoss(current_price) ->
-        validate_stop_loss(
-          transaction,
-          own_ref,
-          datum,
-          current_price,
-          orders_validator,
-        )
+        validate_stop_loss(transaction, datum, current_price, orders_validator)
     }
   }
 

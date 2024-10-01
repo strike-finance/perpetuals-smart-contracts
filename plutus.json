@@ -410,7 +410,7 @@
               "$ref": "#/definitions/Int"
             },
             {
-              "title": "leverage_amount",
+              "title": "leverage_factor",
               "$ref": "#/definitions/Int"
             },
             {
@@ -491,7 +491,7 @@
               "$ref": "#/definitions/Int"
             },
             {
-              "title": "leverage_amount",
+              "title": "leverage_factor",
               "$ref": "#/definitions/Int"
             },
             {
