@@ -82,7 +82,7 @@ pub fn validate_order(
     ClosePosition ->
       validate_close_position(input, output, current_asset_price, transaction)
     ContributeLiquidity -> validate_contribute_liquidity(input, output)
-    WithdrawLiquidity -> validate_withdraw_liquidity(input, output)
+    WithdrawLiquidity -> validate_withdraw_liquidity(input, output, transaction)
   }
 }
 
@@ -132,13 +132,6 @@ pub fn validate_close_position(
 
   expect input_datum_typed: OrdersDatum = input_datum
 
-  let expected_mint =
-    (
-      input_datum_typed.positions_asset.policy_id,
-      input_datum_typed.positions_asset.asset_name,
-      -1,
-    )
-
   let current_position_amount: Int =
     current_asset_price * input_datum_typed.leverage_factor
 
@@ -157,10 +150,18 @@ pub fn validate_close_position(
   let expected_asset_amount_send_to_user: Int =
     current_position_amount - payback_lend_amount - entry_position_amount
 
+  let expected_mint =
+    (
+      input_datum_typed.positions_asset.policy_id,
+      input_datum_typed.positions_asset.asset_name,
+      -1,
+    )
+
+  let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
+
   let address: Address =
     from_verification_key(input_datum_typed.owner_address_hash)
 
-  let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
   // not sure if a staking credential can alter this
   let output_is_to_owner = output.address == address
 
@@ -181,9 +182,39 @@ pub fn validate_close_position(
   mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
 }
 
-// correct asset is consumed, asset is sent to user, asset is burned
-pub fn validate_withdraw_liquidity(input: Output, output: Output) -> Bool {
-  todo
+// correct asset is consumed, asset is sent to user, asset is burned, consumed the assets, and then the relevant fees 
+pub fn validate_withdraw_liquidity(
+  input: Output,
+  output: Output,
+  transaction: Transaction,
+) -> Bool {
+  expect InlineDatum(input_datum) = input.datum
+
+  expect input_datum_typed: OrdersDatum = input_datum
+
+  let address: Address =
+    from_verification_key(input_datum_typed.owner_address_hash)
+
+  // not sure if a staking credential can alter this
+  let output_is_to_owner = output.address == address
+
+  let expected_mint =
+    (
+      input_datum_typed.liquidity_asset.policy_id,
+      input_datum_typed.liquidity_asset.asset_name,
+      input_datum_typed.liquidity_amount,
+    )
+
+  let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
+
+  let asset_sent_to_owner_valid =
+    quantity_of(
+      output.value,
+      input_datum_typed.liquidity_asset.policy_id,
+      input_datum_typed.liquidity_asset.asset_name,
+    ) == input_datum_typed.liquidity_amount
+
+  output_is_to_owner && mint_valid && asset_sent_to_owner_valid
 }
 
 // The logic in the main function checks if the asset is being added to the pooled utxo
