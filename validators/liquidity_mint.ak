@@ -3,7 +3,7 @@ use cardano/assets.{PolicyId, quantity_of}
 use cardano/transaction.{Transaction, find_script_outputs}
 use utils.{validate_token_mint}
 
-validator pools_mint(
+validator liquidity_mint(
   orders_validator: ByteArray,
   asset_name: ByteArray,
   pool_asset_policy_id: PolicyId,

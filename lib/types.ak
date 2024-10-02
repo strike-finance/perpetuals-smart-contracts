@@ -38,6 +38,15 @@ pub type OrdersRedeemer {
 pub type PositionsRedeemer {
   Close
   StopLoss(Int)
+  PayLend(Int)
+}
+
+pub type RedeemerIndexer =
+  List<(Int, Int)>
+
+pub type OrdersWithdrawRedeemer {
+  indexer: RedeemerIndexer,
+  current_price: Int,
 }
 
 pub type OrdersDatum {
@@ -84,10 +93,7 @@ pub type PoolDatum {
   liquidity_asset: Asset,
 }
 
-pub type RedeemerIndexer =
-  List<(Int, Int)>
-
-pub type OrdersWithdrawRedeemer {
-  indexer: RedeemerIndexer,
-  current_price: Int,
+pub type PositionsMintRedeemer {
+  Mint
+  Burn
 }

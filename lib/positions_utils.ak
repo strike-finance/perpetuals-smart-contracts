@@ -69,3 +69,12 @@ pub fn validate_stop_loss(
 
   only_one_input_from_script && only_one_output_to_orders_validator && valid_asset_in_output && stop_loss_valid
 }
+
+pub fn validate_pay_lend(
+  transaction: Transaction,
+  datum: Option<PositionDatum>,
+  current_price: Int,
+  orders_validator_hash: ByteArray,
+) -> Bool {
+  True
+}

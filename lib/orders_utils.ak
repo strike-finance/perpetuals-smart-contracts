@@ -118,6 +118,9 @@ pub fn validate_open_position(input: Output, output: Output) -> Bool {
 
   expect output_datum_typed: PositionDatum = output_datum
 
+  let perpetual_address =
+    from_verification_key(input_datum_typed.positions_validator_hash)
+
   valid_asset_in_output && output_datum_typed == expected_output_datum
 }
 
