@@ -8,7 +8,7 @@ pub fn validate_close_position(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   orders_validator_hash: ByteArray,
-) {
+) -> Bool {
   expect Some(datum) = datum
 
   let signed_by_owner: Bool =
