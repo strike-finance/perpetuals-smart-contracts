@@ -40,7 +40,12 @@ validator enter_positions_mint(
 
         only_one_output_to_orders && mint_valid
       }
-      Burn -> True
+      Burn ->
+        quantity_of(
+          transaction.mint,
+          position_asset_policy_id,
+          position_asset_name,
+        ) < 0
     }
   }
 
