@@ -2,15 +2,15 @@
 
 ## Table of Contents
 
-- [What are Perpetuals](#introduction)
+- [What are Perpetuals](#what-are-perpetuals)
 - [Technical High-Level Overview](#technical-high-level-overview)
 - [Smart Contract Implementation](#smart-contract-implementation)
   - [Batcher](#batcher)
   - [Enter Position](#enter-position)
-  - [Cancel Enter Position](#enter-position)
+  - [Cancel Enter Position](#cancel-enter-position)
   - [Pay Hourly Interest](#pay-hourly-interest)
   - [Close Position](#close-position)
-  - [Cancel Close Position](#close-position)
+  - [Cancel Close Position](#cancel-close-position)
   - [Stop Loss](#stop-loss)
   - [Liquidate](#liquidate)
   - [Take Profit](#take-profit)
@@ -22,51 +22,55 @@
 ## What are Perpetuals
 Perpetual futures are a type of derivative contract that allows traders to speculate on the continuous price movement of an underlying asset without an expiration date, enabling positions to be held indefinitely. These contracts typically offer leverage, meaning traders can control larger positions with a relatively small amount of capital by essentially borrowing, which amplifies both potential gains and losses. To manage the increased risk associated with leveraged trading, perpetual futures require maintenance margins—minimum account balances that must be maintained to keep positions open. 
 
-There are two positions that a trader can take, a long and a short. Traders will open a long position when they think the underlying asset will up in value and a short position when they think it will go down in value. To open a position, the trader will need to deposit USDM as collateral for opening short positions and the underlying asset for opening long positions. When they close their position they will be able to keep all the profits + the collateral back. Any losses that occured will be deducted from their collateral
+There are two positions that a trader can take: a long and a short. Traders will open a long position when they think the underlying asset will go up in value and a short position when they think it will go down in value. To open a position, the trader will need to deposit USDM as collateral for opening short positions and the underlying asset for opening long positions. When they close their position, they will be able to keep all the profits plus the collateral back. Any losses that occurred will be deducted from their collateral.
 
 **Scenario**
-**Long Position**
-Collateral: 100 USD worth of ADA
-Leverage: 10x 
-Total Position: 1000 USD worth of ada
-ADA Percentage USD Change: +10% 
-Profits: 100 * 10 * .1 = 100
 
-When the trader closes their position they will be keep the $100 profit + their original collateral of 100 USD worth of ADA back.
+**Long Position**
+- Collateral: 100 USD worth of ADA
+- Leverage: 10x 
+- Total Position: 1000 USD worth of ADA
+- ADA Percentage USD Change: +10% 
+- Profits: 100 * 10 * 0.1 = 100
+
+When the trader closes their position, they will keep the $100 profit + their original collateral of 100 USD worth of ADA back.
 
 **Short Position** 
-Collateral: 100 USDM 
-Leverage: 10x 
-Total Position: 1000 USD worth of ADA
-ADA Percentage USD Change: -10% 
-Profits: 100 * 10 * -(-.1) = 100
+- Collateral: 100 USDM 
+- Leverage: 10x 
+- Total Position: 1000 USD worth of ADA
+- ADA Percentage USD Change: -10% 
+- Profits: 100 * 10 * -(-.1) = 100
 
-When the trader closes their position they will be keep the $100 profit + their original collateral of 100 USDM back
+When the trader closes their position, they will keep the $100 profit + their original collateral of 100 USDM back.
 
+When traders use leverage, they will need to pay interest on the amount borrowed hourly. The formula for calculating borrowed hourly is as follows:
+```
+Amount Of Tokens Borrowed From Liquidity Pool / All Tokens In Liquidity Pool * Borrow Rate * Size Of Position
+```
 
-When traders use leverage, they will need to pay interest on the amount borrowed hourly. The formula for calculating borrowed hourly is as follows.
-```Amount Of Tokens Borrowed From Liquidity Pool/All Tokens In Liquidity Pool * Borrow Rate * Size Of Position```
-
-The traders final profit/loss from exiting their position will be 
-```Final Position Value - Inital Position Value - (Hourly Borrowed Rate * Hours Borrowed)```
+The trader's final profit/loss from exiting their position will be:
+```
+Final Position Value - Initial Position Value - (Hourly Borrowed Rate * Hours Borrowed)
+```
 
 ## Technical High-Level Overview
 There are 3 Minting Scripts and 3 Validator Scripts used. We also use a batcher. All liquidity users will be used to borrow and take profits from will be in the singular UTxO. 
 
 The `orders.ak` script is a script that holds all pending transactions. All actions on the platform will have to go through the `orders.ak` script. 
 
-The `pools.ak` file is a multivalidator with that has a minting script an a spending script. The minting script validates that the singular UTxO that contains the liquidity is a valid UTxO and created by us. The `pools.ak` script is parameterized by the staking credential of the `orders.ak` script. The only way to consume anything from the `pools.ak` script is if the withdrawal script in `orders.ak` is called. 
+The `pools.ak` file is a multivalidator with that has a minting script and a spending script. The minting script validates that the singular UTxO that contains the liquidity is a valid UTxO and created by us. The `pools.ak` script is parameterized by the staking credential of the `orders.ak` script. The only way to consume anything from the `pools.ak` script is if the withdrawal script in `orders.ak` is called. 
 
-The `enter_position_mint.ak` script handles minting of assets that validates the traders position is valid. If their position is valid, ie the trader deposited the correct amount of collateral, the datum values are correct, and the UTxO is being sent to the `orders.ak` script.  
+The `enter_position_mint.ak` script handles minting of assets that validates the trader's position is valid. If their position is valid, i.e., the trader deposited the correct amount of collateral, the datum values are correct, and the UTxO is being sent to the `orders.ak` script.  
 
 The `position.ak` script handles logic for stop loss, take profit, and interest payment for borrowing funds. Stop loss and take profits are things the traders can set to close their position once it reaches a certain value automatically. 
 
-The `liquidity_mint.ak` script mints assets that liquidity providers will hold in their wallet. To withdraw their liquidity they simply send their assets to the `orders.ak` script, and the batcher will burn the minted assets and send the liquidity assets as well as the fees earned for providing liquidity back to them. 
-
+The `liquidity_mint.ak` script mints assets that liquidity providers will hold in their wallet. To withdraw their liquidity, they simply send their assets to the `orders.ak` script, and the batcher will burn the minted assets and send the liquidity assets as well as the fees earned for providing liquidity back to them. 
 
 ## Smart Contract Implementation
+
 ### Batcher
-```
+```aiken
 pub type OrdersDatum {
   owner_address_hash: AddressHash,
   entered_at_price: Int,
@@ -88,7 +92,7 @@ pub type OrdersDatum {
 ```
 The batcher grabs all transactions sitting at the `orders.ak` and performs validations based on the action type. The validation is performed with a withdrawal script. This transaction will have the pool UTxO present. 
 
-```
+```aiken
 pub type OrderAction {
   OpenPosition
   ClosePosition
@@ -96,22 +100,22 @@ pub type OrderAction {
   WithdrawLiquidity
 }
 ```
-Each individual UTxO will have a validation perform on them based on the action type, ie for closing position the trader is getting the correct amount of collateral and profit/loss back. 
+Each individual UTxO will have a validation performed on them based on the action type, e.g., for closing position, the trader is getting the correct amount of collateral and profit/loss back. 
 
-The final validation will be looping through all the inputs and calculate the expected output pool UTxO has the correct datum and contains the correct amount of assets. 
+The final validation will be looping through all the inputs and calculating the expected output pool UTxO has the correct datum and contains the correct amount of assets. 
 
 ### Enter Position
-To enter a position you first mint assets from the `enter_position_mint.ak` file. The minting policy checks for the following things 
-* A UTxO is send to the orders validator
+To enter a position, you first mint assets from the `enter_position_mint.ak` file. The minting policy checks for the following things:
+* A UTxO is sent to the orders validator
 * The UTxO contains the correct amount of collateral lock up, and the minted asset
 * The amount of assets minted = total position value = position size * leverage
 * All information in the datum to the orders validator is valid
 
-Once it is in the orders validator and an off-chain batcher will pick it up
-* A UTxO is send to the positions validator
+Once it is in the orders validator and an off-chain batcher will pick it up:
+* A UTxO is sent to the positions validator
 * The UTxO contains the correct amount of minted assets and collateral
 * The positions datum is valid
-```
+```aiken
 pub type PositionDatum {
   owner_address_hash: AddressHash,
   entered_at_price: Int,
@@ -128,6 +132,10 @@ pub type PositionDatum {
 ```
 
 ### Pay Hourly Interest
+An off-chain bot will be keeping track of these positions every hour. Once an hour has passed, they will consume the positions UTxO and burn some amount of the minted asset. 
+* The Position UTxO is sent back to the validator
+* After calculating the hourly borrow rate, they will pay back interest by burning the minted assets in the positions UTxO
+* The datum has not changed
 
 ### Cancel Enter Position
 Users are able to cancel their orders. 
@@ -137,28 +145,67 @@ Users are able to cancel their orders.
 ### Close Position
 Once the UTxO is at the positions validator, traders can close their position.
 * UTxO is sent to the orders validator for processing
-* Position assets in the the position UTxO are all sent to the orders validator
+* Position assets in the position UTxO are all sent to the orders validator
 * The datum in the order UTxO is valid
 * The transaction is sent to the owner
 
+Once it reaches the order validator, the validator will perform the following checks:
+* The correct amount of underlying asset is being sent to the owner
+* The collateral is sent back to the owner
+* The position assets are burnt 
+
 ### Cancel Close Position
 Traders can cancel their close position order.
-* UTxO is sent to the positions validator
+* UTxO is sent back to the positions validator
 * The UTxO has the correct datum
-* The UTxO contains correct amount of minted asset and collateral
+* The UTxO contains the correct amount of minted asset and collateral
 
 ### Stop Loss
-An off-chain bot will be looking for 
+An off-chain bot will be looking for stop losses in the positions UTxO 
+* Checks that the stop loss in the datum has been reached
+* Sends UTxO to the orders validator with all the minted asset
+* The UTxO contains a valid datum, i.e., has not been changed from the positions UTxO
+
+Once it reaches the order validator, the validator will perform the following checks:
+* The collateral is being returned to the owner
+* The position assets are burnt
+* The correct amount of underlying asset is being sent to the owner
 
 ### Take Profit
+An off-chain bot will be looking for Take Profit in the positions UTxO 
+* Checks that the Take profit in the datum has been reached
+* Sends UTxO to the orders validator with all the minted asset
+* The UTxO contains a valid datum, i.e., has not been changed from the positions UTxO
+
+Once it reaches the order validator, the validator will perform the following checks:
+* The collateral is being returned to the owner
+* The position assets are burnt
+* The correct amount of underlying asset is being sent to the owner
+
+Take Profit and Take Loss are essentially the same transaction with different values in the datum.
 
 ### Provide Liquidity
+To provide liquidity, the users will mint assets from the liquidity_mint script and send a UTxO to the orders validator. The minting script will check for the following things:
+* The datum is valid, i.e., the datum specifies the correct amount of liquidity provided
+* The amount of asset minted is 1:1 of the liquidity provided
+* The UTxO is being sent to the orders validator
+
+Once it reaches the order validator, the validator will not perform any checks. The orders validator, aside from validating each order type, will also loop through all the orders in the input and calculate the expected output of the liquidity UTxO.
 
 ### Cancel Provide Liquidity
-
+Traders can cancel their provide liquidity order.
+* The liquidity assets are burnt
+  
 ### Withdraw Liquidity
+If the users want to withdraw their liquidity, they will send the liquidity asset to be processed in the orders validator. 
+
+Once it reaches the order validator, the validator will perform the following checks:
+* The liquidity asset must be in the UTxO
+* The datum corresponds to the amount of liquidity asset in the UTxO
+* The amount of liquidity withdrawn is valid
+* The liquidity is sent to the owner
 
 ### Cancel Withdraw Liquidity
-
-
-
+Traders can cancel their withdraw liquidity order.
+* Assets are sent back to the owner
+* The owner signed the transaction
