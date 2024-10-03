@@ -8,6 +8,7 @@
   - [Batcher](#batcher)
   - [Enter Position](#enter-position)
   - [Cancel Enter Position](#enter-position)
+  - [Pay Hourly Interest](#pay-hourly-interest)
   - [Close Position](#close-position)
   - [Cancel Close Position](#close-position)
   - [Stop Loss](#stop-loss)
@@ -65,17 +66,89 @@ The `liquidity_mint.ak` script mints assets that liquidity providers will hold i
 
 ## Smart Contract Implementation
 ### Batcher
-The batcher grabs all transactions sitting at the `orders.ak`
+```
+pub type OrdersDatum {
+  owner_address_hash: AddressHash,
+  entered_at_price: Int,
+  underlying_asset: Asset,
+  position_amount: Int,
+  leverage_factor: Int,
+  positions_validator_hash: ScriptHash,
+  positions_asset: Asset,
+  orders_validator_hash: ScriptHash,
+  stop_loss_amount: Int,
+  side: PositionSide,
+  action: OrderAction,
+  liquidity_asset: Asset,
+  liquidity_amount: Int,
+  order_submission_time: POSIXTime,
+  collateral_asset: Asset,
+  collateral_amount: Int,
+}
+```
+The batcher grabs all transactions sitting at the `orders.ak` and performs validations based on the action type. The validation is performed with a withdrawal script. This transaction will have the pool UTxO present. 
+
+```
+pub type OrderAction {
+  OpenPosition
+  ClosePosition
+  ContributeLiquidity
+  WithdrawLiquidity
+}
+```
+Each individual UTxO will have a validation perform on them based on the action type, ie for closing position the trader is getting the correct amount of collateral and profit/loss back. 
+
+The final validation will be looping through all the inputs and calculate the expected output pool UTxO has the correct datum and contains the correct amount of assets. 
 
 ### Enter Position
+To enter a position you first mint assets from the `enter_position_mint.ak` file. The minting policy checks for the following things 
+* A UTxO is send to the orders validator
+* The UTxO contains the correct amount of collateral lock up, and the minted asset
+* The amount of assets minted = total position value = position size * leverage
+* All information in the datum to the orders validator is valid
+
+Once it is in the orders validator and an off-chain batcher will pick it up
+* A UTxO is send to the positions validator
+* The UTxO contains the correct amount of minted assets and collateral
+* The positions datum is valid
+```
+pub type PositionDatum {
+  owner_address_hash: AddressHash,
+  entered_at_price: Int,
+  underlying_asset: Asset,
+  position_amount: Int,
+  leverage_factor: Int,
+  stop_loss_amount: Int,
+  positions_asset: Asset,
+  side: PositionSide,
+  entry_time: POSIXTime,
+  collateral_asset: Asset,
+  collateral_amount: Int,
+}
+```
+
+### Pay Hourly Interest
 
 ### Cancel Enter Position
+Users are able to cancel their orders. 
+* Transaction is signed by the owner
+* The position assets are burnt 
 
 ### Close Position
+Once the UTxO is at the positions validator, traders can close their position.
+* UTxO is sent to the orders validator for processing
+* Position assets in the the position UTxO are all sent to the orders validator
+* The datum in the order UTxO is valid
+* The transaction is sent to the owner
 
 ### Cancel Close Position
+Traders can cancel their close position order.
+* UTxO is sent to the positions validator
+* The UTxO has the correct datum
+* The UTxO contains correct amount of minted asset and collateral
 
 ### Stop Loss
+An off-chain bot will be looking for 
 
 ### Take Profit
 
@@ -87,6 +160,5 @@ The batcher grabs all transactions sitting at the `orders.ak`
 
 ### Cancel Withdraw Liquidity
 
-### Pay Hourly Interest
 
 
