@@ -68,9 +68,8 @@ The `position.ak` script handles logic for stop loss, take profit, and interest 
 The `liquidity_mint.ak` script mints assets that liquidity providers will hold in their wallet. To withdraw their liquidity, they simply send their assets to the `orders.ak` script, and the batcher will burn the minted assets and send the liquidity assets as well as the fees earned for providing liquidity back to them. 
 
 ## Smart Contract Implementation
-
-### Batcher
-```aiken
+There are three main datums 
+```
 pub type OrdersDatum {
   owner_address_hash: AddressHash,
   entered_at_price: Int,
@@ -89,7 +88,34 @@ pub type OrdersDatum {
   collateral_asset: Asset,
   collateral_amount: Int,
 }
+
+pub type PositionDatum {
+  owner_address_hash: AddressHash,
+  entered_at_price: Int,
+  underlying_asset: Asset,
+  position_amount: Int,
+  leverage_factor: Int,
+  stop_loss_amount: Int,
+  positions_asset: Asset,
+  side: PositionSide,
+  entry_time: POSIXTime,
+  collateral_asset: Asset,
+  collateral_amount: Int,
+}
+
+pub type PoolDatum {
+  pool_asset: Asset,
+  pool_asset_amount: Int,
+  pooled_interest_rate: Int,
+  collateral_asset: Asset,
+  max_leverage_amount: Int,
+  max_strike_holder_leverage_amount: Int,
+  maintain_margin_amount: Int,
+  liquidity_asset: Asset,
+}
 ```
+
+### Batcher
 The batcher grabs all transactions sitting at the `orders.ak` and performs validations based on the action type. The validation is performed with a withdrawal script. This transaction will have the pool UTxO present. 
 
 ```aiken
@@ -110,26 +136,12 @@ To enter a position, you first mint assets from the `enter_position_mint.ak` fil
 * The UTxO contains the correct amount of collateral lock up, and the minted asset
 * The amount of assets minted = total position value = position size * leverage
 * All information in the datum to the orders validator is valid
+* The leverage opened is not higher than what specified in the liquidity datum
 
 Once it is in the orders validator and an off-chain batcher will pick it up:
 * A UTxO is sent to the positions validator
 * The UTxO contains the correct amount of minted assets and collateral
 * The positions datum is valid
-```aiken
-pub type PositionDatum {
-  owner_address_hash: AddressHash,
-  entered_at_price: Int,
-  underlying_asset: Asset,
-  position_amount: Int,
-  leverage_factor: Int,
-  stop_loss_amount: Int,
-  positions_asset: Asset,
-  side: PositionSide,
-  entry_time: POSIXTime,
-  collateral_asset: Asset,
-  collateral_amount: Int,
-}
-```
 
 ### Pay Hourly Interest
 An off-chain bot will be keeping track of these positions every hour. Once an hour has passed, they will consume the positions UTxO and burn some amount of the minted asset. 
