@@ -1,8 +1,14 @@
 use aiken/collection/list
 use cardano/assets.{quantity_of}
-use cardano/transaction.{Input, Output, Transaction, find_script_outputs}
-use types.{POSIXTime, PositionDatum}
-use utils.{get_address_outputs, get_all_validators_inputs, get_lower_bound}
+use cardano/transaction.{
+  InlineDatum, Input, Output, Transaction, find_script_outputs,
+}
+use math_utils.{calculate_pay_borrow}
+use types.{POSIXTime, PoolDatum, PositionDatum}
+use utils.{
+  get_address_outputs, get_all_validators_inputs, get_lower_bound,
+  validate_token_mint,
+}
 
 pub fn validate_close_position(
   transaction: Transaction,
@@ -79,6 +85,19 @@ pub fn validate_pay_lend(
   let all_validators_inputs: List<Input> =
     get_all_validators_inputs(transaction)
 
+  let ref_input: List<Input> = transaction.reference_inputs
+
+  expect Some(pool_ref_input) =
+    list.find(
+      ref_input,
+      fn(ref_input: Input) {
+        ref_input.output_reference == datum.validate_pool_ref
+      },
+    )
+
+  expect InlineDatum(pool_ref_datum) = pool_ref_input.output.datum
+  expect pool_ref_datum_typed: PoolDatum = pool_ref_datum
+
   let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
 
   expect Some(input_from_script) = list.head(all_validators_inputs)
@@ -94,5 +113,22 @@ pub fn validate_pay_lend(
   let one_hour_has_passed: Bool =
     current_time > datum.last_pay_lend_time + 3_600_000
 
-  only_one_input_from_script && only_one_output_to_positions_validator && one_hour_has_passed
+  let expected_burn_amount =
+    calculate_pay_borrow(
+      datum.position_amount,
+      pool_ref_datum_typed.pool_asset_amount,
+      pool_ref_datum_typed.pool_asset_lended_amount,
+      pool_ref_datum_typed.pooled_interest_rate,
+    )
+
+  let expected_mint =
+    (
+      datum.positions_asset.policy_id,
+      datum.positions_asset.asset_name,
+      expected_burn_amount * -1,
+    )
+
+  let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
+
+  only_one_input_from_script && only_one_output_to_positions_validator && one_hour_has_passed && mint_valid
 }

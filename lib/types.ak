@@ -1,5 +1,6 @@
 use aiken/crypto.{Blake2b_224, Hash, Script, VerificationKey}
 use cardano/assets.{AssetName, PolicyId}
+use cardano/transaction.{OutputReference}
 
 pub type Asset {
   policy_id: PolicyId,
@@ -71,6 +72,7 @@ pub type OrdersDatum {
   order_submission_time: POSIXTime,
   collateral_asset: Asset,
   collateral_amount: Int,
+  validate_pool_ref: OutputReference,
 }
 
 pub type PositionDatum {
@@ -85,11 +87,13 @@ pub type PositionDatum {
   last_pay_lend_time: POSIXTime,
   collateral_asset: Asset,
   collateral_amount: Int,
+  validate_pool_ref: OutputReference,
 }
 
 pub type PoolDatum {
   pool_asset: Asset,
   pool_asset_amount: Int,
+  pool_asset_lended_amount: Int,
   pooled_interest_rate: Int,
   collateral_asset: Asset,
   max_leverage_amount: Int,

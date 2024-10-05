@@ -112,6 +112,7 @@ pub fn validate_open_position(input: Output, output: Output) -> Bool {
       last_pay_lend_time: input_datum_typed.order_submission_time,
       collateral_asset: input_datum_typed.collateral_asset,
       collateral_amount: input_datum_typed.collateral_amount,
+      validate_pool_ref: input_datum_typed.validate_pool_ref,
     }
 
   expect InlineDatum(output_datum) = output.datum
@@ -270,6 +271,7 @@ pub fn cancel_close_position_order(
       last_pay_lend_time: datum.order_submission_time,
       collateral_asset: datum.collateral_asset,
       collateral_amount: datum.collateral_amount,
+      validate_pool_ref: datum.validate_pool_ref,
     }
 
   let quantity_of_positions_asset: Int =
