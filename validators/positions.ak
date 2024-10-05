@@ -15,7 +15,8 @@ validator positions(orders_validator: ByteArray) {
       Close -> validate_close_position(transaction, datum, orders_validator)
       StopLoss(current_price) ->
         validate_stop_loss(transaction, datum, current_price, orders_validator)
-      PayLend -> validate_pay_lend(transaction, datum)
+      PayLend(current_price) ->
+        validate_pay_lend(transaction, datum, current_price)
     }
   }
 

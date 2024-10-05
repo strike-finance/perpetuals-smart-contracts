@@ -79,6 +79,7 @@ pub fn validate_stop_loss(
 pub fn validate_pay_lend(
   transaction: Transaction,
   datum: Option<PositionDatum>,
+  current_price: Int,
 ) -> Bool {
   expect Some(datum) = datum
 
@@ -114,12 +115,7 @@ pub fn validate_pay_lend(
     current_time > datum.last_pay_lend_time + 3_600_000
 
   let expected_burn_amount =
-    calculate_pay_borrow(
-      datum.position_amount,
-      pool_ref_datum_typed.pool_asset_amount,
-      pool_ref_datum_typed.pool_asset_lended_amount,
-      pool_ref_datum_typed.pooled_interest_rate,
-    )
+    calculate_pay_borrow(datum, pool_ref_datum_typed, current_price)
 
   let expected_mint =
     (

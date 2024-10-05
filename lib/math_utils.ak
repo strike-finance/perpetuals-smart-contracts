@@ -1,10 +1,17 @@
+use types.{PoolDatum, PositionDatum}
+
 pub fn calculate_pay_borrow(
-  position_amount: Int,
-  total_amount_in_pool: Int,
-  borrow_amount: Int,
-  borrow_rate: Int,
+  position_datum: PositionDatum,
+  pool_datum: PoolDatum,
+  current_price_volume: Int,
 ) -> Int {
-  borrow_amount / total_amount_in_pool * borrow_rate - position_amount
+  let utilization =
+    pool_datum.pool_asset_lended_amount / pool_datum.pool_asset_amount
+
+  let current_position_usd_value =
+    position_datum.position_amount * current_price_volume
+
+  utilization * pool_datum.pooled_interest_rate * current_position_usd_value
 }
 
 pub fn calculate_withdraw_liquidity(

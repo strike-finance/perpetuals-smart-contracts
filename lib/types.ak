@@ -39,7 +39,7 @@ pub type OrdersRedeemer {
 pub type PositionsRedeemer {
   Close
   StopLoss(Int)
-  PayLend
+  PayLend(Int)
 }
 
 pub type RedeemerIndexer =
