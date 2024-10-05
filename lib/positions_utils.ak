@@ -1,8 +1,8 @@
 use aiken/collection/list
 use cardano/assets.{quantity_of}
 use cardano/transaction.{Input, Output, Transaction, find_script_outputs}
-use types.{PositionDatum}
-use utils.{get_all_validators_inputs}
+use types.{POSIXTime, PositionDatum}
+use utils.{get_address_outputs, get_all_validators_inputs, get_lower_bound}
 
 pub fn validate_close_position(
   transaction: Transaction,
@@ -73,8 +73,26 @@ pub fn validate_stop_loss(
 pub fn validate_pay_lend(
   transaction: Transaction,
   datum: Option<PositionDatum>,
-  current_price: Int,
-  orders_validator_hash: ByteArray,
 ) -> Bool {
-  True
+  expect Some(datum) = datum
+
+  let all_validators_inputs: List<Input> =
+    get_all_validators_inputs(transaction)
+
+  let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
+
+  expect Some(input_from_script) = list.head(all_validators_inputs)
+
+  let outputs_back_to_positions_validator: List<Output> =
+    get_address_outputs(transaction, input_from_script.output.address)
+
+  let only_one_output_to_positions_validator: Bool =
+    list.length(outputs_back_to_positions_validator) == 1
+
+  let current_time: POSIXTime = get_lower_bound(transaction.validity_range)
+
+  let one_hour_has_passed: Bool =
+    current_time > datum.last_pay_lend_time + 3_600_000
+
+  only_one_input_from_script && only_one_output_to_positions_validator && one_hour_has_passed
 }

@@ -38,7 +38,7 @@ pub type OrdersRedeemer {
 pub type PositionsRedeemer {
   Close
   StopLoss(Int)
-  PayLend(Int)
+  PayLend
 }
 
 pub type RedeemerIndexer =
@@ -47,6 +47,11 @@ pub type RedeemerIndexer =
 pub type OrdersWithdrawRedeemer {
   indexer: RedeemerIndexer,
   current_price: Int,
+}
+
+pub type PositionsMintRedeemer {
+  Mint
+  Burn
 }
 
 pub type OrdersDatum {
@@ -77,7 +82,7 @@ pub type PositionDatum {
   stop_loss_amount: Int,
   positions_asset: Asset,
   side: PositionSide,
-  entry_time: POSIXTime,
+  last_pay_lend_time: POSIXTime,
   collateral_asset: Asset,
   collateral_amount: Int,
 }
@@ -91,9 +96,16 @@ pub type PoolDatum {
   max_strike_holder_leverage_amount: Int,
   maintain_margin_amount: Int,
   liquidity_asset: Asset,
+  earnings_per_share: Int,
 }
 
-pub type PositionsMintRedeemer {
-  Mint
-  Burn
+pub type LiquidityPositionDatum {
+  owner_address_hash: AddressHash,
+  entered_total_pool_asset: Asset,
+  entered_total_pool_asset_amount: Int,
+  entered_stable_pool_asset: Asset,
+  entered_stable_pool_asset_amount: Int,
+  earnings_per_share: Int,
+  liquidity_asset: Asset,
+  liquidity_amount: Int,
 }

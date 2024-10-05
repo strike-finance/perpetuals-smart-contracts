@@ -109,7 +109,7 @@ pub fn validate_open_position(input: Output, output: Output) -> Bool {
       stop_loss_amount: input_datum_typed.stop_loss_amount,
       positions_asset: input_datum_typed.positions_asset,
       side: input_datum_typed.side,
-      entry_time: input_datum_typed.order_submission_time,
+      last_pay_lend_time: input_datum_typed.order_submission_time,
       collateral_asset: input_datum_typed.collateral_asset,
       collateral_amount: input_datum_typed.collateral_amount,
     }
@@ -207,7 +207,7 @@ pub fn validate_withdraw_liquidity(
     (
       input_datum_typed.liquidity_asset.policy_id,
       input_datum_typed.liquidity_asset.asset_name,
-      input_datum_typed.liquidity_amount,
+      input_datum_typed.liquidity_amount * -1,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
@@ -267,7 +267,7 @@ pub fn cancel_close_position_order(
       stop_loss_amount: datum.stop_loss_amount,
       positions_asset: datum.positions_asset,
       side: datum.side,
-      entry_time: datum.order_submission_time,
+      last_pay_lend_time: datum.order_submission_time,
       collateral_asset: datum.collateral_asset,
       collateral_amount: datum.collateral_amount,
     }

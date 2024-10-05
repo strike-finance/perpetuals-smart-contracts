@@ -110,3 +110,10 @@ fn only_one_token_in_policy_minted(
   list.length(dict.keys(tokens(mints, policy_id))) == 1
   // Total count of minted unique tokens with policy is 1
 }
+
+pub fn get_address_outputs(
+  transaction: Transaction,
+  address: Address,
+) -> List<Output> {
+  list.filter(transaction.outputs, fn(output) { output.address == address })
+}
