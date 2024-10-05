@@ -4,6 +4,10 @@
 
 - [What are Perpetuals](#what-are-perpetuals)
 - [Technical High-Level Overview](#technical-high-level-overview)
+- [Calculations](#calculations)
+    - [User Profits And Loss](#user-profits-and-loss)
+    - [Hourly Borrowed Rate](#hourly-borrowed-rate)
+    - [Liquidity Provider Earned Fees](#liquidity-provider-earned-fees)
 - [Smart Contract Implementation](#smart-contract-implementation)
   - [Batcher](#batcher)
   - [Enter Position](#enter-position)
@@ -24,7 +28,22 @@ Perpetual futures are a type of derivative contract that allows traders to specu
 
 There are two positions that a trader can take: a long and a short. Traders will open a long position when they think the underlying asset will go up in value and a short position when they think it will go down in value. To open a position, the trader will need to deposit USDM as collateral for opening short positions and the underlying asset for opening long positions. When they close their position, they will be able to keep all the profits plus the collateral back. Any losses that occurred will be deducted from their collateral.
 
-**Scenario**
+## Technical High-Level Overview
+There are 3 Minting Scripts and 3 Validator Scripts used. We also use a batcher. All liquidity users will be used to borrow and take profits from will be in a singular UTxO. 
+
+The `orders.ak` script is a script that holds all pending transactions. All actions on the platform will have to go through the `orders.ak` script. 
+
+The `pools.ak` file is a multivalidator that has a minting script and a spending script. The minting script validates that the singular UTxO that contains the liquidity is a valid UTxO and created by us. The `pools.ak` script is parameterized by the staking credential of the `orders.ak` script. The only way to consume anything from the `pools.ak` script is if the withdrawal script in `orders.ak` is called. 
+
+The `enter_position_mint.ak` script handles minting of assets that validates the trader's position is valid. If their position is valid, i.e., the trader deposited the correct amount of collateral, the datum values are correct, and the UTxO is being sent to the `orders.ak` script.  
+
+The `position.ak` script handles logic for stop loss, take profit, and interest payment for borrowing funds. Stop loss and take profits are things the traders can set to close their position once it reaches a certain value automatically. 
+
+The `liquidity_mint.ak` script mints assets that liquidity providers will hold in their wallet. To withdraw their liquidity, they simply send their assets to the `orders.ak` script, and the batcher will burn the minted assets and send the liquidity assets as well as the fees earned for providing liquidity back to them. 
+
+
+## Calculations
+### Trader Profit And Loss
 
 **Long Position**
 - Collateral: 100 USD worth of ADA
@@ -54,18 +73,308 @@ The trader's final profit/loss from exiting their position will be:
 Final Position Value - Initial Position Value - (Hourly Borrowed Rate * Hours Borrowed)
 ```
 
-## Technical High-Level Overview
-There are 3 Minting Scripts and 3 Validator Scripts used. We also use a batcher. All liquidity users will be used to borrow and take profits from will be in a singular UTxO. 
+### Hourly Borrowed Rate
 
-The `orders.ak` script is a script that holds all pending transactions. All actions on the platform will have to go through the `orders.ak` script. 
+### Liquidity Provider Earned Fees
 
-The `pools.ak` file is a multivalidator that has a minting script and a spending script. The minting script validates that the singular UTxO that contains the liquidity is a valid UTxO and created by us. The `pools.ak` script is parameterized by the staking credential of the `orders.ak` script. The only way to consume anything from the `pools.ak` script is if the withdrawal script in `orders.ak` is called. 
+Liquidity providers will keep profits earned from the perpetual protocol.
 
-The `enter_position_mint.ak` script handles minting of assets that validates the trader's position is valid. If their position is valid, i.e., the trader deposited the correct amount of collateral, the datum values are correct, and the UTxO is being sent to the `orders.ak` script.  
+- **Pool-Level Variables:**
 
-The `position.ak` script handles logic for stop loss, take profit, and interest payment for borrowing funds. Stop loss and take profits are things the traders can set to close their position once it reaches a certain value automatically. 
+  - **Total Liquidity (`TotalFunds`):** Total amount of liquidity in the pool.
+  - **Earnings Per Share for Assets (`EPS_Assets`):** Cumulative assets earnings distributed per unit of liquidity.
+  - **Earnings Per Share for Collateral (`EPS_Collateral`):** Cumulative collateral earnings distributed per unit of liquidity.
 
-The `liquidity_mint.ak` script mints assets that liquidity providers will hold in their wallet. To withdraw their liquidity, they simply send their assets to the `orders.ak` script, and the batcher will burn the minted assets and send the liquidity assets as well as the fees earned for providing liquidity back to them. 
+- **User-Level Variables:**
+  - **User Liquidity (`UserLiquidity`):** Amount of liquidity provided by the user.
+  - **User Entry EPS for Assets (`UserEPS_Enter_Assets`):** Value of `EPS_Assets` when the user adds liquidity.
+  - **User Entry EPS for Collateral (`UserEPS_Enter_Collateral`):** Value of `EPS_Collateral` when the user adds liquidity.
+  - **User Exit EPS for Assets (`UserEPS_Exit_Assets`):** Value of `EPS_Assets` when the user withdraws liquidity.
+  - **User Exit EPS for Collateral (`UserEPS_Exit_Collateral`):** Value of `EPS_Collateral` when the user withdraws liquidity.
+
+1. **Updating EPS When Earnings Are Added:**
+
+   - **For Assets:**
+
+     ```math
+     \Delta EPS_{\text{Assets}} = \frac{\text{Assets Earned}}{\text{TotalFunds}}
+     ```
+
+     ```math
+     EPS_{\text{Assets, new}} = EPS_{\text{Assets, old}} + \Delta EPS_{\text{Assets}}
+     ```
+
+   - **For Collateral:**
+
+     ```math
+     \Delta EPS_{\text{Collateral}} = \frac{\text{Collateral Earned}}{\text{TotalFunds}}
+     ```
+
+     ```math
+     EPS_{\text{Collateral, new}} = EPS_{\text{Collateral, old}} + \Delta EPS_{\text{Collateral}}
+     ```
+
+2. **When a User Provides Liquidity:**
+
+   - Update Total Funds:
+
+     ```math
+     \text{TotalFunds}_{\text{new}} = \text{TotalFunds}_{\text{old}} + \text{UserLiquidity}
+     ```
+
+   - Record User's Entry EPS:
+
+     ```math
+     \text{UserEPS_Enter_Assets} = EPS_{\text{Assets, current}}
+     ```
+
+     ```math
+     \text{UserEPS_Enter_Collateral} = EPS_{\text{Collateral, current}}
+     ```
+
+3. **When a User Withdraws Liquidity:**
+
+   - Record User's Exit EPS:
+
+     ```math
+     \text{UserEPS_Exit_Assets} = EPS_{\text{Assets, current}}
+     ```
+
+     ```math
+     \text{UserEPS_Exit_Collateral} = EPS_{\text{Collateral, current}}
+     ```
+
+   - Calculate User's Earnings:
+
+     - **For Assets:**
+
+       ```math
+       \text{User's Assets Earnings} = (\text{UserEPS_Exit_Assets} - \text{UserEPS_Enter_Assets}) \times \text{UserLiquidity}
+       ```
+
+     - **For Collateral:**
+
+       ```math
+       \text{User's Collateral Earnings} = (\text{UserEPS_Exit_Collateral} - \text{UserEPS_Enter_Collateral}) \times \text{UserLiquidity}
+       ```
+
+   - Update Total Funds:
+
+     ```math
+     \text{TotalFunds}_{\text{new}} = \text{TotalFunds}_{\text{old}} - \text{UserLiquidity}
+     ```
+
+### **Example Calculation**
+
+Let's consider both assets and collateral earnings in this example.
+
+#### **Initial State**
+
+- **Total Liquidity:**
+
+  ```math
+  \text{TotalFunds} = 1,000 \text{ units}
+  ```
+
+- **Earnings Per Share:**
+
+  ```math
+  EPS_{\text{Assets}} = 0
+  ```
+
+  ```math
+  EPS_{\text{Collateral}} = 0
+  ```
+
+---
+
+#### **User A Provides Liquidity**
+
+- **User A's Liquidity:**
+
+  ```math
+  \text{UserLiquidity}_A = 100 \text{ units}
+  ```
+
+- **Update Total Funds:**
+
+  ```math
+  \text{TotalFunds} = 1,000 + 100 = 1,100 \text{ units}
+  ```
+
+- **Record User A's Entry EPS:**
+
+  ```math
+  \text{UserEPS_Enter_Assets}_A = 0
+  ```
+
+  ```math
+  \text{UserEPS_Enter_Collateral}_A = 0
+  ```
+
+---
+
+#### **Pool Earns 200 Units of Assets and 100 Units of Collateral**
+
+- **Update EPS for Assets:**
+
+  ```math
+  \Delta EPS_{\text{Assets}} = \frac{200}{1,100} \approx 0.1818
+  ```
+
+  ```math
+  EPS_{\text{Assets}} = 0 + 0.1818 = 0.1818
+  ```
+
+- **Update EPS for Collateral:**
+
+  ```math
+  \Delta EPS_{\text{Collateral}} = \frac{100}{1,100} \approx 0.0909
+  ```
+
+  ```math
+  EPS_{\text{Collateral}} = 0 + 0.0909 = 0.0909
+  ```
+
+---
+
+#### **User B Provides Liquidity**
+
+- **User B's Liquidity:**
+
+  ```math
+  \text{UserLiquidity}_B = 300 \text{ units}
+  ```
+
+- **Update Total Funds:**
+
+  ```math
+  \text{TotalFunds} = 1,100 + 300 = 1,400 \text{ units}
+  ```
+
+- **Record User B's Entry EPS:**
+
+  ```math
+  \text{UserEPS_Enter_Assets}_B = 0.1818
+  ```
+
+  ```math
+  \text{UserEPS_Enter_Collateral}_B = 0.0909
+  ```
+
+---
+
+#### **Pool Earns Another 140 Units of Assets and 70 Units of Collateral**
+
+- **Update EPS for Assets:**
+
+  ```math
+  \Delta EPS_{\text{Assets}} = \frac{140}{1,400} = 0.1
+  ```
+
+  ```math
+  EPS_{\text{Assets}} = 0.1818 + 0.1 = 0.2818
+  ```
+
+- **Update EPS for Collateral:**
+
+  ```math
+  \Delta EPS_{\text{Collateral}} = \frac{70}{1,400} = 0.05
+  ```
+
+  ```math
+  EPS_{\text{Collateral}} = 0.0909 + 0.05 = 0.1409
+  ```
+
+---
+
+#### **User A Withdraws Liquidity**
+
+- **Record User A's Exit EPS:**
+
+  ```math
+  \text{UserEPS_Exit_Assets}_A = 0.2818
+  ```
+
+  ```math
+  \text{UserEPS_Exit_Collateral}_A = 0.1409
+  ```
+
+- **Calculate User A's Earnings:**
+
+  - **Assets Earnings:**
+
+    ```math
+    \text{User's Assets Earnings}_A = (0.2818 - 0) \times 100 = 28.18 \text{ units}
+    ```
+
+  - **Collateral Earnings:**
+
+    ```math
+    \text{User's Collateral Earnings}_A = (0.1409 - 0) \times 100 = 14.09 \text{ units}
+    ```
+
+- **Update Total Funds:**
+
+  ```math
+  \text{TotalFunds} = 1,400 - 100 = 1,300 \text{ units}
+  ```
+
+---
+
+#### **User B Withdraws Liquidity Later**
+
+- **Assuming No Further Earnings, EPS Remains:**
+
+  ```math
+  EPS_{\text{Assets}} = 0.2818
+  ```
+
+  ```math
+  EPS_{\text{Collateral}} = 0.1409
+  ```
+
+- **Record User B's Exit EPS:**
+
+  ```math
+  \text{UserEPS_Exit_Assets}_B = 0.2818
+  ```
+
+  ```math
+  \text{UserEPS_Exit_Collateral}_B = 0.1409
+  ```
+
+- **Calculate User B's Earnings:**
+
+  - **Assets Earnings:**
+
+    ```math
+    \text{User's Assets Earnings}_B = (0.2818 - 0.1818) \times 300 = 0.1 \times 300 = 30 \text{ units}
+    ```
+
+  - **Collateral Earnings:**
+
+    ```math
+    \text{User's Collateral Earnings}_B = (0.1409 - 0.0909) \times 300 = 0.05 \times 300 = 15 \text{ units}
+    ```
+
+---
+
+**Summary:**
+
+- **User A:**
+
+  - **Initial Liquidity:** 100 units
+  - **Assets Earnings:** 28.18 units
+  - **Collateral Earnings:** 14.09 units
+  - **Total Return:** 100 + 28.18 (Assets) + 14.09 (Collateral) = **142.27 units**
+
+- **User B:**
+  - **Initial Liquidity:** 300 units
+  - **Assets Earnings:** 30 units
+  - **Collateral Earnings:** 15 units
+  - **Total Return:** 300 + 30 (Assets) + 15 (Collateral) = **345 units**
+
 
 
 ## Smart Contract Implementation
@@ -176,7 +485,7 @@ To provide liquidity, the users will mint assets from the liquidity_mint script 
 * The amount of asset minted is 1:1 of the liquidity provided
 * The UTxO is being sent to the orders validator
 
-Once it reaches the order validator, the validator will not perform any checks. The orders validator, aside from validating each order type, will also loop through all the orders in the input and calculate the expected output of the liquidity UTxO.
+Once it reaches the order validator, the validator will not perform any checks. The orders validator, aside from validating each order type, will also loop through all the orders in the input and calculate the expected output of the liquidity UTxO. 
 
 ### Cancel Provide Liquidity
 Traders can cancel their provide liquidity order.
@@ -189,6 +498,7 @@ Once it reaches the order validator, the validator will perform the following ch
 * The liquidity asset must be burnt
 * The amount of liquidity withdrawn is valid
 * The liquidity is sent to the owner
+
 
 ### Cancel Withdraw Liquidity
 Traders can cancel their withdraw liquidity order.
