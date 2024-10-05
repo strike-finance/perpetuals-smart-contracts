@@ -101,15 +101,5 @@ pub type PoolDatum {
   maintain_margin_amount: Int,
   liquidity_asset: Asset,
   earnings_per_share: Int,
-}
-
-pub type LiquidityPositionDatum {
-  owner_address_hash: AddressHash,
-  entered_total_pool_asset: Asset,
-  entered_total_pool_asset_amount: Int,
-  entered_stable_pool_asset: Asset,
-  entered_stable_pool_asset_amount: Int,
-  earnings_per_share: Int,
-  liquidity_asset: Asset,
-  liquidity_amount: Int,
+  collateral_earnings_per_share: Int,
 }

@@ -14,10 +14,4 @@ pub fn calculate_pay_borrow(
   utilization * pool_datum.pooled_interest_rate * current_position_usd_value
 }
 
-pub fn calculate_withdraw_liquidity(
-  position_amount: Int,
-  position_price: Int,
-  liquidity_amount: Int,
-) -> Int {
-  position_amount * position_price - liquidity_amount
-}
+

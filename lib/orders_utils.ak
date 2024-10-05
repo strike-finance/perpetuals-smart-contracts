@@ -7,7 +7,7 @@ use cardano/transaction.{
 }
 use types.{
   AddressHash, ClosePosition, ContributeLiquidity, OpenPosition, OrdersDatum,
-  PositionDatum, WithdrawLiquidity,
+  PoolDatum, PositionDatum, WithdrawLiquidity,
 }
 use utils.{get_lower_bound, validate_token_mint}
 
@@ -160,7 +160,7 @@ pub fn validate_close_position(
     (
       input_datum_typed.positions_asset.policy_id,
       input_datum_typed.positions_asset.asset_name,
-      -1,
+      input_datum_typed.position_amount * -1,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
@@ -188,7 +188,6 @@ pub fn validate_close_position(
   mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
 }
 
-// correct asset is consumed, asset is sent to user, asset is burned, consumed the assets, and then the relevant fees 
 pub fn validate_withdraw_liquidity(
   input: Output,
   output: Output,
@@ -197,6 +196,19 @@ pub fn validate_withdraw_liquidity(
   expect InlineDatum(input_datum) = input.datum
 
   expect input_datum_typed: OrdersDatum = input_datum
+
+  let ref_input: List<Input> = transaction.reference_inputs
+
+  expect Some(pool_ref_input) =
+    list.find(
+      ref_input,
+      fn(ref_input: Input) {
+        ref_input.output_reference == input_datum_typed.validate_pool_ref
+      },
+    )
+
+  expect InlineDatum(pool_ref_datum) = pool_ref_input.output.datum
+  expect pool_ref_datum_typed: PoolDatum = pool_ref_datum
 
   let address: Address =
     from_verification_key(input_datum_typed.owner_address_hash)
@@ -213,14 +225,27 @@ pub fn validate_withdraw_liquidity(
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
+  let expected_earnings: Int =
+    input_datum_typed.liquidity_amount * pool_ref_datum_typed.earnings_per_share
+
+  let expected_collateral_earnings: Int =
+    input_datum_typed.liquidity_amount * pool_ref_datum_typed.collateral_earnings_per_share
+
   let asset_sent_to_owner_valid =
     quantity_of(
       output.value,
       input_datum_typed.liquidity_asset.policy_id,
       input_datum_typed.liquidity_asset.asset_name,
-    ) == input_datum_typed.liquidity_amount
+    ) == input_datum_typed.liquidity_amount + expected_earnings
 
-  output_is_to_owner && mint_valid && asset_sent_to_owner_valid
+  let expected_collateral_earnings_valid =
+    quantity_of(
+      output.value,
+      input_datum_typed.collateral_asset.policy_id,
+      input_datum_typed.collateral_asset.asset_name,
+    ) == expected_collateral_earnings
+
+  output_is_to_owner && mint_valid && asset_sent_to_owner_valid && expected_collateral_earnings_valid
 }
 
 // The logic in the main function checks if the asset is being added to the pooled utxo
