@@ -52,8 +52,7 @@ pub fn validate_stop_loss(
 
   let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
 
-  let current_price_volume =
-    current_price * datum.position_amount * datum.leverage_factor
+  let current_price_volume = current_price * datum.positions_asset_amount
 
   let outputs_to_orders_validator: List<Output> =
     find_script_outputs(transaction.outputs, orders_validator_hash)

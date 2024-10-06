@@ -9,9 +9,7 @@ pub fn calculate_pay_borrow(
     pool_datum.pool_asset_lended_amount / pool_datum.pool_asset_amount
 
   let current_position_usd_value =
-    position_datum.position_amount * current_price_volume
+    position_datum.positions_asset_amount * position_datum.leverage_factor * current_price_volume
 
   utilization * pool_datum.pooled_interest_rate * current_position_usd_value
 }
-
-

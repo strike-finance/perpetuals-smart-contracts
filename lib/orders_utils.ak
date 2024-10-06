@@ -104,14 +104,14 @@ pub fn validate_open_position(input: Output, output: Output) -> Bool {
       owner_address_hash: input_datum_typed.owner_address_hash,
       underlying_asset: input_datum_typed.underlying_asset,
       entered_at_price: input_datum_typed.entered_at_price,
-      position_amount: input_datum_typed.position_amount,
+      positions_asset_amount: input_datum_typed.positions_asset_amount,
       leverage_factor: input_datum_typed.leverage_factor,
       stop_loss_amount: input_datum_typed.stop_loss_amount,
       positions_asset: input_datum_typed.positions_asset,
       side: input_datum_typed.side,
       last_pay_lend_time: input_datum_typed.order_submission_time,
-      collateral_asset: input_datum_typed.collateral_asset,
-      collateral_amount: input_datum_typed.collateral_amount,
+      collateral_asset: input_datum_typed.stable_collateral_asset,
+      collateral_amount: input_datum_typed.stable_collateral_amount,
       validate_pool_ref: input_datum_typed.validate_pool_ref,
       take_profit_amount: input_datum_typed.take_profit_amount,
     }
@@ -143,7 +143,7 @@ pub fn validate_close_position(
     current_asset_price * input_datum_typed.leverage_factor
 
   let entry_position_amount: Int =
-    input_datum_typed.position_amount * input_datum_typed.leverage_factor
+    input_datum_typed.positions_asset_amount * input_datum_typed.leverage_factor
 
   let current_time: Int = get_lower_bound(transaction.validity_range)
 
@@ -161,7 +161,7 @@ pub fn validate_close_position(
     (
       input_datum_typed.positions_asset.policy_id,
       input_datum_typed.positions_asset.asset_name,
-      input_datum_typed.position_amount * -1,
+      input_datum_typed.positions_asset_amount * -1,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
@@ -182,9 +182,9 @@ pub fn validate_close_position(
   let collateral_sent_to_owner_valid =
     quantity_of(
       output.value,
-      input_datum_typed.collateral_asset.policy_id,
-      input_datum_typed.collateral_asset.asset_name,
-    ) == input_datum_typed.collateral_amount
+      input_datum_typed.stable_collateral_asset.policy_id,
+      input_datum_typed.stable_collateral_asset.asset_name,
+    ) == input_datum_typed.stable_collateral_amount
 
   mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
 }
@@ -221,29 +221,29 @@ pub fn validate_withdraw_liquidity(
     (
       input_datum_typed.liquidity_asset.policy_id,
       input_datum_typed.liquidity_asset.asset_name,
-      input_datum_typed.liquidity_amount * -1,
+      input_datum_typed.liquidity_asset_amount * -1,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
   let expected_earnings: Int =
-    input_datum_typed.liquidity_amount * pool_ref_datum_typed.earnings_per_share
+    input_datum_typed.liquidity_asset_amount * pool_ref_datum_typed.earnings_per_share
 
   let expected_collateral_earnings: Int =
-    input_datum_typed.liquidity_amount * pool_ref_datum_typed.collateral_earnings_per_share
+    input_datum_typed.liquidity_asset_amount * pool_ref_datum_typed.collateral_earnings_per_share
 
   let asset_sent_to_owner_valid =
     quantity_of(
       output.value,
       input_datum_typed.liquidity_asset.policy_id,
       input_datum_typed.liquidity_asset.asset_name,
-    ) == input_datum_typed.liquidity_amount + expected_earnings
+    ) == input_datum_typed.liquidity_asset_amount + expected_earnings
 
   let expected_collateral_earnings_valid =
     quantity_of(
       output.value,
-      input_datum_typed.collateral_asset.policy_id,
-      input_datum_typed.collateral_asset.asset_name,
+      input_datum_typed.stable_collateral_asset.policy_id,
+      input_datum_typed.stable_collateral_asset.asset_name,
     ) == expected_collateral_earnings
 
   output_is_to_owner && mint_valid && asset_sent_to_owner_valid && expected_collateral_earnings_valid
@@ -289,14 +289,14 @@ pub fn cancel_close_position_order(
       owner_address_hash: datum.owner_address_hash,
       underlying_asset: datum.underlying_asset,
       entered_at_price: datum.entered_at_price,
-      position_amount: datum.position_amount,
+      positions_asset_amount: datum.positions_asset_amount,
       leverage_factor: datum.leverage_factor,
       stop_loss_amount: datum.stop_loss_amount,
       positions_asset: datum.positions_asset,
       side: datum.side,
       last_pay_lend_time: datum.order_submission_time,
-      collateral_asset: datum.collateral_asset,
-      collateral_amount: datum.collateral_amount,
+      collateral_asset: datum.stable_collateral_asset,
+      collateral_amount: datum.stable_collateral_amount,
       validate_pool_ref: datum.validate_pool_ref,
       take_profit_amount: datum.take_profit_amount,
     }
@@ -308,7 +308,7 @@ pub fn cancel_close_position_order(
       datum.positions_asset.asset_name,
     )
 
-  only_one_output_to_positions && output_datum_typed == expected_positions_datum && quantity_of_positions_asset == datum.position_amount
+  only_one_output_to_positions && output_datum_typed == expected_positions_datum && quantity_of_positions_asset == datum.positions_asset_amount
 }
 
 // assets are burned 
@@ -320,7 +320,7 @@ pub fn cancel_contribute_liquidity_order(
     (
       datum.liquidity_asset.policy_id,
       datum.liquidity_asset.asset_name,
-      -datum.liquidity_amount,
+      -datum.liquidity_asset_amount,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
