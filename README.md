@@ -512,52 +512,65 @@ Let's consider both assets and collateral earnings in this example.
 
   - When users withdraw liquidity, **TotalFunds** decreases, affecting future increments of AccEPS.
 
-
-
 ```
 pub type OrdersDatum {
   owner_address_hash: AddressHash,
   entered_at_price: Int,
   underlying_asset: Asset,
-  position_amount: Int,
+  underlying_amount: Int,
   leverage_factor: Int,
+  orders_validator_hash: ScriptHash,
   positions_validator_hash: ScriptHash,
   positions_asset: Asset,
-  orders_validator_hash: ScriptHash,
-  stop_loss_amount: Int,
-  side: PositionSide,
-  action: OrderAction,
+  positions_asset_amount: Int,
   liquidity_asset: Asset,
-  liquidity_amount: Int,
+  liquidity_asset_amount: Int,
+  stable_collateral_asset: Asset,
+  stable_collateral_amount: Int,
+  strike_collateral_asset: Asset,
+  strike_collateral_amount: Int,
+  entered_earnings_per_share: Int,
+  entered_collateral_earnings_per_share: Int,
+  stop_loss_amount: Int,
+  take_profit_amount: Int,
   order_submission_time: POSIXTime,
-  collateral_asset: Asset,
-  collateral_amount: Int,
+  validate_pool_ref: OutputReference,
+  action: OrderAction,
+  side: PositionSide,
 }
 
 pub type PositionDatum {
   owner_address_hash: AddressHash,
   entered_at_price: Int,
   underlying_asset: Asset,
-  position_amount: Int,
   leverage_factor: Int,
-  stop_loss_price: Int,
-  take_profit_price: Int,
   positions_asset: Asset,
-  side: PositionSide,
-  entry_time: POSIXTime,
+  positions_asset_amount: Int,
   collateral_asset: Asset,
   collateral_amount: Int,
+  stop_loss_amount: Int,
+  take_profit_amount: Int,
+  last_pay_lend_time: POSIXTime,
+  entered_earnings_per_share: Int,
+  entered_collateral_earnings_per_share: Int,
+  validate_pool_ref: OutputReference,
+  side: PositionSide,
 }
 
 pub type PoolDatum {
-  liquidity_asset: Asset,
-  valid_pool_asset: Asset,
+  pool_asset: Asset,
+  pool_asset_amount: Int,
+  pool_asset_lended_amount: Int,
   pooled_interest_rate: Int,
   collateral_asset: Asset,
-  max_leverage_amount: Int,
-  max_strike_holder_leverage_amount: Int,
+  max_leverage_factor: Int,
+  max_strike_holder_leverage_factor: Int,
   maintain_margin_amount: Int,
+  liquidity_asset: Asset,
+  earnings_per_share: Int,
+  collateral_earnings_per_share: Int,
 }
+
 ```
 
 ### Batcher

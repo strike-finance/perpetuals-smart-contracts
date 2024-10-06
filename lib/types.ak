@@ -73,6 +73,8 @@ pub type OrdersDatum {
   stable_collateral_amount: Int,
   strike_collateral_asset: Asset,
   strike_collateral_amount: Int,
+  entered_earnings_per_share: Int,
+  entered_collateral_earnings_per_share: Int,
   stop_loss_amount: Int,
   take_profit_amount: Int,
   order_submission_time: POSIXTime,
@@ -93,6 +95,8 @@ pub type PositionDatum {
   stop_loss_amount: Int,
   take_profit_amount: Int,
   last_pay_lend_time: POSIXTime,
+  entered_earnings_per_share: Int,
+  entered_collateral_earnings_per_share: Int,
   validate_pool_ref: OutputReference,
   side: PositionSide,
 }

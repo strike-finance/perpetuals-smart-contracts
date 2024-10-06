@@ -58,7 +58,11 @@ validator enter_positions_mint(
             orders_datum_typed.strike_collateral_asset.asset_name,
           ) > 0
 
-        expect only_one_output_to_orders && valid_pool_ref
+        let earnings_per_share_valid =
+          orders_datum_typed.entered_earnings_per_share == pool_ref_datum_typed.earnings_per_share && orders_datum_typed.entered_collateral_earnings_per_share == pool_ref_datum_typed.collateral_earnings_per_share
+
+        expect
+          only_one_output_to_orders && valid_pool_ref && earnings_per_share_valid
 
         if contains_strike_collateral {
           let collateral_asset_deposited_amount =
@@ -134,7 +138,11 @@ validator enter_positions_mint(
             orders_datum_typed.strike_collateral_asset.asset_name,
           ) > 0
 
-        expect only_one_output_to_orders && valid_pool_ref
+        let earnings_per_share_valid =
+          orders_datum_typed.entered_earnings_per_share == pool_ref_datum_typed.earnings_per_share && orders_datum_typed.entered_collateral_earnings_per_share == pool_ref_datum_typed.collateral_earnings_per_share
+
+        expect
+          only_one_output_to_orders && valid_pool_ref && earnings_per_share_valid
 
         if contains_strike_collateral {
           let expected_usd_collateral =
