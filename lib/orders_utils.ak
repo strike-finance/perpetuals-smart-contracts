@@ -112,8 +112,6 @@ pub fn validate_open_position(input: Output, output: Output) -> Bool {
       last_pay_lend_time: input_datum_typed.order_submission_time,
       collateral_asset: input_datum_typed.stable_collateral_asset,
       collateral_amount: input_datum_typed.stable_collateral_amount,
-      entered_earnings_per_share: input_datum_typed.entered_earnings_per_share,
-      entered_collateral_earnings_per_share: input_datum_typed.entered_collateral_earnings_per_share,
       validate_pool_ref: input_datum_typed.validate_pool_ref,
       take_profit_amount: input_datum_typed.take_profit_amount,
     }
@@ -299,8 +297,6 @@ pub fn cancel_close_position_order(
       last_pay_lend_time: datum.order_submission_time,
       collateral_asset: datum.stable_collateral_asset,
       collateral_amount: datum.stable_collateral_amount,
-      entered_earnings_per_share: datum.entered_earnings_per_share,
-      entered_collateral_earnings_per_share: datum.entered_collateral_earnings_per_share,
       validate_pool_ref: datum.validate_pool_ref,
       take_profit_amount: datum.take_profit_amount,
     }

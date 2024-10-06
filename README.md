@@ -571,6 +571,11 @@ pub type PoolDatum {
   collateral_earnings_per_share: Int,
 }
 
+pub type LiquidityPositionDatum {
+  owner_address_hash: AddressHash,
+  entered_earnings_per_share: Int,
+  entered_collateral_earnings_per_share: Int,
+}
 ```
 
 ### Batcher

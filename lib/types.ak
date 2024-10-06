@@ -95,8 +95,6 @@ pub type PositionDatum {
   stop_loss_amount: Int,
   take_profit_amount: Int,
   last_pay_lend_time: POSIXTime,
-  entered_earnings_per_share: Int,
-  entered_collateral_earnings_per_share: Int,
   validate_pool_ref: OutputReference,
   side: PositionSide,
 }
@@ -113,4 +111,10 @@ pub type PoolDatum {
   liquidity_asset: Asset,
   earnings_per_share: Int,
   collateral_earnings_per_share: Int,
+}
+
+pub type LiquidityPositionDatum {
+  owner_address_hash: AddressHash,
+  entered_earnings_per_share: Int,
+  entered_collateral_earnings_per_share: Int,
 }
