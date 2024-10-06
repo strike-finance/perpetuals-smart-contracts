@@ -81,96 +81,121 @@ The trader's final profit/loss from exiting their position will be:
 Final Position Value - Initial Position Value - (Hourly Borrowed Rate * Hours Borrowed)
 ```
 
-### Liquidity Provider Earned Fees
+Certainly! Below is the updated version of your document, incorporating the **Reward Debt** method to address the flaw in the original Earnings Per Share (EPS) calculation. This method ensures that liquidity providers only earn from the point they start providing liquidity, preventing new providers from benefiting from past earnings.
+
+---
+
+### **Liquidity Provider Earned Fees (Updated with Reward Debt Method)**
 
 Liquidity providers will keep profits earned from the perpetual protocol.
 
-- **Pool-Level Variables:**
+#### **Pool-Level Variables:**
 
-  - **Total Liquidity (`TotalFunds`):** Total amount of liquidity in the pool.
-  - **Earnings Per Share for Assets (`EPS_Assets`):** Cumulative assets earnings distributed per unit of liquidity.
-  - **Earnings Per Share for Collateral (`EPS_Collateral`):** Cumulative collateral earnings distributed per unit of liquidity.
+- **Total Liquidity (`TotalFunds`):** Total amount of liquidity in the pool.
+- **Accumulated Earnings Per Share for Assets (`AccEPS_Assets`):** Cumulative assets earnings distributed per unit of liquidity.
+- **Accumulated Earnings Per Share for Collateral (`AccEPS_Collateral`):** Cumulative collateral earnings distributed per unit of liquidity.
 
-- **User-Level Variables:**
-  - **User Liquidity (`UserLiquidity`):** Amount of liquidity provided by the user.
-  - **User Entry EPS for Assets (`UserEPS_Enter_Assets`):** Value of `EPS_Assets` when the user adds liquidity.
-  - **User Entry EPS for Collateral (`UserEPS_Enter_Collateral`):** Value of `EPS_Collateral` when the user adds liquidity.
-  - **User Exit EPS for Assets (`UserEPS_Exit_Assets`):** Value of `EPS_Assets` when the user withdraws liquidity.
-  - **User Exit EPS for Collateral (`UserEPS_Exit_Collateral`):** Value of `EPS_Collateral` when the user withdraws liquidity.
+#### **User-Level Variables:**
 
-1. **Updating EPS When Earnings Are Added:**
+- **User Liquidity (`UserLiquidity`):** Amount of liquidity provided by the user.
+- **User Reward Debt for Assets (`UserRewardDebt_Assets`):** The portion of assets earnings per share the user is not yet entitled to claim.
+- **User Reward Debt for Collateral (`UserRewardDebt_Collateral`):** The portion of collateral earnings per share the user is not yet entitled to claim.
+
+---
+
+### **Mechanism Overview**
+
+1. **Updating Accumulated EPS When Earnings Are Added:**
 
    - **For Assets:**
 
      ```math
-     \Delta EPS_{\text{Assets}} = \frac{\text{Assets Earned}}{\text{TotalFunds}}
+     \Delta AccEPS_{\text{Assets}} = \frac{\text{Assets Earned}}{\text{TotalFunds}}
      ```
 
      ```math
-     EPS_{\text{Assets, new}} = EPS_{\text{Assets, old}} + \Delta EPS_{\text{Assets}}
+     AccEPS_{\text{Assets, new}} = AccEPS_{\text{Assets, old}} + \Delta AccEPS_{\text{Assets}}
      ```
 
    - **For Collateral:**
 
      ```math
-     \Delta EPS_{\text{Collateral}} = \frac{\text{Collateral Earned}}{\text{TotalFunds}}
+     \Delta AccEPS_{\text{Collateral}} = \frac{\text{Collateral Earned}}{\text{TotalFunds}}
      ```
 
      ```math
-     EPS_{\text{Collateral, new}} = EPS_{\text{Collateral, old}} + \Delta EPS_{\text{Collateral}}
+     AccEPS_{\text{Collateral, new}} = AccEPS_{\text{Collateral, old}} + \Delta AccEPS_{\text{Collateral}}
      ```
 
 2. **When a User Provides Liquidity:**
 
-   - Update Total Funds:
+   - **Update Total Funds:**
 
      ```math
      \text{TotalFunds}_{\text{new}} = \text{TotalFunds}_{\text{old}} + \text{UserLiquidity}
      ```
 
-   - Record User's Entry EPS:
-
-     ```math
-     \text{UserEPS\_Enter\_Assets} = EPS_{\text{Assets, current}}
-     ```
-
-     ```math
-     \text{UserEPS\_Enter\_Collateral} = EPS_{\text{Collateral, current}}
-     ```
-
-3. **When a User Withdraws Liquidity:**
-
-   - Record User's Exit EPS:
-
-     ```math
-     \text{UserEPS\_Exit\_Assets} = EPS_{\text{Assets, current}}
-     ```
-
-     ```math
-     \text{UserEPS\_Exit\_Collateral} = EPS_{\text{Collateral, current}}
-     ```
-
-   - Calculate User's Earnings:
+   - **Calculate User's Reward Debt:**
 
      - **For Assets:**
 
        ```math
-       \text{User's Assets Earnings} = (\text{UserEPS\_Exit\_Assets} - \text{UserEPS\_Enter\_Assets}) \times \text{UserLiquidity}
+       \text{UserRewardDebt}_{\text{Assets}} = \text{UserLiquidity} \times AccEPS_{\text{Assets}}
        ```
 
      - **For Collateral:**
 
        ```math
-       \text{User's Collateral Earnings} = (\text{UserEPS\_Exit\_Collateral} - \text{UserEPS\_Enter\_Collateral}) \times \text{UserLiquidity}
+       \text{UserRewardDebt}_{\text{Collateral}} = \text{UserLiquidity} \times AccEPS_{\text{Collateral}}
        ```
 
-   - Update Total Funds:
+3. **When a User Withdraws Liquidity:**
+
+   - **Calculate User's Earnings:**
+
+     - **For Assets:**
+
+       ```math
+       \text{User's Assets Earnings} = (\text{UserLiquidity} \times AccEPS_{\text{Assets}}) - \text{UserRewardDebt}_{\text{Assets}}
+       ```
+
+     - **For Collateral:**
+
+       ```math
+       \text{User's Collateral Earnings} = (\text{UserLiquidity} \times AccEPS_{\text{Collateral}}) - \text{UserRewardDebt}_{\text{Collateral}}
+       ```
+
+   - **Update User's Liquidity and Reward Debt:**
+
+     - **Adjust User's Liquidity:**
+
+       ```math
+       \text{UserLiquidity}_{\text{new}} = \text{UserLiquidity}_{\text{old}} - \text{Withdrawn Amount}
+       ```
+
+     - **Update User's Reward Debt:**
+
+       - **For Assets:**
+
+         ```math
+         \text{UserRewardDebt}_{\text{Assets, new}} = \text{UserLiquidity}_{\text{new}} \times AccEPS_{\text{Assets}}
+         ```
+
+       - **For Collateral:**
+
+         ```math
+         \text{UserRewardDebt}_{\text{Collateral, new}} = \text{UserLiquidity}_{\text{new}} \times AccEPS_{\text{Collateral}}
+         ```
+
+   - **Update Total Funds:**
 
      ```math
-     \text{TotalFunds}_{\text{new}} = \text{TotalFunds}_{\text{old}} - \text{UserLiquidity}
+     \text{TotalFunds}_{\text{new}} = \text{TotalFunds}_{\text{old}} - \text{Withdrawn Amount}
      ```
 
-### **Example Calculation**
+---
+
+### **Example Calculation Using the Reward Debt Method**
 
 Let's consider both assets and collateral earnings in this example.
 
@@ -182,14 +207,14 @@ Let's consider both assets and collateral earnings in this example.
   \text{TotalFunds} = 1,000 \text{ units}
   ```
 
-- **Earnings Per Share:**
+- **Accumulated Earnings Per Share:**
 
   ```math
-  EPS_{\text{Assets}} = 0
+  AccEPS_{\text{Assets}} = 0
   ```
 
   ```math
-  EPS_{\text{Collateral}} = 0
+  AccEPS_{\text{Collateral}} = 0
   ```
 
 ---
@@ -208,38 +233,42 @@ Let's consider both assets and collateral earnings in this example.
   \text{TotalFunds} = 1,000 + 100 = 1,100 \text{ units}
   ```
 
-- **Record User A's Entry EPS:**
+- **Calculate User A's Reward Debt:**
 
-  ```math
-  \text{UserEPS\_Enter\_Assets}_A = 0
-  ```
+  - **For Assets:**
 
-  ```math
-  \text{UserEPS\_Enter\_Collateral}_A = 0
-  ```
+    ```math
+    \text{UserRewardDebt}_{\text{Assets, A}} = 100 \times 0 = 0
+    ```
+
+  - **For Collateral:**
+
+    ```math
+    \text{UserRewardDebt}_{\text{Collateral, A}} = 100 \times 0 = 0
+    ```
 
 ---
 
 #### **Pool Earns 200 Units of Assets and 100 Units of Collateral**
 
-- **Update EPS for Assets:**
+- **Update Accumulated EPS for Assets:**
 
   ```math
-  \Delta EPS_{\text{Assets}} = \frac{200}{1,100} \approx 0.1818
+  \Delta AccEPS_{\text{Assets}} = \frac{200}{1,100} \approx 0.1818
   ```
 
   ```math
-  EPS_{\text{Assets}} = 0 + 0.1818 = 0.1818
+  AccEPS_{\text{Assets}} = 0 + 0.1818 = 0.1818
   ```
 
-- **Update EPS for Collateral:**
+- **Update Accumulated EPS for Collateral:**
 
   ```math
-  \Delta EPS_{\text{Collateral}} = \frac{100}{1,100} \approx 0.0909
+  \Delta AccEPS_{\text{Collateral}} = \frac{100}{1,100} \approx 0.0909
   ```
 
   ```math
-  EPS_{\text{Collateral}} = 0 + 0.0909 = 0.0909
+  AccEPS_{\text{Collateral}} = 0 + 0.0909 = 0.0909
   ```
 
 ---
@@ -258,67 +287,83 @@ Let's consider both assets and collateral earnings in this example.
   \text{TotalFunds} = 1,100 + 300 = 1,400 \text{ units}
   ```
 
-- **Record User B's Entry EPS:**
+- **Calculate User B's Reward Debt:**
 
-  ```math
-  \text{UserEPS\_Enter\_Assets}_B = 0.1818
-  ```
+  - **For Assets:**
 
-  ```math
-  \text{UserEPS\_Enter\_Collateral}_B = 0.0909
-  ```
+    ```math
+    \text{UserRewardDebt}_{\text{Assets, B}} = 300 \times 0.1818 = 54.54
+    ```
+
+  - **For Collateral:**
+
+    ```math
+    \text{UserRewardDebt}_{\text{Collateral, B}} = 300 \times 0.0909 = 27.27
+    ```
 
 ---
 
 #### **Pool Earns Another 140 Units of Assets and 70 Units of Collateral**
 
-- **Update EPS for Assets:**
+- **Update Accumulated EPS for Assets:**
 
   ```math
-  \Delta EPS_{\text{Assets}} = \frac{140}{1,400} = 0.1
+  \Delta AccEPS_{\text{Assets}} = \frac{140}{1,400} = 0.1
   ```
 
   ```math
-  EPS_{\text{Assets}} = 0.1818 + 0.1 = 0.2818
+  AccEPS_{\text{Assets}} = 0.1818 + 0.1 = 0.2818
   ```
 
-- **Update EPS for Collateral:**
+- **Update Accumulated EPS for Collateral:**
 
   ```math
-  \Delta EPS_{\text{Collateral}} = \frac{70}{1,400} = 0.05
+  \Delta AccEPS_{\text{Collateral}} = \frac{70}{1,400} = 0.05
   ```
 
   ```math
-  EPS_{\text{Collateral}} = 0.0909 + 0.05 = 0.1409
+  AccEPS_{\text{Collateral}} = 0.0909 + 0.05 = 0.1409
   ```
 
 ---
 
 #### **User A Withdraws Liquidity**
 
-- **Record User A's Exit EPS:**
-
-  ```math
-  \text{UserEPS\_Exit\_Assets}_A = 0.2818
-  ```
-
-  ```math
-  \text{UserEPS\_Exit\_Collateral}_A = 0.1409
-  ```
-
 - **Calculate User A's Earnings:**
 
-  - **Assets Earnings:**
+  - **For Assets:**
 
     ```math
-    \text{User's Assets Earnings}_A = (0.2818 - 0) \times 100 = 28.18 \text{ units}
+    \text{User's Assets Earnings}_A = (100 \times 0.2818) - 0 = 28.18 \text{ units}
     ```
 
-  - **Collateral Earnings:**
+  - **For Collateral:**
 
     ```math
-    \text{User's Collateral Earnings}_A = (0.1409 - 0) \times 100 = 14.09 \text{ units}
+    \text{User's Collateral Earnings}_A = (100 \times 0.1409) - 0 = 14.09 \text{ units}
     ```
+
+- **Update User A's Liquidity and Reward Debt:**
+
+  - **User A withdraws all liquidity:**
+
+    ```math
+    \text{UserLiquidity}_A = 100 - 100 = 0 \text{ units}
+    ```
+
+  - **Update User A's Reward Debt:**
+
+    - **For Assets:**
+
+      ```math
+      \text{UserRewardDebt}_{\text{Assets, A}} = 0 \times 0.2818 = 0
+      ```
+
+    - **For Collateral:**
+
+      ```math
+      \text{UserRewardDebt}_{\text{Collateral, A}} = 0 \times 0.1409 = 0
+      ```
 
 - **Update Total Funds:**
 
@@ -330,60 +375,144 @@ Let's consider both assets and collateral earnings in this example.
 
 #### **User B Withdraws Liquidity Later**
 
-- **Assuming No Further Earnings, EPS Remains:**
+- **Assuming No Further Earnings, Accumulated EPS Remains:**
 
   ```math
-  EPS_{\text{Assets}} = 0.2818
+  AccEPS_{\text{Assets}} = 0.2818
   ```
 
   ```math
-  EPS_{\text{Collateral}} = 0.1409
-  ```
-
-- **Record User B's Exit EPS:**
-
-  ```math
-  \text{UserEPS\_Exit\_Assets}_B = 0.2818
-  ```
-
-  ```math
-  \text{UserEPS\_Exit\_Collateral}_B = 0.1409
+  AccEPS_{\text{Collateral}} = 0.1409
   ```
 
 - **Calculate User B's Earnings:**
 
-  - **Assets Earnings:**
+  - **For Assets:**
 
     ```math
-    \text{User's Assets Earnings}_B = (0.2818 - 0.1818) \times 300 = 0.1 \times 300 = 30 \text{ units}
+    \text{User's Assets Earnings}_B = (300 \times 0.2818) - 54.54 = 84.54 - 54.54 = 30 \text{ units}
     ```
 
-  - **Collateral Earnings:**
+  - **For Collateral:**
 
     ```math
-    \text{User's Collateral Earnings}_B = (0.1409 - 0.0909) \times 300 = 0.05 \times 300 = 15 \text{ units}
+    \text{User's Collateral Earnings}_B = (300 \times 0.1409) - 27.27 = 42.27 - 27.27 = 15 \text{ units}
     ```
+
+- **Update User B's Liquidity and Reward Debt:**
+
+  - **User B withdraws all liquidity:**
+
+    ```math
+    \text{UserLiquidity}_B = 300 - 300 = 0 \text{ units}
+    ```
+
+  - **Update User B's Reward Debt:**
+
+    - **For Assets:**
+
+      ```math
+      \text{UserRewardDebt}_{\text{Assets, B}} = 0 \times 0.2818 = 0
+      ```
+
+    - **For Collateral:**
+
+      ```math
+      \text{UserRewardDebt}_{\text{Collateral, B}} = 0 \times 0.1409 = 0
+      ```
+
+- **Update Total Funds:**
+
+  ```math
+  \text{TotalFunds} = 1,300 - 300 = 1,000 \text{ units}
+  ```
 
 ---
 
-**Summary:**
+### **Summary with Reward Debt Method**
 
 - **User A:**
 
   - **Initial Liquidity:** 100 units
   - **Assets Earnings:** 28.18 units
   - **Collateral Earnings:** 14.09 units
-  - **Total Return:** 100 + 28.18 (Assets) + 14.09 (Collateral) = **142.27 units**
+  - **Total Return:** 100 (Liquidity) + 28.18 (Assets) + 14.09 (Collateral) = **142.27 units**
 
 - **User B:**
+
   - **Initial Liquidity:** 300 units
   - **Assets Earnings:** 30 units
   - **Collateral Earnings:** 15 units
-  - **Total Return:** 300 + 30 (Assets) + 15 (Collateral) = **345 units**
+  - **Total Return:** 300 (Liquidity) + 30 (Assets) + 15 (Collateral) = **345 units**
 
-## Smart Contract Implementation
+---
 
-There are three main datums
+### **Explanation**
+
+#### **User A's Earnings Calculation:**
+
+- **Assets Earnings:**
+
+  ```math
+  \text{User's Assets Earnings}_A = (100 \times 0.2818) - 0 = 28.18 \text{ units}
+  ```
+
+- **Collateral Earnings:**
+
+  ```math
+  \text{User's Collateral Earnings}_A = (100 \times 0.1409) - 0 = 14.09 \text{ units}
+  ```
+
+- **Total Return for User A:**
+
+  ```math
+  \text{Total Return}_A = 100 + 28.18 + 14.09 = 142.27 \text{ units}
+  ```
+
+#### **User B's Earnings Calculation:**
+
+- **Assets Earnings:**
+
+  ```math
+  \text{User's Assets Earnings}_B = (300 \times 0.2818) - 54.54 = 84.54 - 54.54 = 30 \text{ units}
+  ```
+
+- **Collateral Earnings:**
+
+  ```math
+  \text{User's Collateral Earnings}_B = (300 \times 0.1409) - 27.27 = 42.27 - 27.27 = 15 \text{ units}
+  ```
+
+- **Total Return for User B:**
+
+  ```math
+  \text{Total Return}_B = 300 + 30 + 15 = 345 \text{ units}
+  ```
+
+---
+
+### **Key Points**
+
+- **Fair Distribution of Earnings:**
+
+  - **User A** earns from both earnings periods since they were providing liquidity during both.
+  - **User B** earns only from the second earnings period since their Reward Debt accounts for the Accumulated EPS at the time they joined.
+
+- **Reward Debt Mechanism:**
+
+  - **Prevents New Users from Earning Past Earnings:**
+
+    - By calculating Reward Debt when a user provides liquidity, we ensure they don't receive earnings accrued before they joined.
+
+- **AccEPS Remains Unchanged During Liquidity Changes:**
+
+  - **AccEPS** is updated only when the pool earns new fees, not when users add or remove liquidity.
+
+- **Total Funds Impact on Future Earnings:**
+
+  - When users withdraw liquidity, **TotalFunds** decreases, affecting future increments of AccEPS.
+
+
 
 ```
 pub type OrdersDatum {
