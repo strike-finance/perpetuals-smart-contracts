@@ -51,7 +51,7 @@ pub type OrdersWithdrawRedeemer {
 }
 
 pub type PositionsMintRedeemer {
-  MintLong
+  MintLong(Int)
   MintShort(Int)
   BurnLong
   BurnShort
