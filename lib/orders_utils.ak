@@ -111,7 +111,7 @@ pub fn validate_open_position(input: Output, output: Output) -> Bool {
       side: input_datum_typed.side,
       last_pay_lend_time: input_datum_typed.order_submission_time,
       collateral_asset: input_datum_typed.stable_collateral_asset,
-      collateral_amount: input_datum_typed.stable_collateral_amount,
+      collateral_asset_amount: input_datum_typed.stable_collateral_asset_amount,
       validate_pool_ref: input_datum_typed.validate_pool_ref,
       take_profit_amount: input_datum_typed.take_profit_amount,
     }
@@ -184,7 +184,7 @@ pub fn validate_close_position(
       output.value,
       input_datum_typed.stable_collateral_asset.policy_id,
       input_datum_typed.stable_collateral_asset.asset_name,
-    ) == input_datum_typed.stable_collateral_amount
+    ) == input_datum_typed.stable_collateral_asset_amount
 
   mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
 }
@@ -296,7 +296,7 @@ pub fn cancel_close_position_order(
       side: datum.side,
       last_pay_lend_time: datum.order_submission_time,
       collateral_asset: datum.stable_collateral_asset,
-      collateral_amount: datum.stable_collateral_amount,
+      collateral_asset_amount: datum.stable_collateral_asset_amount,
       validate_pool_ref: datum.validate_pool_ref,
       take_profit_amount: datum.take_profit_amount,
     }

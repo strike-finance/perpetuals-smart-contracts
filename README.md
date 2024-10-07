@@ -526,7 +526,7 @@ pub type OrdersDatum {
   liquidity_asset: Asset,
   liquidity_asset_amount: Int,
   stable_collateral_asset: Asset,
-  stable_collateral_amount: Int,
+  stable_collateral_asset_amount: Int,
   strike_collateral_asset: Asset,
   strike_collateral_amount: Int,
   entered_earnings_per_share: Int,
