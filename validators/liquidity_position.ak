@@ -4,6 +4,8 @@ use cardano/transaction.{
 }
 use types.{LiquidityPositionDatum, OrdersDatum, ScriptHash, WithdrawLiquidity}
 
+// Users liquidity positions are held here. When they want to withdraw their liquidity, they will spend from this script and send to the orders
+// validator for processing
 validator liquidity_position(orders_script_hash: ScriptHash) {
   spend(
     datum: Option<LiquidityPositionDatum>,

@@ -3,8 +3,8 @@ use cardano/address.{Credential}
 use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{Input, OutputReference, Transaction}
 use types.{
-  AddressHash, BatchOrders, CancelOrders, ClosePosition, ContributeLiquidity,
-  OpenPosition, OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer,
+  AddressHash, BatchOrders, CancelOrders, ClosePosition, OpenPosition,
+  OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer, ProvideLiquidity,
   WithdrawLiquidity,
 }
 use utils.{get_all_validators_inputs, is_withdrawal}
@@ -48,7 +48,7 @@ validator orders(
         when datum.action is {
           OpenPosition -> cancel_open_position_order(datum, transaction)
           ClosePosition -> cancel_close_position_order(datum, transaction)
-          ContributeLiquidity ->
+          ProvideLiquidity ->
             cancel_contribute_liquidity_order(datum, transaction)
           WithdrawLiquidity -> True
         }

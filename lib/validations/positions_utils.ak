@@ -55,7 +55,7 @@ pub fn from_positions_to_orders_datum_valid(
 pub fn validate_close_position(
   transaction: Transaction,
   datum: Option<PositionDatum>,
-  orders_validator_hash: ByteArray,
+  orders_script_hash: ByteArray,
 ) -> Bool {
   expect Some(datum) = datum
 
@@ -63,7 +63,7 @@ pub fn validate_close_position(
     list.has(transaction.extra_signatories, datum.owner_address_hash)
 
   let outputs_to_orders_validator: List<Output> =
-    find_script_outputs(transaction.outputs, orders_validator_hash)
+    find_script_outputs(transaction.outputs, orders_script_hash)
 
   expect Some(output_to_orders_validator) =
     list.head(outputs_to_orders_validator)
@@ -91,7 +91,7 @@ pub fn validate_stop_loss(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   current_price: Int,
-  orders_validator_hash: ByteArray,
+  orders_script_hash: ByteArray,
 ) -> Bool {
   expect Some(datum) = datum
 
@@ -103,7 +103,7 @@ pub fn validate_stop_loss(
   let current_price_volume = current_price * datum.positions_asset_amount
 
   let outputs_to_orders_validator: List<Output> =
-    find_script_outputs(transaction.outputs, orders_validator_hash)
+    find_script_outputs(transaction.outputs, orders_script_hash)
 
   expect Some(output_to_orders_validator) =
     list.head(outputs_to_orders_validator)

@@ -3,9 +3,14 @@ use types.{Asset}
 pub const enter_position_policy_id =
   #"5e4341df568a79b2106e0f5370ea737c62ef78728b74228bd20e0a48"
 
+pub const provide_liquidity_policy_id =
+  #"7b41055e0f57c0c938af3373a7e1785b6569393c85cce9ddc5f246e8"
+
 pub const long_asset_name = #"6c6f6e67"
 
 pub const short_asset_name = #"73686f7274"
+
+pub const provide_liquidty_asset_name = #"6c6f6e67"
 
 pub const pool_policy_id =
   #"400df17fee0ea6de308fd1867fcc494ace5ca924b509ea7c42df9f75"

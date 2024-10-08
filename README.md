@@ -519,7 +519,7 @@ pub type OrdersDatum {
   underlying_asset: Asset,
   underlying_amount: Int,
   leverage_factor: Int,
-  orders_validator_hash: ScriptHash,
+  orders_script_hash: ScriptHash,
   positions_validator_hash: ScriptHash,
   positions_asset: Asset,
   positions_asset_amount: Int,
@@ -586,7 +586,7 @@ The batcher grabs all transactions sitting at the `orders.ak` and performs valid
 pub type OrderAction {
   OpenPosition
   ClosePosition
-  ContributeLiquidity
+  ProvideLiquidity
   WithdrawLiquidity
 }
 ```

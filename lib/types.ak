@@ -27,7 +27,7 @@ pub type PositionSide {
 pub type OrderAction {
   OpenPosition
   ClosePosition
-  ContributeLiquidity
+  ProvideLiquidity
   WithdrawLiquidity
 }
 
@@ -50,7 +50,7 @@ pub type OrdersDatum {
   underlying_asset: Asset,
   underlying_asset_amount: Int,
   leverage_factor: Int,
-  orders_validator_hash: ScriptHash,
+  orders_script_hash: ScriptHash,
   positions_validator_hash: ScriptHash,
   positions_asset: Asset,
   positions_asset_amount: Int,
@@ -127,10 +127,9 @@ pub type LiquidityPositionDatum {
   entered_collateral_earnings_per_share: Int,
 }
 
-pub type MintValidPoolParams {
+pub type ProvideLiquidityMintParams {
   orders_validator: ByteArray,
-  asset_name: ByteArray,
-  pool_asset_policy_id: PolicyId,
-  pool_asset_name: ByteArray,
-  admin_pkh: ByteArray,
+  asset_name: AssetName,
+  provided_asset_policy_id: PolicyId,
+  provided_asset_name: AssetName,
 }

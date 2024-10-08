@@ -6,8 +6,8 @@ use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  AddressHash, ClosePosition, ContributeLiquidity, OpenPosition, OrdersDatum,
-  PoolDatum, PositionDatum, WithdrawLiquidity,
+  AddressHash, ClosePosition, OpenPosition, OrdersDatum, PoolDatum,
+  PositionDatum, ProvideLiquidity, WithdrawLiquidity,
 }
 use utils.{get_lower_bound, validate_token_mint}
 
@@ -81,7 +81,7 @@ pub fn validate_order(
     OpenPosition -> validate_open_position(input, output)
     ClosePosition ->
       validate_close_position(input, output, current_asset_price, transaction)
-    ContributeLiquidity -> validate_contribute_liquidity(input, output)
+    ProvideLiquidity -> validate_contribute_liquidity(input, output)
     WithdrawLiquidity -> validate_withdraw_liquidity(input, output, transaction)
   }
 }
