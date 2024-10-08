@@ -36,25 +36,12 @@ pub type OrdersRedeemer {
   CancelOrders
 }
 
-pub type PositionsRedeemer {
-  Close
-  StopLoss(Int)
-  PayLend(Int)
-}
-
 pub type RedeemerIndexer =
   List<(Int, Int)>
 
 pub type OrdersWithdrawRedeemer {
   indexer: RedeemerIndexer,
   current_price: Int,
-}
-
-pub type PositionsMintRedeemer {
-  MintLong(Int)
-  MintShort(Int)
-  BurnLong
-  BurnShort
 }
 
 pub type OrdersDatum {
@@ -81,6 +68,27 @@ pub type OrdersDatum {
   validate_pool_ref: OutputReference,
   action: OrderAction,
   side: PositionSide,
+}
+
+pub type PositionsRedeemer {
+  Close
+  StopLoss(Int)
+  PayLend(Int)
+}
+
+pub type EnterPositionParams {
+  orders_script_hash: ScriptHash,
+  long_asset_name: ByteArray,
+  short_asset_name: ByteArray,
+  validate_pool_ref: OutputReference,
+  admin_pkh: AddressHash,
+}
+
+pub type PositionsMintRedeemer {
+  MintLong(Int)
+  MintShort(Int)
+  BurnLong
+  BurnShort
 }
 
 pub type PositionDatum {
@@ -119,10 +127,10 @@ pub type LiquidityPositionDatum {
   entered_collateral_earnings_per_share: Int,
 }
 
-pub type EnterPositionParams {
-  orders_script_hash: ScriptHash,
-  long_asset_name: ByteArray,
-  short_asset_name: ByteArray,
-  validate_pool_ref: OutputReference,
-  admin_pkh: AddressHash,
+pub type MintValidPoolParams {
+  orders_validator: ByteArray,
+  asset_name: ByteArray,
+  pool_asset_policy_id: PolicyId,
+  pool_asset_name: ByteArray,
+  admin_pkh: ByteArray,
 }
