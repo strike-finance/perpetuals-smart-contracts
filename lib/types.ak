@@ -100,15 +100,15 @@ pub type PositionDatum {
 }
 
 pub type PoolDatum {
-  pool_asset: Asset,
-  pool_asset_amount: Int,
-  pool_asset_lended_amount: Int,
-  pooled_interest_rate: Int,
+  underlying_asset: Asset,
+  underlying_asset_amount: Int,
+  underlying_asset_lended_amount: Int,
+  underlying_interest_rate: Int,
   collateral_asset: Asset,
   max_leverage_factor: Int,
   max_strike_holder_leverage_factor: Int,
   maintain_margin_amount: Int,
-  liquidity_asset: Asset,
+  is_valid_pool_asset: Asset,
   earnings_per_share: Int,
   collateral_earnings_per_share: Int,
 }
@@ -117,4 +117,12 @@ pub type LiquidityPositionDatum {
   owner_address_hash: AddressHash,
   entered_earnings_per_share: Int,
   entered_collateral_earnings_per_share: Int,
+}
+
+pub type EnterPositionParams {
+  orders_script_hash: ScriptHash,
+  long_asset_name: ByteArray,
+  short_asset_name: ByteArray,
+  validate_pool_ref: OutputReference,
+  admin_pkh: AddressHash,
 }

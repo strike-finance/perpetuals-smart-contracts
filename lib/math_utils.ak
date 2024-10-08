@@ -6,10 +6,10 @@ pub fn calculate_pay_borrow(
   current_price_volume: Int,
 ) -> Int {
   let utilization =
-    pool_datum.pool_asset_lended_amount / pool_datum.pool_asset_amount
+    pool_datum.underlying_asset_lended_amount / pool_datum.underlying_asset_amount
 
   let current_position_usd_value =
     position_datum.positions_asset_amount * position_datum.leverage_factor * current_price_volume
 
-  utilization * pool_datum.pooled_interest_rate * current_position_usd_value
+  utilization * pool_datum.underlying_interest_rate * current_position_usd_value
 }
