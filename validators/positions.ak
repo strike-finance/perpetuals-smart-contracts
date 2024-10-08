@@ -1,5 +1,5 @@
 use cardano/transaction.{OutputReference, Transaction}
-use positions_utils.{
+use validations/positions_utils.{
   validate_close_position, validate_pay_lend, validate_stop_loss,
 }
 use types.{Close, PayLend, PositionDatum, PositionsRedeemer, StopLoss}

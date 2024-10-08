@@ -104,7 +104,7 @@ pub type PoolDatum {
   underlying_asset_amount: Int,
   underlying_asset_lended_amount: Int,
   underlying_interest_rate: Int,
-  collateral_asset: Asset,
+  stable_collateral_asset: Asset,
   max_leverage_factor: Int,
   max_strike_holder_leverage_factor: Int,
   maintain_margin_amount: Int,

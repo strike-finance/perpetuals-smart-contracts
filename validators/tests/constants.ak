@@ -21,6 +21,11 @@ pub const trader_pkh =
 pub const admin_pkh =
   #"d48838fee1e840857dab28a04dd88193aec8c297b85d8150c0a1f5cc"
 
+pub const stable_collateral_policy_id =
+  #"965f87c8322049a498f0803697298766e9e6b673c7ec120613048642"
+
+pub const stable_collateral_asset_name = #"46414b455f5553444d"
+
 pub const strike_collateral_policy_id =
   #"a5ff2c36e9eeb9655d06c0a2f02d9e200aa6f8db00d760acf62c0eba"
 
@@ -28,10 +33,10 @@ pub const strike_collateral_asset_name = #"535452494b45"
 
 pub const underlying_asset = Asset { policy_id: "", asset_name: "" }
 
-pub const collateral_asset =
+pub const stable_collateral_asset =
   Asset {
-    policy_id: #"965f87c8322049a498f0803697298766e9e6b673c7ec120613048642",
-    asset_name: #"46414b455f5553444d",
+    policy_id: stable_collateral_policy_id,
+    asset_name: stable_collateral_asset_name,
   }
 
 pub const long_position_asset =
