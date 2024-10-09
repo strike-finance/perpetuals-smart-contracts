@@ -31,6 +31,7 @@ test test_enter_long_positions_mint() {
       underlying_interest_rate: 0,
       stable_collateral_asset,
       max_leverage_factor: 5,
+      liquidate_margin: 2,
       max_strike_holder_leverage_factor: 10,
       maintain_margin_amount: 0,
       is_valid_pool_asset: pool_asset,
@@ -71,7 +72,7 @@ test test_enter_long_positions_mint() {
       strike_collateral_amount: 10,
       entered_earnings_per_share: 0,
       entered_collateral_earnings_per_share: 0,
-      liquidate_usd_price:0,
+      liquidate_usd_price: 0,
       stop_loss_usd_price: 0,
       take_profit_usd_price: 0,
       order_submission_time: 1751111000,
@@ -154,6 +155,7 @@ test test_enter_short_positions_mint() {
       is_valid_pool_asset: pool_asset,
       earnings_per_share: 0,
       collateral_earnings_per_share: 0,
+      liquidate_margin: 0,
     }
 
   let pool_ref_input =
@@ -188,8 +190,7 @@ test test_enter_short_positions_mint() {
       strike_collateral_amount: 10,
       entered_earnings_per_share: 0,
       entered_collateral_earnings_per_share: 0,
-            liquidate_usd_price:0,
-
+      liquidate_usd_price: 0,
       stop_loss_usd_price: 0,
       take_profit_usd_price: 0,
       order_submission_time: 1751111000,

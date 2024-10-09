@@ -1,5 +1,5 @@
 use aiken/collection/list
-use cardano/assets.{PolicyId, quantity_of,from_lovelace}
+use cardano/assets.{PolicyId, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
@@ -54,48 +54,40 @@ pub fn enter_long_mint(
     list.has(transaction.extra_signatories, params.admin_pkh)
 
   let liquidate_usd_price: Int =
-    calculate_liquidate_amount(orders_datum_typed, current_price)
+    calculate_long_liquidate_amount(
+      orders_datum_typed,
+      current_price,
+      pool_ref_datum_typed.liquidate_margin,
+    )
 
   let liquidate_usd_price_valid: Bool =
     liquidate_usd_price == orders_datum_typed.liquidate_usd_price
 
+  let collateral_asset_deposited_amount: Int =
+    quantity_of(
+      output_to_orders_validator.value,
+      orders_datum_typed.underlying_asset.policy_id,
+      orders_datum_typed.underlying_asset.asset_name,
+    ) * orders_datum_typed.leverage_factor
+
+  let expected_mint: (PolicyId, ByteArray, Int) =
+    (policy_id, params.long_asset_name, collateral_asset_deposited_amount)
+
+  let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
+
   expect
-    only_one_output_to_orders && valid_pool_ref && current_price_valid && signed_by_admin && liquidate_usd_price_valid
+    only_one_output_to_orders && valid_pool_ref && current_price_valid && signed_by_admin && liquidate_usd_price_valid && mint_valid
 
   if contains_strike_collateral {
-    let collateral_asset_deposited_amount: Int =
-      quantity_of(
-        output_to_orders_validator.value,
-        orders_datum_typed.underlying_asset.policy_id,
-        orders_datum_typed.underlying_asset.asset_name,
-      ) * orders_datum_typed.leverage_factor
-
     let leverage_factor_valid: Bool =
       pool_ref_datum_typed.max_strike_holder_leverage_factor >= orders_datum_typed.leverage_factor
 
-    let expected_mint: (PolicyId, ByteArray, Int) =
-      (policy_id, params.long_asset_name, collateral_asset_deposited_amount)
-
-    let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
-
-    leverage_factor_valid && mint_valid
+    leverage_factor_valid
   } else {
-    let collateral_asset_deposited_amount: Int =
-      quantity_of(
-        output_to_orders_validator.value,
-        orders_datum_typed.underlying_asset.policy_id,
-        orders_datum_typed.underlying_asset.asset_name,
-      ) * orders_datum_typed.leverage_factor
-
     let leverage_factor_valid: Bool =
       pool_ref_datum_typed.max_leverage_factor >= orders_datum_typed.leverage_factor
 
-    let expected_mint: (PolicyId, ByteArray, Int) =
-      (policy_id, params.long_asset_name, collateral_asset_deposited_amount)
-
-    let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
-
-    leverage_factor_valid && mint_valid
+    leverage_factor_valid
   }
 }
 
@@ -168,14 +160,18 @@ pub fn enter_short_mint(
     collateral_asset_deposited_amount >= expected_usd_collateral
 
   let liquidate_usd_price: Int =
-    calculate_liquidate_amount(orders_datum_typed, current_price)
+    calculate_short_liquidate_amount(
+      orders_datum_typed,
+      current_price,
+      pool_ref_datum_typed.liquidate_margin,
+    )
 
   let liquidate_usd_price_valid: Bool =
-    liquidate_usd_price == orders_datum_typed.liquidate_usd_price
+    orders_datum_typed.liquidate_usd_price >= liquidate_usd_price
 
   expect
-    only_one_output_to_orders && valid_pool_ref && current_price_valid && signed_by_admin && liquidate_usd_price_valid
-    
+    mint_valid && only_one_output_to_orders && valid_pool_ref && current_price_valid && signed_by_admin && expected_usd_collateral_valid && liquidate_usd_price_valid
+
   if contains_strike_collateral {
     let leverage_factor_valid: Bool =
       pool_ref_datum_typed.max_strike_holder_leverage_factor >= orders_datum_typed.leverage_factor
@@ -189,18 +185,35 @@ pub fn enter_short_mint(
 
 fn get_expected_usd_collateral(orders_datum: OrdersDatum, current_price: Int) {
   if orders_datum.underlying_asset.policy_id == "" {
-  let collateral_amount = lovelace_to_ada(orders_datum.positions_asset_amount)
-   collateral_amount * current_price * orders_datum.leverage_factor
+    let collateral_amount = lovelace_to_ada(orders_datum.positions_asset_amount)
+    collateral_amount * current_price * orders_datum.leverage_factor
   } else {
     orders_datum.positions_asset_amount * current_price * orders_datum.leverage_factor
   }
 }
 
-fn lovelace_to_ada(lovelace: Int)->Int {
- lovelace/1_000_000
+fn lovelace_to_ada(lovelace: Int) -> Int {
+  lovelace / 1_000_000
 }
 
+fn calculate_long_liquidate_amount(
+  orders_datum: OrdersDatum,
+  current_price: Int,
+  liquidate_margin: Int,
+) {
+  let formatted_liquidate_margin = liquidate_margin / 1000
+  current_price * (
+    1 - ( 1 - formatted_liquidate_margin ) / orders_datum.leverage_factor
+  )
+}
 
-fn calculate_liquidate_amount(orders_datum: OrdersDatum, current_price: Int) {
-  orders_datum.positions_asset_amount * current_price * orders_datum.leverage_factor
+fn calculate_short_liquidate_amount(
+  orders_datum: OrdersDatum,
+  current_price: Int,
+  liquidate_margin: Int,
+) {
+  let formatted_liquidate_margin = liquidate_margin / 1000
+  current_price * (
+    1 + ( 1 - formatted_liquidate_margin ) / orders_datum.leverage_factor
+  )
 }

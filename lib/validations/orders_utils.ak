@@ -103,18 +103,19 @@ pub fn validate_open_position(input: Output, output: Output) -> Bool {
   let expected_output_datum =
     PositionDatum {
       owner_address_hash: input_datum_typed.owner_address_hash,
-      underlying_asset: input_datum_typed.underlying_asset,
       entered_at_price: input_datum_typed.entered_at_price,
-      positions_asset_amount: input_datum_typed.positions_asset_amount,
+      underlying_asset: input_datum_typed.underlying_asset,
       leverage_factor: input_datum_typed.leverage_factor,
-      stop_loss_usd_price: input_datum_typed.stop_loss_usd_price,
       positions_asset: input_datum_typed.positions_asset,
-      side: input_datum_typed.side,
-      last_pay_lend_time: input_datum_typed.order_submission_time,
+      positions_asset_amount: input_datum_typed.positions_asset_amount,
       collateral_asset: input_datum_typed.stable_collateral_asset,
       collateral_asset_amount: input_datum_typed.stable_collateral_asset_amount,
-      validate_pool_ref: input_datum_typed.validate_pool_ref,
+      stop_loss_usd_price: input_datum_typed.stop_loss_usd_price,
       take_profit_usd_price: input_datum_typed.take_profit_usd_price,
+      liquidate_usd_price: input_datum_typed.liquidate_usd_price,
+      last_pay_lend_time: input_datum_typed.order_submission_time,
+      validate_pool_ref: input_datum_typed.validate_pool_ref,
+      side: input_datum_typed.side,
     }
 
   expect InlineDatum(output_datum) = output.datum
@@ -290,16 +291,17 @@ pub fn cancel_close_position_order(
       owner_address_hash: datum.owner_address_hash,
       underlying_asset: datum.underlying_asset,
       entered_at_price: datum.entered_at_price,
-      positions_asset_amount: datum.positions_asset_amount,
       leverage_factor: datum.leverage_factor,
-      stop_loss_usd_price: datum.stop_loss_usd_price,
       positions_asset: datum.positions_asset,
-      side: datum.side,
-      last_pay_lend_time: datum.order_submission_time,
+      positions_asset_amount: datum.positions_asset_amount,
       collateral_asset: datum.stable_collateral_asset,
       collateral_asset_amount: datum.stable_collateral_asset_amount,
-      validate_pool_ref: datum.validate_pool_ref,
+      liquidate_usd_price: datum.liquidate_usd_price,
+      stop_loss_usd_price: datum.stop_loss_usd_price,
       take_profit_usd_price: datum.take_profit_usd_price,
+      last_pay_lend_time: datum.order_submission_time,
+      validate_pool_ref: datum.validate_pool_ref,
+      side: datum.side,
     }
 
   let quantity_of_positions_asset: Int =
