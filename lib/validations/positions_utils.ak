@@ -3,7 +3,6 @@ use cardano/assets.{quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
-use math_utils.{calculate_pay_borrow}
 use types.{OrdersDatum, POSIXTime, PoolDatum, PositionDatum}
 use utils.{
   get_address_outputs, get_all_validators_inputs, get_lower_bound,
@@ -43,16 +42,16 @@ pub fn from_positions_to_orders_datum_valid(
   let last_pay_lend_time_valid: Bool =
     position_datum.last_pay_lend_time == orders_datum.order_submission_time
 
-  let take_profit_amount_valid: Bool =
-    position_datum.take_profit_amount == orders_datum.take_profit_amount
+  let take_profit_usd_price_valid: Bool =
+    position_datum.take_profit_usd_price == orders_datum.take_profit_usd_price
 
   let enter_at_price_valid: Bool =
     position_datum.entered_at_price == orders_datum.entered_at_price
 
-  owner_address_hash_valid && underlying_asset_valid && positions_asset_amount_valid && leverage_factor_valid && positions_asset_valid && side_valid && collateral_asset_valid && collateral_asset_amount_valid && validate_pool_ref_valid && last_pay_lend_time_valid && take_profit_amount_valid && enter_at_price_valid
+  owner_address_hash_valid && underlying_asset_valid && positions_asset_amount_valid && leverage_factor_valid && positions_asset_valid && side_valid && collateral_asset_valid && collateral_asset_amount_valid && validate_pool_ref_valid && last_pay_lend_time_valid && take_profit_usd_price_valid && enter_at_price_valid
 }
 
-pub fn validate_close_position(
+pub fn close_position(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   orders_script_hash: ByteArray,
@@ -87,7 +86,7 @@ pub fn validate_close_position(
   signed_by_owner && only_one_output_to_orders_validator && valid_asset_in_output && orders_datum_valid
 }
 
-pub fn validate_stop_loss(
+pub fn stop_loss(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   current_price: Int,
@@ -124,12 +123,50 @@ pub fn validate_stop_loss(
   let orders_datum_valid: Bool =
     from_positions_to_orders_datum_valid(datum, orders_datum_typed)
 
-  let stop_loss_valid: Bool = current_price_volume >= datum.stop_loss_amount
+  let stop_loss_valid: Bool = current_price_volume >= datum.stop_loss_usd_price
 
   orders_datum_valid && only_one_input_from_script && only_one_output_to_orders_validator && valid_asset_in_output && stop_loss_valid
 }
 
-pub fn validate_pay_lend(
+pub fn update_stop_loss(
+  transaction: Transaction,
+  datum: Option<PositionDatum>,
+  orders_script_hash: ByteArray,
+) -> Bool {
+ todo
+}
+
+pub fn take_profit(
+  transaction: Transaction,
+  datum: Option<PositionDatum>,
+  current_price: Int,
+  orders_script_hash: ByteArray,
+) -> Bool {
+ todo
+}
+
+pub fn update_take_profit(
+  transaction: Transaction,
+  datum: Option<PositionDatum>,
+  orders_script_hash: ByteArray,
+) -> Bool {
+ todo
+}
+
+pub fn liquidate_position(
+  transaction: Transaction,
+  datum: Option<PositionDatum>,
+  current_price: Int,
+  orders_script_hash: ByteArray,
+) -> Bool {
+ todo
+}
+
+
+
+
+
+pub fn pay_lend(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   current_price: Int,
@@ -180,4 +217,18 @@ pub fn validate_pay_lend(
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
   only_one_input_from_script && only_one_output_to_positions_validator && one_hour_has_passed && mint_valid
+}
+
+fn calculate_pay_borrow(
+  position_datum: PositionDatum,
+  pool_datum: PoolDatum,
+  current_price_volume: Int,
+) -> Int {
+  let utilization =
+    pool_datum.underlying_asset_lended_amount / pool_datum.underlying_asset_amount
+
+  let current_position_usd_value =
+    position_datum.positions_asset_amount * position_datum.leverage_factor * current_price_volume
+
+  utilization * pool_datum.underlying_interest_rate * current_position_usd_value
 }

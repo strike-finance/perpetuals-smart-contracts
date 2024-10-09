@@ -1,8 +1,12 @@
 use cardano/transaction.{OutputReference, Transaction}
-use validations/positions_utils.{
-  validate_close_position, validate_pay_lend, validate_stop_loss,
+use types.{
+  Close, LiquidatePosition, PayLend, PositionDatum, PositionsRedeemer, StopLoss,
+  TakeProfit, UpdateStopLoss, UpdateTakeProfit,
 }
-use types.{Close, PayLend, PositionDatum, PositionsRedeemer, StopLoss}
+use validations/positions_utils.{
+  close_position, liquidate_position, stop_loss, take_profit, update_stop_loss, pay_lend,
+  update_take_profit,
+}
 
 validator positions(orders_validator: ByteArray) {
   spend(
@@ -12,11 +16,22 @@ validator positions(orders_validator: ByteArray) {
     transaction: Transaction,
   ) {
     when redeemer is {
-      Close -> validate_close_position(transaction, datum, orders_validator)
+      Close -> close_position(transaction, datum, orders_validator)
       StopLoss(current_price) ->
-        validate_stop_loss(transaction, datum, current_price, orders_validator)
+      stop_loss(transaction, datum, current_price, orders_validator)
+      UpdateStopLoss -> update_stop_loss(transaction, datum, orders_validator)
+      TakeProfit(current_price) ->
+        take_profit(transaction, datum, current_price, orders_validator)
+      UpdateTakeProfit -> update_take_profit(transaction, datum, orders_validator)
+      LiquidatePosition(current_price) ->
+        liquidate_position(
+          transaction,
+          datum,
+          current_price,
+          orders_validator,
+        )
       PayLend(current_price) ->
-        validate_pay_lend(transaction, datum, current_price)
+   pay_lend(transaction, datum, current_price)
     }
   }
 

@@ -53,8 +53,14 @@ pub fn enter_long_mint(
   let signed_by_admin: Bool =
     list.has(transaction.extra_signatories, params.admin_pkh)
 
+  let liquidate_usd_price: Int =
+    calculate_liquidate_amount(orders_datum_typed, current_price)
+
+  let liquidate_usd_price_valid: Bool =
+    liquidate_usd_price == orders_datum_typed.liquidate_usd_price
+
   expect
-    only_one_output_to_orders && valid_pool_ref && current_price_valid && signed_by_admin
+    only_one_output_to_orders && valid_pool_ref && current_price_valid && signed_by_admin && liquidate_usd_price_valid
   if contains_strike_collateral {
     let collateral_asset_deposited_amount: Int =
       quantity_of(
@@ -151,9 +157,15 @@ pub fn enter_short_mint(
   let expected_usd_collateral_valid: Bool =
     collateral_asset_deposited_amount >= expected_usd_collateral
 
-  expect
-    only_one_output_to_orders && valid_pool_ref && current_price_valid && signed_by_admin && expected_usd_collateral_valid && mint_valid
+  let liquidate_usd_price: Int =
+    calculate_liquidate_amount(orders_datum_typed, current_price)
 
+  let liquidate_usd_price_valid: Bool =
+    liquidate_usd_price == orders_datum_typed.liquidate_usd_price
+
+  expect
+    only_one_output_to_orders && valid_pool_ref && current_price_valid && signed_by_admin && liquidate_usd_price_valid
+    
   if contains_strike_collateral {
     let leverage_factor_valid: Bool =
       pool_ref_datum_typed.max_strike_holder_leverage_factor >= orders_datum_typed.leverage_factor
@@ -171,4 +183,9 @@ fn get_expected_usd_collateral(orders_datum: OrdersDatum, current_price: Int) {
   } else {
     orders_datum.positions_asset_amount * current_price * orders_datum.leverage_factor
   }
+}
+
+
+fn calculate_liquidate_amount(orders_datum: OrdersDatum, current_price: Int) {
+  orders_datum.positions_asset_amount * current_price * orders_datum.leverage_factor
 }

@@ -4,13 +4,13 @@ use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{Input, OutputReference, Transaction}
 use types.{
   AddressHash, BatchOrders, CancelOrders, ClosePosition, OpenPosition,
-  OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer, ProvideLiquidity,
+  OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer, ProvideLiquidity, Liquidate,
   WithdrawLiquidity,
 }
 use utils.{get_all_validators_inputs, is_withdrawal}
 use validations/orders_utils.{
   cancel_close_position_order, cancel_contribute_liquidity_order,
-  cancel_open_position_order, valid_orders, validate_order,
+  cancel_open_position_order, valid_orders, validate_order,cancel_withdraw_liquidity_order
 }
 
 // Users will be placing their orders here. The funds for their position will be here until the the batcher puts it into the pool.
@@ -50,7 +50,8 @@ validator orders(
           ClosePosition -> cancel_close_position_order(datum, transaction)
           ProvideLiquidity ->
             cancel_contribute_liquidity_order(datum, transaction)
-          WithdrawLiquidity -> True
+          WithdrawLiquidity -> cancel_withdraw_liquidity_order(datum, transaction)
+          Liquidate -> False
         }
       }
     }

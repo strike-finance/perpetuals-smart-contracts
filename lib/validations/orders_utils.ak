@@ -6,8 +6,8 @@ use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  AddressHash, ClosePosition, OpenPosition, OrdersDatum, PoolDatum,
-  PositionDatum, ProvideLiquidity, WithdrawLiquidity,
+  AddressHash, ClosePosition, Liquidate, OpenPosition, OrdersDatum,
+  PoolDatum, PositionDatum, ProvideLiquidity, WithdrawLiquidity,
 }
 use utils.{get_lower_bound, validate_token_mint}
 
@@ -83,6 +83,7 @@ pub fn validate_order(
       validate_close_position(input, output, current_asset_price, transaction)
     ProvideLiquidity -> validate_contribute_liquidity(input, output)
     WithdrawLiquidity -> validate_withdraw_liquidity(input, output, transaction)
+    Liquidate -> False
   }
 }
 
@@ -106,14 +107,14 @@ pub fn validate_open_position(input: Output, output: Output) -> Bool {
       entered_at_price: input_datum_typed.entered_at_price,
       positions_asset_amount: input_datum_typed.positions_asset_amount,
       leverage_factor: input_datum_typed.leverage_factor,
-      stop_loss_amount: input_datum_typed.stop_loss_amount,
+      stop_loss_usd_price: input_datum_typed.stop_loss_usd_price,
       positions_asset: input_datum_typed.positions_asset,
       side: input_datum_typed.side,
       last_pay_lend_time: input_datum_typed.order_submission_time,
       collateral_asset: input_datum_typed.stable_collateral_asset,
       collateral_asset_amount: input_datum_typed.stable_collateral_asset_amount,
       validate_pool_ref: input_datum_typed.validate_pool_ref,
-      take_profit_amount: input_datum_typed.take_profit_amount,
+      take_profit_usd_price: input_datum_typed.take_profit_usd_price,
     }
 
   expect InlineDatum(output_datum) = output.datum
@@ -291,14 +292,14 @@ pub fn cancel_close_position_order(
       entered_at_price: datum.entered_at_price,
       positions_asset_amount: datum.positions_asset_amount,
       leverage_factor: datum.leverage_factor,
-      stop_loss_amount: datum.stop_loss_amount,
+      stop_loss_usd_price: datum.stop_loss_usd_price,
       positions_asset: datum.positions_asset,
       side: datum.side,
       last_pay_lend_time: datum.order_submission_time,
       collateral_asset: datum.stable_collateral_asset,
       collateral_asset_amount: datum.stable_collateral_asset_amount,
       validate_pool_ref: datum.validate_pool_ref,
-      take_profit_amount: datum.take_profit_amount,
+      take_profit_usd_price: datum.take_profit_usd_price,
     }
 
   let quantity_of_positions_asset: Int =
@@ -326,4 +327,11 @@ pub fn cancel_contribute_liquidity_order(
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
   mint_valid
+}
+
+pub fn cancel_withdraw_liquidity_order(
+  datum: OrdersDatum,
+  transaction: Transaction,
+) -> Bool {
+  True
 }
