@@ -1,5 +1,5 @@
 use aiken/collection/list
-use cardano/assets.{PolicyId, quantity_of}
+use cardano/assets.{PolicyId, quantity_of,from_lovelace}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
@@ -61,6 +61,7 @@ pub fn enter_long_mint(
 
   expect
     only_one_output_to_orders && valid_pool_ref && current_price_valid && signed_by_admin && liquidate_usd_price_valid
+
   if contains_strike_collateral {
     let collateral_asset_deposited_amount: Int =
       quantity_of(
@@ -68,11 +69,15 @@ pub fn enter_long_mint(
         orders_datum_typed.underlying_asset.policy_id,
         orders_datum_typed.underlying_asset.asset_name,
       ) * orders_datum_typed.leverage_factor
+
     let leverage_factor_valid: Bool =
       pool_ref_datum_typed.max_strike_holder_leverage_factor >= orders_datum_typed.leverage_factor
+
     let expected_mint: (PolicyId, ByteArray, Int) =
       (policy_id, params.long_asset_name, collateral_asset_deposited_amount)
+
     let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
+
     leverage_factor_valid && mint_valid
   } else {
     let collateral_asset_deposited_amount: Int =
@@ -81,11 +86,15 @@ pub fn enter_long_mint(
         orders_datum_typed.underlying_asset.policy_id,
         orders_datum_typed.underlying_asset.asset_name,
       ) * orders_datum_typed.leverage_factor
+
     let leverage_factor_valid: Bool =
       pool_ref_datum_typed.max_leverage_factor >= orders_datum_typed.leverage_factor
+
     let expected_mint: (PolicyId, ByteArray, Int) =
       (policy_id, params.long_asset_name, collateral_asset_deposited_amount)
+
     let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
+
     leverage_factor_valid && mint_valid
   }
 }
@@ -142,6 +151,7 @@ pub fn enter_short_mint(
       orders_datum_typed.stable_collateral_asset.policy_id,
       orders_datum_typed.stable_collateral_asset.asset_name,
     )
+
   let contains_strike_collateral: Bool =
     quantity_of(
       output_to_orders_validator.value,
@@ -179,10 +189,15 @@ pub fn enter_short_mint(
 
 fn get_expected_usd_collateral(orders_datum: OrdersDatum, current_price: Int) {
   if orders_datum.underlying_asset.policy_id == "" {
-    orders_datum.positions_asset_amount * current_price * orders_datum.leverage_factor
+  let collateral_amount = lovelace_to_ada(orders_datum.positions_asset_amount)
+   collateral_amount * current_price * orders_datum.leverage_factor
   } else {
     orders_datum.positions_asset_amount * current_price * orders_datum.leverage_factor
   }
+}
+
+fn lovelace_to_ada(lovelace: Int)->Int {
+ lovelace/1_000_000
 }
 
 
