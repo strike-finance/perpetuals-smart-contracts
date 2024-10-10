@@ -1,16 +1,17 @@
 use aiken/collection/list
-use cardano/address.{Credential}
+use cardano/address.{Credential, Script}
 use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{Input, OutputReference, Transaction}
 use types.{
-  AddressHash, BatchOrders, CancelOrders, ClosePosition, OpenPosition,
-  OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer, ProvideLiquidity, Liquidate,
+  AddressHash, BatchOrders, CancelOrders, ClosePosition, Liquidate, OpenPosition,
+  OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer, ProvideLiquidity,
   WithdrawLiquidity,
 }
 use utils.{get_all_validators_inputs, is_withdrawal}
 use validations/orders_utils.{
   cancel_close_position_order, cancel_contribute_liquidity_order,
-  cancel_open_position_order, valid_orders, validate_order,cancel_withdraw_liquidity_order
+  cancel_open_position_order, cancel_withdraw_liquidity_order, valid_orders,
+  validate_order,
 }
 
 // Users will be placing their orders here. The funds for their position will be here until the the batcher puts it into the pool.
@@ -50,7 +51,8 @@ validator orders(
           ClosePosition -> cancel_close_position_order(datum, transaction)
           ProvideLiquidity ->
             cancel_contribute_liquidity_order(datum, transaction)
-          WithdrawLiquidity -> cancel_withdraw_liquidity_order(datum, transaction)
+          WithdrawLiquidity ->
+            cancel_withdraw_liquidity_order(datum, transaction)
           Liquidate -> False
         }
       }
@@ -59,14 +61,16 @@ validator orders(
 
   withdraw(
     redeemer: OrdersWithdrawRedeemer,
-    _credential: Credential,
+    credential: Credential,
     transaction: Transaction,
   ) {
+    expect Script(own_validator) = credential
+
     valid_orders(
       validate_order,
       redeemer.indexer,
       transaction,
-      admin_pkh,
+      credential,
       redeemer.current_price,
     )
   }
