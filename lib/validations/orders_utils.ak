@@ -1,4 +1,5 @@
 use aiken/collection/list
+use aiken/crypto.{ScriptHash}
 use aiken/math/rational.{new, round}
 use cardano/address.{Address, Script, from_verification_key}
 use cardano/assets.{quantity_of}
@@ -6,8 +7,8 @@ use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  AddressHash, ClosePosition, Liquidate, OpenPosition, OrdersDatum,
-  PoolDatum, PositionDatum, ProvideLiquidity, WithdrawLiquidity,
+  ClosePosition, Liquidate, OpenPosition, OrdersDatum, PoolDatum, PositionDatum,
+  ProvideLiquidity, WithdrawLiquidity,
 }
 use utils.{get_lower_bound, validate_token_mint}
 
@@ -15,7 +16,7 @@ pub fn valid_orders(
   validation_logic: fn(Output, Output, Int, Transaction) -> Bool,
   redeemer: List<(Int, Int)>,
   transaction: Transaction,
-  own_validator: AddressHash,
+  own_validator: ScriptHash,
   current_asset_price: Int,
 ) -> Bool {
   let Transaction { inputs, outputs, .. } = transaction

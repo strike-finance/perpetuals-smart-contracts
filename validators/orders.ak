@@ -70,7 +70,7 @@ validator orders(
       validate_order,
       redeemer.indexer,
       transaction,
-      credential,
+      own_validator,
       redeemer.current_price,
     )
   }
