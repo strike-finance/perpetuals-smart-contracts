@@ -93,8 +93,8 @@ pub type EnterPositionParams {
 pub type PositionsMintRedeemer {
   MintLong(Int)
   MintShort(Int)
-  BurnLong
-  BurnShort
+  BurnLong(Int)
+  BurnShort(Int)
 }
 
 pub type PositionDatum {
