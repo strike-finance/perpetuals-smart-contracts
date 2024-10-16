@@ -49,8 +49,8 @@ validator orders(
         when datum.action is {
           ProcessOpenPositionOrder -> cancel_open_position(datum, transaction)
           ProcessClosePositionOrder -> cancel_close_position(datum, transaction)
-          ProcessStopLossOrder -> todo
-          ProcessTakeProfitOrder -> todo
+          ProcessStopLossOrder -> False
+          ProcessTakeProfitOrder -> False
           ProcessProvideLiquidityOrder ->
             cancel_contribute_liquidity(datum, transaction)
           ProcessWithdrawLiquidityOrder ->
