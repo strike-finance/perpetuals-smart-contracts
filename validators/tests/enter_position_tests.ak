@@ -7,9 +7,10 @@ use cardano/transaction.{
 }
 use enter_position_mint
 use tests/constants.{
-  admin_pkh, collateral_asset, enter_position_policy_id, long_asset_name,
-  long_position_asset, orders_script_hash, pool_asset, short_asset_name,
-  strike_collateral_asset, trader_pkh, underlying_asset,
+  admin_pkh, collateral_asset, enter_position_policy_id,
+  liquidity_positions_script_hash, long_asset_name, long_position_asset,
+  orders_script_hash, pool_asset, short_asset_name, strike_collateral_asset,
+  trader_pkh, underlying_asset,
 }
 use types.{
   Asset, BurnLong, BurnShort, EnterPositionParams, Long, MintLong, MintShort,
@@ -61,11 +62,12 @@ test test_enter_long_positions_mint() {
       underlying_asset_amount: 10,
       leverage_factor: 2,
       orders_script_hash,
-      positions_validator_hash: orders_script_hash,
+      positions_script_hash: orders_script_hash,
       positions_asset: long_position_asset,
       positions_asset_amount: 10,
       liquidity_asset: underlying_asset,
       liquidity_asset_amount: 10,
+      liquidity_positions_script_hash,
       collateral_asset,
       collateral_asset_amount: 10,
       strike_collateral_asset,
@@ -180,11 +182,12 @@ test test_enter_short_positions_mint() {
       underlying_asset_amount: 10,
       leverage_factor: 2,
       orders_script_hash,
-      positions_validator_hash: orders_script_hash,
+      positions_script_hash: orders_script_hash,
       positions_asset: long_position_asset,
       positions_asset_amount: 10,
       liquidity_asset: underlying_asset,
       liquidity_asset_amount: 10,
+      liquidity_positions_script_hash,
       collateral_asset,
       collateral_asset_amount: 10,
       strike_collateral_asset,

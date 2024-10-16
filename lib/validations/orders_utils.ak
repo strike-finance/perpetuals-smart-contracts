@@ -6,11 +6,12 @@ use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  OrdersDatum, PoolDatum, PositionDatum, ProcessClosePositionOrder,
-  ProcessLiquidateOrder, ProcessOpenPositionOrder, ProcessProvideLiquidityOrder,
-  ProcessStopLossOrder, ProcessTakeProfitOrder, ProcessWithdrawLiquidityOrder,
+  LiquidityPositionDatum, OrdersDatum, PoolDatum, PositionDatum,
+  ProcessClosePositionOrder, ProcessLiquidateOrder, ProcessOpenPositionOrder,
+  ProcessProvideLiquidityOrder, ProcessStopLossOrder, ProcessTakeProfitOrder,
+  ProcessWithdrawLiquidityOrder,
 }
-use utils.{validate_token_mint}
+use utils.{get_all_validators_inputs, validate_token_mint}
 
 pub fn valid_orders(
   validation_logic: fn(Output, Output, Transaction) -> Bool,
@@ -119,7 +120,7 @@ pub fn open_position(input: Output, output: Output) -> Bool {
   expect output_datum_typed: PositionDatum = output_datum
 
   let perpetual_address: Address =
-    from_verification_key(input_datum_typed.positions_validator_hash)
+    from_verification_key(input_datum_typed.positions_script_hash)
 
   let output_is_to_perpetual = output.address == perpetual_address
 
@@ -261,7 +262,7 @@ pub fn cancel_close_position(
   transaction: Transaction,
 ) -> Bool {
   let outputs_to_positions: List<Output> =
-    find_script_outputs(transaction.outputs, datum.positions_validator_hash)
+    find_script_outputs(transaction.outputs, datum.positions_script_hash)
 
   expect Some(output_to_positions) = list.head(outputs_to_positions)
 
@@ -324,7 +325,46 @@ pub fn cancel_withdraw_liquidity(
   datum: OrdersDatum,
   transaction: Transaction,
 ) -> Bool {
-  True
+  let inputs_from_scripts: List<Input> = get_all_validators_inputs(transaction)
+
+  expect Some(input_from_orders_validator) = list.head(inputs_from_scripts)
+
+  let only_one_input_from_script: Bool = list.length(inputs_from_scripts) == 1
+
+  let outputs_to_liquidity_position: List<Output> =
+    find_script_outputs(
+      transaction.outputs,
+      datum.liquidity_positions_script_hash,
+    )
+
+  expect Some(output_to_liquidity_position) =
+    list.head(outputs_to_liquidity_position)
+  expect InlineDatum(output_datum) = output_to_liquidity_position.datum
+
+  expect liquidity_position_datum_typed: LiquidityPositionDatum = output_datum
+
+  let signed_by_owner: Bool =
+    list.has(transaction.extra_signatories, datum.owner_address_hash)
+
+  let expected_liquidity_position_datum =
+    LiquidityPositionDatum {
+      owner_address_hash: datum.owner_address_hash,
+      entered_earnings_per_share: datum.entered_earnings_per_share,
+      entered_collateral_earnings_per_share: datum.entered_collateral_earnings_per_share,
+    }
+
+  let liquidity_assets_not_consumed =
+    quantity_of(
+      input_from_orders_validator.output.value,
+      datum.liquidity_asset.policy_id,
+      datum.liquidity_asset.asset_name,
+    ) == quantity_of(
+      output_to_liquidity_position.value,
+      datum.liquidity_asset.policy_id,
+      datum.liquidity_asset.asset_name,
+    )
+
+  only_one_input_from_script && signed_by_owner && liquidity_position_datum_typed == expected_liquidity_position_datum && liquidity_assets_not_consumed
 }
 
 pub fn stop_loss(

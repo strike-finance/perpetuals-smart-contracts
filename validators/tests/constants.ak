@@ -20,6 +20,9 @@ pub const pool_asset_name = #"6c6f6e67"
 pub const orders_script_hash =
   #"bcbc44bd78bff976123ad00e496f855df46d6af2c7a2de30133cd7f0"
 
+pub const liquidity_positions_script_hash =
+  #"bcbc44bd78bff976123ad00e496f855df46d6af2c7a2de30133cd7f0"
+
 pub const trader_pkh =
   #"d48838fee1e840857dab28a04dd88193aec8c297b85d8150c0a1f5cc"
 

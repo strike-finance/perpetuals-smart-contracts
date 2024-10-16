@@ -26,7 +26,7 @@
 //       underlying_asset_amount: 5000000,
 //       leverage_factor: 2,
 //       orders_script_hash,
-//       positions_validator_hash: orders_script_hash,
+//       position_script_hash: orders_script_hash,
 //       positions_asset: long_position_asset,
 //       positions_asset_amount: 10,
 //       liquidity_asset: underlying_asset,

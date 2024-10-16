@@ -520,7 +520,7 @@ pub type OrdersDatum {
   underlying_amount: Int,
   leverage_factor: Int,
   orders_script_hash: ScriptHash,
-  positions_validator_hash: ScriptHash,
+  position_script_hash: ScriptHash,
   positions_asset: Asset,
   positions_asset_amount: Int,
   liquidity_asset: Asset,
