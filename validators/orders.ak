@@ -10,9 +10,8 @@ use types.{
 }
 use utils.{get_all_validators_inputs, is_withdrawal}
 use validations/orders_utils.{
-  cancel_close_position_order, cancel_contribute_liquidity_order,
-  cancel_open_position_order, cancel_withdraw_liquidity_order, valid_orders,
-  validate_individual_order,
+  cancel_close_position, cancel_contribute_liquidity, cancel_open_position,
+  cancel_withdraw_liquidity, valid_orders, validate_individual_order,
 }
 
 // Users will be placing their orders here. The funds for their position will be here until the the batcher puts it into the pool.
@@ -48,16 +47,14 @@ validator orders(
         expect signed_by_owner && only_one_input_from_script
 
         when datum.action is {
-          ProcessOpenPositionOrder ->
-            cancel_open_position_order(datum, transaction)
-          ProcessClosePositionOrder ->
-            cancel_close_position_order(datum, transaction)
+          ProcessOpenPositionOrder -> cancel_open_position(datum, transaction)
+          ProcessClosePositionOrder -> cancel_close_position(datum, transaction)
           ProcessStopLossOrder -> todo
           ProcessTakeProfitOrder -> todo
           ProcessProvideLiquidityOrder ->
-            cancel_contribute_liquidity_order(datum, transaction)
+            cancel_contribute_liquidity(datum, transaction)
           ProcessWithdrawLiquidityOrder ->
-            cancel_withdraw_liquidity_order(datum, transaction)
+            cancel_withdraw_liquidity(datum, transaction)
           ProcessLiquidateOrder -> False
         }
       }

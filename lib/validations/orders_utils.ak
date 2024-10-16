@@ -80,20 +80,20 @@ pub fn validate_individual_order(
   expect input_datum_typed: OrdersDatum = input_datum
 
   when input_datum_typed.action is {
-    ProcessOpenPositionOrder -> validate_open_position(input, output)
+    ProcessOpenPositionOrder -> open_position(input, output)
     ProcessClosePositionOrder ->
-      validate_close_position(input, output, current_asset_price, transaction)
+      close_position(input, output, current_asset_price, transaction)
     ProcessStopLossOrder -> todo
     ProcessTakeProfitOrder -> todo
-    ProcessProvideLiquidityOrder -> validate_contribute_liquidity(input, output)
+    ProcessProvideLiquidityOrder -> contribute_liquidity(input, output)
     ProcessWithdrawLiquidityOrder ->
-      validate_withdraw_liquidity(input, output, transaction)
+      withdraw_liquidity(input, output, transaction)
     ProcessLiquidateOrder -> False
   }
 }
 
 // asset is send to positions_contract, datum is not corruped, is sent to the correct validator
-pub fn validate_open_position(input: Output, output: Output) -> Bool {
+pub fn open_position(input: Output, output: Output) -> Bool {
   expect InlineDatum(input_datum) = input.datum
 
   expect input_datum_typed: OrdersDatum = input_datum
@@ -136,7 +136,7 @@ pub fn validate_open_position(input: Output, output: Output) -> Bool {
 }
 
 // correct asset is consumed, asset is sent to user, asset is burned
-pub fn validate_close_position(
+pub fn close_position(
   input: Output,
   output: Output,
   current_asset_price: Int,
@@ -196,7 +196,7 @@ pub fn validate_close_position(
   mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
 }
 
-pub fn validate_withdraw_liquidity(
+pub fn withdraw_liquidity(
   input: Output,
   output: Output,
   transaction: Transaction,
@@ -257,12 +257,12 @@ pub fn validate_withdraw_liquidity(
 }
 
 // The logic in the main function checks if the asset is being added to the pooled utxo
-pub fn validate_contribute_liquidity(_input: Output, _output: Output) -> Bool {
+pub fn contribute_liquidity(_input: Output, _output: Output) -> Bool {
   True
 }
 
 // assets are burned 
-pub fn cancel_open_position_order(
+pub fn cancel_open_position(
   datum: OrdersDatum,
   transaction: Transaction,
 ) -> Bool {
@@ -275,7 +275,7 @@ pub fn cancel_open_position_order(
 }
 
 // positions send back to positions utxo, datum is not corrupted
-pub fn cancel_close_position_order(
+pub fn cancel_close_position(
   datum: OrdersDatum,
   transaction: Transaction,
 ) -> Bool {
@@ -320,7 +320,7 @@ pub fn cancel_close_position_order(
 }
 
 // assets are burned 
-pub fn cancel_contribute_liquidity_order(
+pub fn cancel_contribute_liquidity(
   datum: OrdersDatum,
   transaction: Transaction,
 ) -> Bool {
@@ -336,9 +336,17 @@ pub fn cancel_contribute_liquidity_order(
   mint_valid
 }
 
-pub fn cancel_withdraw_liquidity_order(
+pub fn cancel_withdraw_liquidity(
   datum: OrdersDatum,
   transaction: Transaction,
 ) -> Bool {
+  True
+}
+
+pub fn stop_loss() -> Bool {
+  True
+}
+
+pub fn take_profit() -> Bool {
   True
 }
