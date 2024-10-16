@@ -128,43 +128,167 @@ pub fn stop_loss(
   orders_datum_valid && only_one_input_from_script && only_one_output_to_orders_validator && valid_asset_in_output && stop_loss_valid
 }
 
+// assets are not consumed, user signed transaction, only stop lose is updated 
 pub fn update_stop_loss(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   orders_script_hash: ByteArray,
+  stop_loss_usd_price: Int,
 ) -> Bool {
- todo
+  expect Some(input_datum) = datum
+
+  let all_validators_inputs: List<Input> =
+    get_all_validators_inputs(transaction)
+  let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
+
+  expect Some(input_from_script) = list.head(all_validators_inputs)
+
+  let outputs_back_to_positions_validator: List<Output> =
+    get_address_outputs(transaction, input_from_script.output.address)
+  let only_one_output_to_positions_validator: Bool =
+    list.length(outputs_back_to_positions_validator) == 1
+
+  expect Some(output_to_positions_validator) =
+    list.head(outputs_back_to_positions_validator)
+
+  expect InlineDatum(output_datum) = output_to_positions_validator.datum
+  expect output_datum_typed: PositionDatum = output_datum
+
+  let collateral_asset_returned: Bool =
+    quantity_of(
+      input_from_script.output.value,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
+    ) == quantity_of(
+      output_to_positions_validator.value,
+      output_datum_typed.collateral_asset.policy_id,
+      output_datum_typed.collateral_asset.asset_name,
+    )
+
+  let positions_asset_returned: Bool =
+    quantity_of(
+      input_from_script.output.value,
+      input_datum.positions_asset.policy_id,
+      input_datum.positions_asset.asset_name,
+    ) == quantity_of(
+      output_to_positions_validator.value,
+      output_datum_typed.positions_asset.policy_id,
+      output_datum_typed.positions_asset.asset_name,
+    )
+
+  let expected_output_datum =
+    PositionDatum {
+      owner_address_hash: input_datum.owner_address_hash,
+      entered_at_price: input_datum.entered_at_price,
+      underlying_asset: input_datum.underlying_asset,
+      leverage_factor: input_datum.leverage_factor,
+      positions_asset: input_datum.positions_asset,
+      positions_asset_amount: input_datum.positions_asset_amount,
+      collateral_asset: input_datum.collateral_asset,
+      collateral_asset_amount: input_datum.collateral_asset_amount,
+      liquidate_usd_price: input_datum.liquidate_usd_price,
+      stop_loss_usd_price,
+      take_profit_usd_price: input_datum.take_profit_usd_price,
+      last_pay_lend_time: input_datum.last_pay_lend_time,
+      validate_pool_ref: input_datum.validate_pool_ref,
+      side: input_datum.side,
+    }
+
+  let output_datum_valid: Bool = output_datum_typed == expected_output_datum
+
+  only_one_input_from_script && only_one_output_to_positions_validator && collateral_asset_returned && positions_asset_returned && output_datum_valid
 }
 
+// assets are not consumed, user signed transaction, only stop lose is updated 
 pub fn take_profit(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   current_price: Int,
   orders_script_hash: ByteArray,
 ) -> Bool {
- todo
+  todo
 }
 
+// assets are not consumed, user signed transaction, only stop lose is updated 
 pub fn update_take_profit(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   orders_script_hash: ByteArray,
+  take_profit_usd_price: Int,
 ) -> Bool {
- todo
+  expect Some(input_datum) = datum
+
+  let all_validators_inputs: List<Input> =
+    get_all_validators_inputs(transaction)
+  let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
+
+  expect Some(input_from_script) = list.head(all_validators_inputs)
+
+  let outputs_back_to_positions_validator: List<Output> =
+    get_address_outputs(transaction, input_from_script.output.address)
+  let only_one_output_to_positions_validator: Bool =
+    list.length(outputs_back_to_positions_validator) == 1
+
+  expect Some(output_to_positions_validator) =
+    list.head(outputs_back_to_positions_validator)
+
+  expect InlineDatum(output_datum) = output_to_positions_validator.datum
+  expect output_datum_typed: PositionDatum = output_datum
+
+  let collateral_asset_returned: Bool =
+    quantity_of(
+      input_from_script.output.value,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
+    ) == quantity_of(
+      output_to_positions_validator.value,
+      output_datum_typed.collateral_asset.policy_id,
+      output_datum_typed.collateral_asset.asset_name,
+    )
+
+  let positions_asset_returned: Bool =
+    quantity_of(
+      input_from_script.output.value,
+      input_datum.positions_asset.policy_id,
+      input_datum.positions_asset.asset_name,
+    ) == quantity_of(
+      output_to_positions_validator.value,
+      output_datum_typed.positions_asset.policy_id,
+      output_datum_typed.positions_asset.asset_name,
+    )
+
+  let expected_output_datum =
+    PositionDatum {
+      owner_address_hash: input_datum.owner_address_hash,
+      entered_at_price: input_datum.entered_at_price,
+      underlying_asset: input_datum.underlying_asset,
+      leverage_factor: input_datum.leverage_factor,
+      positions_asset: input_datum.positions_asset,
+      positions_asset_amount: input_datum.positions_asset_amount,
+      collateral_asset: input_datum.collateral_asset,
+      collateral_asset_amount: input_datum.collateral_asset_amount,
+      liquidate_usd_price: input_datum.liquidate_usd_price,
+      stop_loss_usd_price: input_datum.stop_loss_usd_price,
+      take_profit_usd_price,
+      last_pay_lend_time: input_datum.last_pay_lend_time,
+      validate_pool_ref: input_datum.validate_pool_ref,
+      side: input_datum.side,
+    }
+
+  let output_datum_valid: Bool = output_datum_typed == expected_output_datum
+
+  only_one_input_from_script && only_one_output_to_positions_validator && collateral_asset_returned && positions_asset_returned && output_datum_valid
 }
 
+// assets are not consumed, user signed transaction, only stop lose is updated 
 pub fn liquidate_position(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   current_price: Int,
   orders_script_hash: ByteArray,
 ) -> Bool {
- todo
+  todo
 }
-
-
-
-
 
 pub fn pay_lend(
   transaction: Transaction,
