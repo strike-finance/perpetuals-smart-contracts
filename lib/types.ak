@@ -25,13 +25,13 @@ pub type PositionSide {
 }
 
 pub type OrderAction {
-  OpenPosition
-  ClosePosition
-  CloseStopLossPosition
-  CloseTakeProfitPosition
-  ProvideLiquidity
-  WithdrawLiquidity
-  Liquidate
+  ProcessOpenPositionOrder
+  ProcessClosePositionOrder
+  ProcessStopLossOrder
+  ProcessTakeProfitOrder
+  ProcessProvideLiquidityOrder
+  ProcessWithdrawLiquidityOrder
+  ProcessLiquidateOrder
 }
 
 pub type OrdersRedeemer {
@@ -81,7 +81,7 @@ pub type PositionsRedeemer {
   UpdateStopLoss(Int)
   TakeProfit(Int)
   UpdateTakeProfit(Int)
-  LiquidatePosition(Int)
+  Liquidate(Int)
   PayLend(Int)
 }
 

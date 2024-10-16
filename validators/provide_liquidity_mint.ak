@@ -1,7 +1,8 @@
 use aiken/collection/list
 use cardano/assets.{PolicyId, quantity_of}
 use cardano/transaction.{InlineDatum, Transaction, find_script_outputs}
-use types.{OrdersDatum, ProvideLiquidity, ProvideLiquidityMintParams}
+use types.{OrdersDatum,
+  ProcessProvideLiquidityOrder, ProvideLiquidityMintParams}
 use utils.{validate_token_mint}
 
 // when user wants to provide liquidity, they will mint assets and sent it to the orders validator for processing
@@ -31,8 +32,7 @@ validator provide_liquidity_mint(params: ProvideLiquidityMintParams) {
       (policy_id, params.asset_name, pool_asset_deposited_amount)
 
     let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
-
-    let action_valid = orders_datum_typed.action == ProvideLiquidity
+    let action_valid = orders_datum_typed.action == ProcessProvideLiquidityOrder
 
     only_one_output_to_orders && mint_valid && action_valid
   }

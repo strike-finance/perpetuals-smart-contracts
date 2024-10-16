@@ -2,7 +2,9 @@ use aiken/collection/list
 use cardano/transaction.{
   InlineDatum, OutputReference, Transaction, find_script_outputs,
 }
-use types.{LiquidityPositionDatum, OrdersDatum, ScriptHash, WithdrawLiquidity}
+use types.{
+  LiquidityPositionDatum, OrdersDatum, ProcessWithdrawLiquidityOrder, ScriptHash,
+}
 
 // Users liquidity positions are held here. When they want to withdraw their liquidity, they will spend from this script and send to the orders
 // validator for processing
@@ -27,7 +29,8 @@ validator liquidity_position(orders_script_hash: ScriptHash) {
 
     expect orders_datum_typed: OrdersDatum = orders_datum
 
-    let action_valid = orders_datum_typed.action == WithdrawLiquidity
+    let action_valid =
+      orders_datum_typed.action == ProcessWithdrawLiquidityOrder
 
     let earnings_per_share_valid =
       orders_datum_typed.entered_earnings_per_share == datum.entered_earnings_per_share && orders_datum_typed.entered_collateral_earnings_per_share == datum.entered_collateral_earnings_per_share

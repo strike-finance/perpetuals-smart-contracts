@@ -3,9 +3,10 @@ use cardano/address.{Credential, Script}
 use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{Input, OutputReference, Transaction}
 use types.{
-  AddressHash, BatchOrders, CancelOrders, ClosePosition, CloseStopLossPosition,
-  CloseTakeProfitPosition, Liquidate, OpenPosition, OrdersDatum, OrdersRedeemer,
-  OrdersWithdrawRedeemer, ProvideLiquidity, WithdrawLiquidity,
+  AddressHash, BatchOrders, CancelOrders, OrdersDatum, OrdersRedeemer,
+  OrdersWithdrawRedeemer, ProcessClosePositionOrder, ProcessLiquidateOrder,
+  ProcessOpenPositionOrder, ProcessProvideLiquidityOrder, ProcessStopLossOrder,
+  ProcessTakeProfitOrder, ProcessWithdrawLiquidityOrder,
 }
 use utils.{get_all_validators_inputs, is_withdrawal}
 use validations/orders_utils.{
@@ -47,15 +48,17 @@ validator orders(
         expect signed_by_owner && only_one_input_from_script
 
         when datum.action is {
-          OpenPosition -> cancel_open_position_order(datum, transaction)
-          ClosePosition -> cancel_close_position_order(datum, transaction)
-          CloseStopLossPosition -> todo
-          CloseTakeProfitPosition -> todo
-          ProvideLiquidity ->
+          ProcessOpenPositionOrder ->
+            cancel_open_position_order(datum, transaction)
+          ProcessClosePositionOrder ->
+            cancel_close_position_order(datum, transaction)
+          ProcessStopLossOrder -> todo
+          ProcessTakeProfitOrder -> todo
+          ProcessProvideLiquidityOrder ->
             cancel_contribute_liquidity_order(datum, transaction)
-          WithdrawLiquidity ->
+          ProcessWithdrawLiquidityOrder ->
             cancel_withdraw_liquidity_order(datum, transaction)
-          Liquidate -> False
+          ProcessLiquidateOrder -> False
         }
       }
     }

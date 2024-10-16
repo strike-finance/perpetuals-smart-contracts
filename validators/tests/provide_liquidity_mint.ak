@@ -9,7 +9,9 @@ use tests/constants.{
   provide_liquidity_policy_id, provide_liquidty_asset_name,
   strike_collateral_asset, trader_pkh, underlying_asset,
 }
-use types.{Long, OrdersDatum, ProvideLiquidity, ProvideLiquidityMintParams}
+use types.{
+  Long, OrdersDatum, ProcessProvideLiquidityOrder, ProvideLiquidityMintParams,
+}
 
 test test_burn_short_positions_mint() {
   let validate_pool_ref =
@@ -43,7 +45,7 @@ test test_burn_short_positions_mint() {
       order_submission_time: 1751111000,
       validate_pool_ref,
       order_submission_usd_price: 100,
-      action: ProvideLiquidity,
+      action: ProcessProvideLiquidityOrder,
       side: Long,
     }
 

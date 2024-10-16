@@ -4,8 +4,9 @@ use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  ClosePosition, CloseStopLossPosition, CloseTakeProfitPosition, Liquidate,
   OrderAction, OrdersDatum, POSIXTime, PoolDatum, PositionDatum,
+  ProcessClosePositionOrder, ProcessLiquidateOrder, ProcessStopLossOrder,
+  ProcessTakeProfitOrder,
 }
 use utils.{
   get_address_outputs, get_all_validators_inputs, get_lower_bound,
@@ -60,7 +61,7 @@ pub fn close_position(
       input_datum,
       orders_datum_typed,
       current_price,
-      ClosePosition,
+      ProcessClosePositionOrder,
     )
 
   signed_by_owner && valid_asset_in_output && orders_datum_valid && only_one_input_from_script && collateral_asset_not_consumed
@@ -111,7 +112,7 @@ pub fn stop_loss(
       input_datum,
       orders_datum_typed,
       current_price,
-      CloseStopLossPosition,
+      ProcessStopLossOrder,
     )
 
   let stop_loss_reached: Bool = current_price <= input_datum.stop_loss_usd_price
@@ -233,7 +234,7 @@ pub fn take_profit(
       input_datum,
       orders_datum_typed,
       current_price,
-      CloseTakeProfitPosition,
+      ProcessTakeProfitOrder,
     )
 
   let stop_loss_reached: Bool =
@@ -358,7 +359,7 @@ pub fn liquidate_position(
       input_datum,
       orders_datum_typed,
       current_price,
-      Liquidate,
+      ProcessLiquidateOrder,
     )
 
   let stop_loss_reached: Bool = current_price <= input_datum.liquidate_usd_price

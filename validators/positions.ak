@@ -1,6 +1,6 @@
 use cardano/transaction.{OutputReference, Transaction}
 use types.{
-  Close, LiquidatePosition, PayLend, PositionDatum, PositionsRedeemer, StopLoss,
+  Close, Liquidate, PayLend, PositionDatum, PositionsRedeemer, StopLoss,
   TakeProfit, UpdateStopLoss, UpdateTakeProfit,
 }
 use validations/positions_utils.{
@@ -26,7 +26,7 @@ validator positions(orders_validator: ByteArray) {
         take_profit(transaction, datum, current_price, orders_validator)
       UpdateTakeProfit(take_profit_price) ->
         update_take_profit(transaction, datum, take_profit_price)
-      LiquidatePosition(current_price) ->
+      Liquidate(current_price) ->
         liquidate_position(transaction, datum, current_price, orders_validator)
       PayLend(current_price) -> pay_lend(transaction, datum, current_price)
     }

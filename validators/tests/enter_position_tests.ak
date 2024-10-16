@@ -13,7 +13,7 @@ use tests/constants.{
 }
 use types.{
   Asset, BurnLong, BurnShort, EnterPositionParams, Long, MintLong, MintShort,
-  OpenPosition, OrdersDatum, PoolDatum,
+  OrdersDatum, PoolDatum, ProcessOpenPositionOrder,
 }
 
 test test_enter_long_positions_mint() {
@@ -78,7 +78,7 @@ test test_enter_long_positions_mint() {
       order_submission_time: 1751111000,
       order_submission_usd_price: 100,
       validate_pool_ref,
-      action: OpenPosition,
+      action: ProcessOpenPositionOrder,
       side: Long,
     }
 
@@ -197,7 +197,7 @@ test test_enter_short_positions_mint() {
       order_submission_time: 1751111000,
       order_submission_usd_price: 100,
       validate_pool_ref,
-      action: OpenPosition,
+      action: ProcessOpenPositionOrder,
       side: Long,
     }
 

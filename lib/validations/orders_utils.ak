@@ -7,9 +7,9 @@ use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  ClosePosition, CloseStopLossPosition, CloseTakeProfitPosition, Liquidate,
-  OpenPosition, OrdersDatum, PoolDatum, PositionDatum, ProvideLiquidity,
-  WithdrawLiquidity,
+  OrdersDatum, PoolDatum, PositionDatum, ProcessClosePositionOrder,
+  ProcessLiquidateOrder, ProcessOpenPositionOrder, ProcessProvideLiquidityOrder,
+  ProcessStopLossOrder, ProcessTakeProfitOrder, ProcessWithdrawLiquidityOrder,
 }
 use utils.{get_lower_bound, validate_token_mint}
 
@@ -80,14 +80,15 @@ pub fn validate_individual_order(
   expect input_datum_typed: OrdersDatum = input_datum
 
   when input_datum_typed.action is {
-    OpenPosition -> validate_open_position(input, output)
-    ClosePosition ->
+    ProcessOpenPositionOrder -> validate_open_position(input, output)
+    ProcessClosePositionOrder ->
       validate_close_position(input, output, current_asset_price, transaction)
-    CloseStopLossPosition -> todo
-    CloseTakeProfitPosition -> todo
-    ProvideLiquidity -> validate_contribute_liquidity(input, output)
-    WithdrawLiquidity -> validate_withdraw_liquidity(input, output, transaction)
-    Liquidate -> False
+    ProcessStopLossOrder -> todo
+    ProcessTakeProfitOrder -> todo
+    ProcessProvideLiquidityOrder -> validate_contribute_liquidity(input, output)
+    ProcessWithdrawLiquidityOrder ->
+      validate_withdraw_liquidity(input, output, transaction)
+    ProcessLiquidateOrder -> False
   }
 }
 
