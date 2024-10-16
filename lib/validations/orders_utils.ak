@@ -1,6 +1,5 @@
 use aiken/collection/list
 use aiken/crypto.{ScriptHash}
-use aiken/math/rational.{new, round}
 use cardano/address.{Address, Script, from_verification_key}
 use cardano/assets.{quantity_of}
 use cardano/transaction.{
@@ -11,14 +10,13 @@ use types.{
   ProcessLiquidateOrder, ProcessOpenPositionOrder, ProcessProvideLiquidityOrder,
   ProcessStopLossOrder, ProcessTakeProfitOrder, ProcessWithdrawLiquidityOrder,
 }
-use utils.{get_lower_bound, validate_token_mint}
+use utils.{validate_token_mint}
 
 pub fn valid_orders(
-  validation_logic: fn(Output, Output, Int, Transaction) -> Bool,
+  validation_logic: fn(Output, Output, Transaction) -> Bool,
   redeemer: List<(Int, Int)>,
   transaction: Transaction,
   own_validator: ScriptHash,
-  current_asset_price: Int,
 ) -> Bool {
   let Transaction { inputs, outputs, .. } = transaction
   let (script_inputs, script_input_count) =
@@ -51,12 +49,7 @@ pub fn valid_orders(
         if in1 > in0 && out1 > out0 {
           expect Some(in_utxo) = script_inputs |> list.at(in1)
           expect Some(out_utxo) = outputs |> list.at(out1)
-          if validation_logic(
-            in_utxo,
-            out_utxo,
-            current_asset_price,
-            transaction,
-          ) {
+          if validation_logic(in_utxo, out_utxo, transaction) {
             (in1, out1, count + 1)
           } else {
             fail @"Validation failed"
@@ -72,7 +65,6 @@ pub fn valid_orders(
 pub fn validate_individual_order(
   input: Output,
   output: Output,
-  current_asset_price: Int,
   transaction: Transaction,
 ) -> Bool {
   expect InlineDatum(input_datum) = input.datum
@@ -81,10 +73,9 @@ pub fn validate_individual_order(
 
   when input_datum_typed.action is {
     ProcessOpenPositionOrder -> open_position(input, output)
-    ProcessClosePositionOrder ->
-      close_position(input, output, current_asset_price, transaction)
-    ProcessStopLossOrder -> todo
-    ProcessTakeProfitOrder -> todo
+    ProcessClosePositionOrder -> close_position(input, output, transaction)
+    ProcessStopLossOrder -> stop_loss(input, output, transaction)
+    ProcessTakeProfitOrder -> take_profit(input, output, transaction)
     ProcessProvideLiquidityOrder -> contribute_liquidity(input, output)
     ProcessWithdrawLiquidityOrder ->
       withdraw_liquidity(input, output, transaction)
@@ -139,7 +130,6 @@ pub fn open_position(input: Output, output: Output) -> Bool {
 pub fn close_position(
   input: Output,
   output: Output,
-  current_asset_price: Int,
   transaction: Transaction,
 ) -> Bool {
   expect InlineDatum(input_datum) = input.datum
@@ -147,22 +137,13 @@ pub fn close_position(
   expect input_datum_typed: OrdersDatum = input_datum
 
   let current_position_amount: Int =
-    current_asset_price * input_datum_typed.leverage_factor
+    input_datum_typed.order_submission_usd_price * input_datum_typed.leverage_factor
 
   let entry_position_amount: Int =
     input_datum_typed.positions_asset_amount * input_datum_typed.leverage_factor
 
-  let current_time: Int = get_lower_bound(transaction.validity_range)
-
-  let time_passed: Int = current_time - input_datum_typed.order_submission_time
-
-  expect Some(time_passed_rational) = new(time_passed, 3600000)
-
-  let payback_lend_amount: Int =
-    round(time_passed_rational) * entry_position_amount * entry_position_amount
-
   let expected_asset_amount_send_to_user: Int =
-    current_position_amount - payback_lend_amount - entry_position_amount
+    current_position_amount - entry_position_amount
 
   let expected_mint =
     (
@@ -333,7 +314,10 @@ pub fn cancel_contribute_liquidity(
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
-  mint_valid
+  let signed_by_owner: Bool =
+    list.has(transaction.extra_signatories, datum.owner_address_hash)
+
+  mint_valid && signed_by_owner
 }
 
 pub fn cancel_withdraw_liquidity(
@@ -343,10 +327,106 @@ pub fn cancel_withdraw_liquidity(
   True
 }
 
-pub fn stop_loss() -> Bool {
-  True
+pub fn stop_loss(
+  input: Output,
+  output: Output,
+  transaction: Transaction,
+) -> Bool {
+  expect InlineDatum(input_datum) = input.datum
+
+  expect input_datum_typed: OrdersDatum = input_datum
+
+  let position_amount: Int =
+    input_datum_typed.positions_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.entered_at_price
+
+  let entry_position_amount: Int =
+    input_datum_typed.positions_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.stop_loss_usd_price
+
+  let loss_in_usd: Int = entry_position_amount - position_amount
+
+  let asset_amount_to_send_back: Int =
+    loss_in_usd / input_datum_typed.stop_loss_usd_price
+
+  let expected_mint =
+    (
+      input_datum_typed.positions_asset.policy_id,
+      input_datum_typed.positions_asset.asset_name,
+      input_datum_typed.positions_asset_amount * -1,
+    )
+
+  let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
+
+  let address: Address =
+    from_verification_key(input_datum_typed.owner_address_hash)
+
+  // not sure if a staking credential can alter this
+  let output_is_to_owner = output.address == address
+
+  let asset_sent_to_owner_valid =
+    quantity_of(
+      output.value,
+      input_datum_typed.underlying_asset.policy_id,
+      input_datum_typed.underlying_asset.asset_name,
+    ) == asset_amount_to_send_back
+
+  let collateral_sent_to_owner_valid =
+    quantity_of(
+      output.value,
+      input_datum_typed.collateral_asset.policy_id,
+      input_datum_typed.collateral_asset.asset_name,
+    ) == input_datum_typed.collateral_asset_amount
+
+  mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
 }
 
-pub fn take_profit() -> Bool {
-  True
+pub fn take_profit(
+  input: Output,
+  output: Output,
+  transaction: Transaction,
+) -> Bool {
+  expect InlineDatum(input_datum) = input.datum
+
+  expect input_datum_typed: OrdersDatum = input_datum
+
+  let position_amount: Int =
+    input_datum_typed.positions_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.entered_at_price
+
+  let entry_position_amount: Int =
+    input_datum_typed.positions_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.take_profit_usd_price
+
+  let loss_in_usd: Int = entry_position_amount - position_amount
+
+  let asset_amount_to_send_back: Int =
+    loss_in_usd / input_datum_typed.take_profit_usd_price
+
+  let expected_mint =
+    (
+      input_datum_typed.positions_asset.policy_id,
+      input_datum_typed.positions_asset.asset_name,
+      input_datum_typed.positions_asset_amount * -1,
+    )
+
+  let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
+
+  let address: Address =
+    from_verification_key(input_datum_typed.owner_address_hash)
+
+  // not sure if a staking credential can alter this
+  let output_is_to_owner = output.address == address
+
+  let asset_sent_to_owner_valid =
+    quantity_of(
+      output.value,
+      input_datum_typed.underlying_asset.policy_id,
+      input_datum_typed.underlying_asset.asset_name,
+    ) == asset_amount_to_send_back
+
+  let collateral_sent_to_owner_valid =
+    quantity_of(
+      output.value,
+      input_datum_typed.collateral_asset.policy_id,
+      input_datum_typed.collateral_asset.asset_name,
+    ) == input_datum_typed.collateral_asset_amount
+
+  mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
 }

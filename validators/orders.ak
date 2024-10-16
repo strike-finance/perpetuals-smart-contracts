@@ -73,7 +73,6 @@ validator orders(
       redeemer.indexer,
       transaction,
       own_validator,
-      redeemer.current_price,
     )
   }
 
