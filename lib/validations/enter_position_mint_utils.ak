@@ -140,8 +140,8 @@ pub fn enter_short_mint(
   let collateral_asset_deposited_amount: Int =
     quantity_of(
       output_to_orders_validator.value,
-      orders_datum_typed.stable_collateral_asset.policy_id,
-      orders_datum_typed.stable_collateral_asset.asset_name,
+      orders_datum_typed.collateral_asset.policy_id,
+      orders_datum_typed.collateral_asset.asset_name,
     )
 
   let contains_strike_collateral: Bool =

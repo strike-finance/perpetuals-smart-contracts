@@ -3,15 +3,15 @@ use cardano/address.{Credential, Script}
 use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{Input, OutputReference, Transaction}
 use types.{
-  AddressHash, BatchOrders, CancelOrders, ClosePosition, Liquidate, OpenPosition,
-  OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer, ProvideLiquidity,
-  WithdrawLiquidity,
+  AddressHash, BatchOrders, CancelOrders, ClosePosition, CloseStopLossPosition,
+  CloseTakeProfitPosition, Liquidate, OpenPosition, OrdersDatum, OrdersRedeemer,
+  OrdersWithdrawRedeemer, ProvideLiquidity, WithdrawLiquidity,
 }
 use utils.{get_all_validators_inputs, is_withdrawal}
 use validations/orders_utils.{
   cancel_close_position_order, cancel_contribute_liquidity_order,
   cancel_open_position_order, cancel_withdraw_liquidity_order, valid_orders,
-  validate_order,
+  validate_individual_order,
 }
 
 // Users will be placing their orders here. The funds for their position will be here until the the batcher puts it into the pool.
@@ -49,6 +49,8 @@ validator orders(
         when datum.action is {
           OpenPosition -> cancel_open_position_order(datum, transaction)
           ClosePosition -> cancel_close_position_order(datum, transaction)
+          CloseStopLossPosition -> todo
+          CloseTakeProfitPosition -> todo
           ProvideLiquidity ->
             cancel_contribute_liquidity_order(datum, transaction)
           WithdrawLiquidity ->
@@ -67,7 +69,7 @@ validator orders(
     expect Script(own_validator) = credential
 
     valid_orders(
-      validate_order,
+      validate_individual_order,
       redeemer.indexer,
       transaction,
       own_validator,

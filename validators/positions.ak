@@ -4,8 +4,8 @@ use types.{
   TakeProfit, UpdateStopLoss, UpdateTakeProfit,
 }
 use validations/positions_utils.{
-  close_position, liquidate_position, stop_loss, take_profit, update_stop_loss, pay_lend,
-  update_take_profit,
+  close_position, liquidate_position, pay_lend, stop_loss, take_profit,
+  update_stop_loss, update_take_profit,
 }
 
 validator positions(orders_validator: ByteArray) {
@@ -16,22 +16,19 @@ validator positions(orders_validator: ByteArray) {
     transaction: Transaction,
   ) {
     when redeemer is {
-      Close -> close_position(transaction, datum, orders_validator)
+      Close(current_price) ->
+        close_position(transaction, datum, current_price, orders_validator)
       StopLoss(current_price) ->
-      stop_loss(transaction, datum, current_price, orders_validator)
-      UpdateStopLoss -> update_stop_loss(transaction, datum, orders_validator)
+        stop_loss(transaction, datum, current_price, orders_validator)
+      UpdateStopLoss(stop_loss_price) ->
+        update_stop_loss(transaction, datum, stop_loss_price)
       TakeProfit(current_price) ->
         take_profit(transaction, datum, current_price, orders_validator)
-      UpdateTakeProfit -> update_take_profit(transaction, datum, orders_validator)
+      UpdateTakeProfit(take_profit_price) ->
+        update_take_profit(transaction, datum, take_profit_price)
       LiquidatePosition(current_price) ->
-        liquidate_position(
-          transaction,
-          datum,
-          current_price,
-          orders_validator,
-        )
-      PayLend(current_price) ->
-   pay_lend(transaction, datum, current_price)
+        liquidate_position(transaction, datum, current_price, orders_validator)
+      PayLend(current_price) -> pay_lend(transaction, datum, current_price)
     }
   }
 

@@ -7,8 +7,8 @@ use cardano/transaction.{
 }
 use enter_position_mint
 use tests/constants.{
-  admin_pkh, enter_position_policy_id, long_asset_name, long_position_asset,
-  orders_script_hash, pool_asset, short_asset_name, stable_collateral_asset,
+  admin_pkh, collateral_asset, enter_position_policy_id, long_asset_name,
+  long_position_asset, orders_script_hash, pool_asset, short_asset_name,
   strike_collateral_asset, trader_pkh, underlying_asset,
 }
 use types.{
@@ -29,7 +29,7 @@ test test_enter_long_positions_mint() {
       underlying_asset_amount: 0,
       underlying_asset_lended_amount: 0,
       underlying_interest_rate: 0,
-      stable_collateral_asset,
+      collateral_asset,
       max_leverage_factor: 5,
       liquidate_margin: 2,
       max_strike_holder_leverage_factor: 10,
@@ -66,8 +66,8 @@ test test_enter_long_positions_mint() {
       positions_asset_amount: 10,
       liquidity_asset: underlying_asset,
       liquidity_asset_amount: 10,
-      stable_collateral_asset,
-      stable_collateral_asset_amount: 10,
+      collateral_asset,
+      collateral_asset_amount: 10,
       strike_collateral_asset,
       strike_collateral_amount: 10,
       entered_earnings_per_share: 0,
@@ -76,6 +76,7 @@ test test_enter_long_positions_mint() {
       stop_loss_usd_price: 0,
       take_profit_usd_price: 0,
       order_submission_time: 1751111000,
+      order_submission_usd_price: 100,
       validate_pool_ref,
       action: OpenPosition,
       side: Long,
@@ -148,7 +149,7 @@ test test_enter_short_positions_mint() {
       underlying_asset_amount: 0,
       underlying_asset_lended_amount: 0,
       underlying_interest_rate: 0,
-      stable_collateral_asset,
+      collateral_asset,
       max_leverage_factor: 5,
       max_strike_holder_leverage_factor: 10,
       maintain_margin_amount: 0,
@@ -184,8 +185,8 @@ test test_enter_short_positions_mint() {
       positions_asset_amount: 10,
       liquidity_asset: underlying_asset,
       liquidity_asset_amount: 10,
-      stable_collateral_asset,
-      stable_collateral_asset_amount: 10,
+      collateral_asset,
+      collateral_asset_amount: 10,
       strike_collateral_asset,
       strike_collateral_amount: 10,
       entered_earnings_per_share: 0,
@@ -194,6 +195,7 @@ test test_enter_short_positions_mint() {
       stop_loss_usd_price: 0,
       take_profit_usd_price: 0,
       order_submission_time: 1751111000,
+      order_submission_usd_price: 100,
       validate_pool_ref,
       action: OpenPosition,
       side: Long,
@@ -205,8 +207,8 @@ test test_enter_short_positions_mint() {
       value: mint
         |> assets.merge(assets.from_lovelace(2_500_000))
         |> assets.add(
-            stable_collateral_asset.policy_id,
-            stable_collateral_asset.asset_name,
+            collateral_asset.policy_id,
+            collateral_asset.asset_name,
             1000000000,
           ),
       datum: InlineDatum(orders_datum),
@@ -304,7 +306,7 @@ test test_burn_long_positions_mint() {
       validate_pool_ref,
       admin_pkh,
     }
-  let redeemer = BurnLong
+  let redeemer = BurnLong(1)
   enter_position_mint.enter_position_mint.mint(
     params,
     redeemer,
@@ -359,7 +361,7 @@ test test_burn_short_positions_mint() {
       validate_pool_ref,
       admin_pkh,
     }
-  let redeemer = BurnShort
+  let redeemer = BurnShort(1)
   enter_position_mint.enter_position_mint.mint(
     params,
     redeemer,

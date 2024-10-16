@@ -7,8 +7,9 @@ use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  ClosePosition, Liquidate, OpenPosition, OrdersDatum, PoolDatum, PositionDatum,
-  ProvideLiquidity, WithdrawLiquidity,
+  ClosePosition, CloseStopLossPosition, CloseTakeProfitPosition, Liquidate,
+  OpenPosition, OrdersDatum, PoolDatum, PositionDatum, ProvideLiquidity,
+  WithdrawLiquidity,
 }
 use utils.{get_lower_bound, validate_token_mint}
 
@@ -68,7 +69,7 @@ pub fn valid_orders(
   (script_input_count == input_index_count)?
 }
 
-pub fn validate_order(
+pub fn validate_individual_order(
   input: Output,
   output: Output,
   current_asset_price: Int,
@@ -82,6 +83,8 @@ pub fn validate_order(
     OpenPosition -> validate_open_position(input, output)
     ClosePosition ->
       validate_close_position(input, output, current_asset_price, transaction)
+    CloseStopLossPosition -> todo
+    CloseTakeProfitPosition -> todo
     ProvideLiquidity -> validate_contribute_liquidity(input, output)
     WithdrawLiquidity -> validate_withdraw_liquidity(input, output, transaction)
     Liquidate -> False
@@ -109,8 +112,8 @@ pub fn validate_open_position(input: Output, output: Output) -> Bool {
       leverage_factor: input_datum_typed.leverage_factor,
       positions_asset: input_datum_typed.positions_asset,
       positions_asset_amount: input_datum_typed.positions_asset_amount,
-      collateral_asset: input_datum_typed.stable_collateral_asset,
-      collateral_asset_amount: input_datum_typed.stable_collateral_asset_amount,
+      collateral_asset: input_datum_typed.collateral_asset,
+      collateral_asset_amount: input_datum_typed.collateral_asset_amount,
       stop_loss_usd_price: input_datum_typed.stop_loss_usd_price,
       take_profit_usd_price: input_datum_typed.take_profit_usd_price,
       liquidate_usd_price: input_datum_typed.liquidate_usd_price,
@@ -185,9 +188,9 @@ pub fn validate_close_position(
   let collateral_sent_to_owner_valid =
     quantity_of(
       output.value,
-      input_datum_typed.stable_collateral_asset.policy_id,
-      input_datum_typed.stable_collateral_asset.asset_name,
-    ) == input_datum_typed.stable_collateral_asset_amount
+      input_datum_typed.collateral_asset.policy_id,
+      input_datum_typed.collateral_asset.asset_name,
+    ) == input_datum_typed.collateral_asset_amount
 
   mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
 }
@@ -245,8 +248,8 @@ pub fn validate_withdraw_liquidity(
   let expected_collateral_earnings_valid =
     quantity_of(
       output.value,
-      input_datum_typed.stable_collateral_asset.policy_id,
-      input_datum_typed.stable_collateral_asset.asset_name,
+      input_datum_typed.collateral_asset.policy_id,
+      input_datum_typed.collateral_asset.asset_name,
     ) == expected_collateral_earnings
 
   output_is_to_owner && mint_valid && asset_sent_to_owner_valid && expected_collateral_earnings_valid
@@ -295,8 +298,8 @@ pub fn cancel_close_position_order(
       leverage_factor: datum.leverage_factor,
       positions_asset: datum.positions_asset,
       positions_asset_amount: datum.positions_asset_amount,
-      collateral_asset: datum.stable_collateral_asset,
-      collateral_asset_amount: datum.stable_collateral_asset_amount,
+      collateral_asset: datum.collateral_asset,
+      collateral_asset_amount: datum.collateral_asset_amount,
       liquidate_usd_price: datum.liquidate_usd_price,
       stop_loss_usd_price: datum.stop_loss_usd_price,
       take_profit_usd_price: datum.take_profit_usd_price,

@@ -603,11 +603,11 @@
               "$ref": "#/definitions/Int"
             },
             {
-              "title": "stable_collateral_asset",
+              "title": "collateral_asset",
               "$ref": "#/definitions/types~1Asset"
             },
             {
-              "title": "stable_collateral_asset_amount",
+              "title": "collateral_asset_amount",
               "$ref": "#/definitions/Int"
             },
             {

@@ -27,6 +27,8 @@ pub type PositionSide {
 pub type OrderAction {
   OpenPosition
   ClosePosition
+  CloseStopLossPosition
+  CloseTakeProfitPosition
   ProvideLiquidity
   WithdrawLiquidity
   Liquidate
@@ -57,8 +59,8 @@ pub type OrdersDatum {
   positions_asset_amount: Int,
   liquidity_asset: Asset,
   liquidity_asset_amount: Int,
-  stable_collateral_asset: Asset,
-  stable_collateral_asset_amount: Int,
+  collateral_asset: Asset,
+  collateral_asset_amount: Int,
   strike_collateral_asset: Asset,
   strike_collateral_amount: Int,
   entered_earnings_per_share: Int,
@@ -66,6 +68,7 @@ pub type OrdersDatum {
   stop_loss_usd_price: Int,
   take_profit_usd_price: Int,
   liquidate_usd_price: Int,
+  order_submission_usd_price: Int,
   order_submission_time: POSIXTime,
   validate_pool_ref: OutputReference,
   action: OrderAction,
@@ -73,11 +76,11 @@ pub type OrdersDatum {
 }
 
 pub type PositionsRedeemer {
-  Close
+  Close(Int)
   StopLoss(Int)
-  UpdateStopLoss
+  UpdateStopLoss(Int)
   TakeProfit(Int)
-  UpdateTakeProfit
+  UpdateTakeProfit(Int)
   LiquidatePosition(Int)
   PayLend(Int)
 }
@@ -120,7 +123,7 @@ pub type PoolDatum {
   underlying_asset_lended_amount: Int,
   underlying_interest_rate: Int,
   liquidate_margin: Int,
-  stable_collateral_asset: Asset,
+  collateral_asset: Asset,
   max_leverage_factor: Int,
   max_strike_holder_leverage_factor: Int,
   maintain_margin_amount: Int,

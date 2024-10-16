@@ -5,9 +5,9 @@ use cardano/assets
 use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction}
 use provide_liquidity_mint
 use tests/constants.{
-  long_position_asset, orders_script_hash, provide_liquidity_policy_id,
-  provide_liquidty_asset_name, stable_collateral_asset, strike_collateral_asset,
-  trader_pkh, underlying_asset,
+  collateral_asset, long_position_asset, orders_script_hash,
+  provide_liquidity_policy_id, provide_liquidty_asset_name,
+  strike_collateral_asset, trader_pkh, underlying_asset,
 }
 use types.{Long, OrdersDatum, ProvideLiquidity, ProvideLiquidityMintParams}
 
@@ -31,8 +31,8 @@ test test_burn_short_positions_mint() {
       positions_asset_amount: 10,
       liquidity_asset: underlying_asset,
       liquidity_asset_amount: 10,
-      stable_collateral_asset,
-      stable_collateral_asset_amount: 10,
+      collateral_asset,
+      collateral_asset_amount: 10,
       strike_collateral_asset,
       strike_collateral_amount: 10,
       entered_earnings_per_share: 0,
@@ -42,6 +42,7 @@ test test_burn_short_positions_mint() {
       take_profit_usd_price: 0,
       order_submission_time: 1751111000,
       validate_pool_ref,
+      order_submission_usd_price: 100,
       action: ProvideLiquidity,
       side: Long,
     }
