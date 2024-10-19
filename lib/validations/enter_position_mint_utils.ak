@@ -7,7 +7,7 @@ use constants.{batcher_fee}
 use types.{Asset, EnterPositionParams, OrdersDatum, PoolDatum}
 use utils.{get_lower_bound, validate_token_mint}
 
-// orders datum valid, collateral locked valid, assets minted valid, leverage factor valid, 
+// TODO: Batcher fee + min utxo should be paid by the user, unless the underlying asset is ADA
 pub fn enter_long_mint(
   transaction: Transaction,
   params: EnterPositionParams,
@@ -40,7 +40,7 @@ pub fn enter_long_mint(
   expect pool_ref_datum_typed: PoolDatum = pool_ref_datum
 
   let expected_minted_amount =
-    orders_datum_typed.collateral_asset_amount * orders_datum_typed.leverage_factor
+    orders_datum_typed.stable_collateral_asset_amount * orders_datum_typed.leverage_factor
 
   let expected_mint: (PolicyId, ByteArray, Int) =
     (policy_id, params.long_asset_name, expected_minted_amount)
@@ -55,9 +55,9 @@ pub fn enter_long_mint(
           expected_minted_amount,
         )
       |> assets.add(
-          orders_datum_typed.collateral_asset.policy_id,
-          orders_datum_typed.collateral_asset.asset_name,
-          orders_datum_typed.collateral_asset_amount,
+          orders_datum_typed.stable_collateral_asset.policy_id,
+          orders_datum_typed.stable_collateral_asset.asset_name,
+          orders_datum_typed.stable_collateral_asset_amount,
         )
 
   let assets_match: Bool =
@@ -88,8 +88,8 @@ pub fn enter_long_mint(
   let contains_strike_collateral: Bool =
     quantity_of(
       output_to_orders_validator.value,
-      orders_datum_typed.strike_collateral_asset.policy_id,
-      orders_datum_typed.strike_collateral_asset.asset_name,
+      orders_datum_typed.strike__collateral_asset.policy_id,
+      orders_datum_typed.strike__collateral_asset.asset_name,
     ) > 0
 
   if contains_strike_collateral {
@@ -105,6 +105,7 @@ pub fn enter_long_mint(
   }
 }
 
+// TODO: Batcher fee + min utxo should be paid by the user since
 pub fn enter_short_mint(
   transaction: Transaction,
   params: EnterPositionParams,
@@ -136,32 +137,38 @@ pub fn enter_short_mint(
   expect InlineDatum(pool_ref_datum) = pool_ref_input.output.datum
   expect pool_ref_datum_typed: PoolDatum = pool_ref_datum
 
-  let valid_pool_ref: Bool =
-    orders_datum_typed.validate_pool_ref == params.validate_pool_ref
-
-  let entered_at_price_valid: Bool =
-    current_price == orders_datum_typed.order_submission_usd_price
-
   let expected_usd_collateral: Int =
     get_expected_usd_collateral(orders_datum_typed, current_price)
 
-  let expected_minted_amount =
-    orders_datum_typed.positions_mint_asset_amount * orders_datum_typed.leverage_factor
-
-  let collateral_asset_deposited_amount: Int =
+  let stable_collateral_asset_deposited_amount: Int =
     quantity_of(
       output_to_orders_validator.value,
-      orders_datum_typed.collateral_asset.policy_id,
-      orders_datum_typed.collateral_asset.asset_name,
+      orders_datum_typed.stable_collateral_asset.policy_id,
+      orders_datum_typed.stable_collateral_asset.asset_name,
     )
+
+  let expected_usd_collateral_valid: Bool =
+    stable_collateral_asset_deposited_amount >= expected_usd_collateral
+
+  let expected_minted_amount =
+    orders_datum_typed.positions_mint_asset_amount * orders_datum_typed.leverage_factor
 
   let expected_mint: (PolicyId, ByteArray, Int) =
     (policy_id, params.short_asset_name, expected_minted_amount)
 
   let mint_valid = validate_token_mint(transaction.mint, expected_mint)
 
-  let expected_usd_collateral_valid: Bool =
-    collateral_asset_deposited_amount >= expected_usd_collateral
+  let expected_assets_locked: Value =
+    assets.from_lovelace(batcher_fee)
+      |> assets.add(policy_id, params.short_asset_name, expected_minted_amount)
+      |> assets.add(
+          orders_datum_typed.stable_collateral_asset.policy_id,
+          orders_datum_typed.stable_collateral_asset.asset_name,
+          orders_datum_typed.stable_collateral_asset_amount,
+        )
+
+  let assets_match: Bool =
+    match(output_to_orders_validator.value, expected_assets_locked, ==)
 
   let liquidate_usd_price: Int =
     calculate_short_liquidate_amount(
@@ -170,17 +177,25 @@ pub fn enter_short_mint(
       pool_ref_datum_typed.liquidate_margin,
     )
 
-  let liquidate_usd_price_valid: Bool =
-    orders_datum_typed.liquidate_usd_price >= liquidate_usd_price
+  // trace @"liquidate_usd_price 111": liquidate_usd_price
+  let datum_values_valid =
+    valid_datum_values(
+      orders_datum_typed,
+      params,
+      current_price,
+      policy_id,
+      transaction,
+      liquidate_usd_price,
+    )
 
   expect
-    mint_valid && only_one_output_to_orders && valid_pool_ref && entered_at_price_valid && expected_usd_collateral_valid && liquidate_usd_price_valid
+    mint_valid && only_one_output_to_orders && assets_match && datum_values_valid
 
   let contains_strike_collateral: Bool =
     quantity_of(
       output_to_orders_validator.value,
-      orders_datum_typed.strike_collateral_asset.policy_id,
-      orders_datum_typed.strike_collateral_asset.asset_name,
+      orders_datum_typed.strike__collateral_asset.policy_id,
+      orders_datum_typed.strike__collateral_asset.asset_name,
     ) > 0
 
   if contains_strike_collateral {
@@ -208,9 +223,10 @@ fn lovelace_to_ada(lovelace: Int) -> Int {
   lovelace / 1_000_000
 }
 
+// TODO: No floats are allowed
 // liquidate when collateral reaches a percentage of it's original value,
 // maintaince margin will be an int so 25 maintance margin will be 2.5% of orignal collateral value
-pub fn calculate_long_liquidate_amount(
+fn calculate_long_liquidate_amount(
   orders_datum: OrdersDatum,
   current_price: Int,
   liquidate_margin: Int,
@@ -221,8 +237,7 @@ pub fn calculate_long_liquidate_amount(
   )
 }
 
-// liquidate when collateral reaches a percentage of it's original value  
-pub fn calculate_short_liquidate_amount(
+fn calculate_short_liquidate_amount(
   orders_datum: OrdersDatum,
   current_price: Int,
   liquidate_margin: Int,
@@ -231,4 +246,30 @@ pub fn calculate_short_liquidate_amount(
   current_price * (
     1 + ( 1 - formatted_liquidate_margin ) / orders_datum.leverage_factor
   )
+}
+
+pub fn valid_datum_values(
+  orders_datum_typed: OrdersDatum,
+  params: EnterPositionParams,
+  current_price: Int,
+  policy_id: PolicyId,
+  transaction: Transaction,
+  liquidate_usd_price: Int,
+) {
+  let liquidate_usd_price_valid: Bool =
+    orders_datum_typed.liquidate_usd_price >= liquidate_usd_price
+
+  let valid_pool_ref: Bool =
+    orders_datum_typed.validate_pool_ref == params.validate_pool_ref
+
+  let entered_at_price_valid: Bool =
+    current_price == orders_datum_typed.order_submission_usd_price
+
+  let submission_time_valid: Bool =
+    get_lower_bound(transaction.validity_range) >= orders_datum_typed.order_submission_time
+
+  let minted_asset_valid: Bool =
+    orders_datum_typed.positions_mint_asset.policy_id == policy_id && orders_datum_typed.positions_mint_asset.asset_name == params.short_asset_name
+
+  minted_asset_valid && liquidate_usd_price_valid && valid_pool_ref && entered_at_price_valid && submission_time_valid
 }

@@ -42,15 +42,15 @@ pub fn close_position(
       input_datum.underlying_asset.asset_name,
     ) == 1
 
-  let collateral_asset_not_consumed =
+  let stable_collateral_asset_not_consumed =
     quantity_of(
       input_from_script.output.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.stable_collateral_asset.policy_id,
+      input_datum.stable_collateral_asset.asset_name,
     ) == quantity_of(
       output_to_orders_validator.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.stable_collateral_asset.policy_id,
+      input_datum.stable_collateral_asset.asset_name,
     )
 
   let signed_by_owner: Bool =
@@ -64,7 +64,7 @@ pub fn close_position(
       ProcessClosePositionOrder,
     )
 
-  signed_by_owner && valid_asset_in_output && orders_datum_valid && only_one_input_from_script && collateral_asset_not_consumed
+  signed_by_owner && valid_asset_in_output && orders_datum_valid && only_one_input_from_script && stable_collateral_asset_not_consumed
 }
 
 pub fn stop_loss(
@@ -96,15 +96,15 @@ pub fn stop_loss(
       input_datum.underlying_asset.asset_name,
     ) == 1
 
-  let collateral_asset_not_consumed =
+  let stable_collateral_asset_not_consumed =
     quantity_of(
       input_from_script.output.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.stable_collateral_asset.policy_id,
+      input_datum.stable_collateral_asset.asset_name,
     ) == quantity_of(
       output_to_orders_validator.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.stable_collateral_asset.policy_id,
+      input_datum.stable_collateral_asset.asset_name,
     )
 
   let orders_datum_valid: Bool =
@@ -117,7 +117,7 @@ pub fn stop_loss(
 
   let stop_loss_reached: Bool = current_price <= input_datum.stop_loss_usd_price
 
-  valid_asset_in_output && orders_datum_valid && only_one_input_from_script && collateral_asset_not_consumed && stop_loss_reached
+  valid_asset_in_output && orders_datum_valid && only_one_input_from_script && stable_collateral_asset_not_consumed && stop_loss_reached
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
@@ -143,15 +143,15 @@ pub fn update_stop_loss(
   expect InlineDatum(output_datum) = output_to_positions_validator.datum
   expect output_datum_typed: PositionDatum = output_datum
 
-  let collateral_asset_not_consumed: Bool =
+  let stable_collateral_asset_not_consumed: Bool =
     quantity_of(
       input_from_script.output.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.stable_collateral_asset.policy_id,
+      input_datum.stable_collateral_asset.asset_name,
     ) == quantity_of(
       output_to_positions_validator.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.stable_collateral_asset.policy_id,
+      input_datum.stable_collateral_asset.asset_name,
     )
 
   let positions_mint_asset_returned: Bool =
@@ -173,8 +173,8 @@ pub fn update_stop_loss(
       leverage_factor: input_datum.leverage_factor,
       positions_mint_asset: input_datum.positions_mint_asset,
       positions_mint_asset_amount: input_datum.positions_mint_asset_amount,
-      collateral_asset: input_datum.collateral_asset,
-      collateral_asset_amount: input_datum.collateral_asset_amount,
+      stable_collateral_asset: input_datum.stable_collateral_asset,
+      stable_collateral_asset_amount: input_datum.stable_collateral_asset_amount,
       liquidate_usd_price: input_datum.liquidate_usd_price,
       stop_loss_usd_price,
       take_profit_usd_price: input_datum.take_profit_usd_price,
@@ -185,7 +185,7 @@ pub fn update_stop_loss(
 
   let output_datum_valid: Bool = output_datum_typed == expected_output_datum
 
-  only_one_input_from_script && collateral_asset_not_consumed && positions_mint_asset_returned && output_datum_valid
+  only_one_input_from_script && stable_collateral_asset_not_consumed && positions_mint_asset_returned && output_datum_valid
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
@@ -218,15 +218,15 @@ pub fn take_profit(
       input_datum.underlying_asset.asset_name,
     ) == 1
 
-  let collateral_asset_not_consumed =
+  let stable_collateral_asset_not_consumed =
     quantity_of(
       input_from_script.output.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.stable_collateral_asset.policy_id,
+      input_datum.stable_collateral_asset.asset_name,
     ) == quantity_of(
       output_to_orders_validator.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.stable_collateral_asset.policy_id,
+      input_datum.stable_collateral_asset.asset_name,
     )
 
   let orders_datum_valid: Bool =
@@ -240,7 +240,7 @@ pub fn take_profit(
   let stop_loss_reached: Bool =
     current_price <= input_datum.take_profit_usd_price
 
-  valid_asset_in_output && orders_datum_valid && only_one_input_from_script && collateral_asset_not_consumed && stop_loss_reached
+  valid_asset_in_output && orders_datum_valid && only_one_input_from_script && stable_collateral_asset_not_consumed && stop_loss_reached
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
@@ -268,15 +268,15 @@ pub fn update_take_profit(
   expect InlineDatum(output_datum) = output_to_positions_validator.datum
   expect output_datum_typed: PositionDatum = output_datum
 
-  let collateral_asset_returned: Bool =
+  let stable_collateral_asset_returned: Bool =
     quantity_of(
       input_from_script.output.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.stable_collateral_asset.policy_id,
+      input_datum.stable_collateral_asset.asset_name,
     ) == quantity_of(
       output_to_positions_validator.value,
-      output_datum_typed.collateral_asset.policy_id,
-      output_datum_typed.collateral_asset.asset_name,
+      output_datum_typed.stable_collateral_asset.policy_id,
+      output_datum_typed.stable_collateral_asset.asset_name,
     )
 
   let positions_mint_asset_returned: Bool =
@@ -298,8 +298,8 @@ pub fn update_take_profit(
       leverage_factor: input_datum.leverage_factor,
       positions_mint_asset: input_datum.positions_mint_asset,
       positions_mint_asset_amount: input_datum.positions_mint_asset_amount,
-      collateral_asset: input_datum.collateral_asset,
-      collateral_asset_amount: input_datum.collateral_asset_amount,
+      stable_collateral_asset: input_datum.stable_collateral_asset,
+      stable_collateral_asset_amount: input_datum.stable_collateral_asset_amount,
       liquidate_usd_price: input_datum.liquidate_usd_price,
       stop_loss_usd_price: input_datum.stop_loss_usd_price,
       take_profit_usd_price,
@@ -310,7 +310,7 @@ pub fn update_take_profit(
 
   let output_datum_valid: Bool = output_datum_typed == expected_output_datum
 
-  only_one_input_from_script && only_one_output_to_positions_validator && collateral_asset_returned && positions_mint_asset_returned && output_datum_valid
+  only_one_input_from_script && only_one_output_to_positions_validator && stable_collateral_asset_returned && positions_mint_asset_returned && output_datum_valid
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
@@ -343,15 +343,15 @@ pub fn liquidate_position(
       input_datum.underlying_asset.asset_name,
     ) == 1
 
-  let collateral_asset_not_consumed =
+  let stable_collateral_asset_not_consumed =
     quantity_of(
       input_from_script.output.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.stable_collateral_asset.policy_id,
+      input_datum.stable_collateral_asset.asset_name,
     ) == quantity_of(
       output_to_orders_validator.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.stable_collateral_asset.policy_id,
+      input_datum.stable_collateral_asset.asset_name,
     )
 
   let orders_datum_valid: Bool =
@@ -364,7 +364,7 @@ pub fn liquidate_position(
 
   let stop_loss_reached: Bool = current_price <= input_datum.liquidate_usd_price
 
-  valid_asset_in_output && orders_datum_valid && only_one_input_from_script && collateral_asset_not_consumed && stop_loss_reached
+  valid_asset_in_output && orders_datum_valid && only_one_input_from_script && stable_collateral_asset_not_consumed && stop_loss_reached
 }
 
 pub fn pay_lend(
@@ -457,11 +457,11 @@ pub fn from_positions_to_orders_datum_valid(
 
   let side_valid: Bool = position_datum.side == orders_datum.side
 
-  let collateral_asset_valid: Bool =
-    position_datum.collateral_asset == orders_datum.collateral_asset
+  let stable_collateral_asset_valid: Bool =
+    position_datum.stable_collateral_asset == orders_datum.stable_collateral_asset
 
-  let collateral_asset_amount_valid: Bool =
-    position_datum.collateral_asset_amount == orders_datum.collateral_asset_amount
+  let stable_collateral_asset_amount_valid: Bool =
+    position_datum.stable_collateral_asset_amount == orders_datum.stable_collateral_asset_amount
 
   let validate_pool_ref_valid: Bool =
     position_datum.validate_pool_ref == orders_datum.validate_pool_ref
@@ -477,5 +477,5 @@ pub fn from_positions_to_orders_datum_valid(
   let order_submission_usd_price_valid: Bool =
     current_price == orders_datum.order_submission_usd_price
 
-  owner_address_hash_valid && underlying_asset_valid && positions_mint_asset_amount_valid && leverage_factor_valid && positions_mint_asset_valid && side_valid && collateral_asset_valid && collateral_asset_amount_valid && validate_pool_ref_valid && last_pay_lend_time_valid && take_profit_usd_price_valid && order_type_valid && order_submission_usd_price_valid
+  owner_address_hash_valid && underlying_asset_valid && positions_mint_asset_amount_valid && leverage_factor_valid && positions_mint_asset_valid && side_valid && stable_collateral_asset_valid && stable_collateral_asset_amount_valid && validate_pool_ref_valid && last_pay_lend_time_valid && take_profit_usd_price_valid && order_type_valid && order_submission_usd_price_valid
 }

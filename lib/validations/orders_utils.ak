@@ -105,8 +105,8 @@ pub fn open_position(input: Output, output: Output) -> Bool {
       leverage_factor: input_datum_typed.leverage_factor,
       positions_mint_asset: input_datum_typed.positions_mint_asset,
       positions_mint_asset_amount: input_datum_typed.positions_mint_asset_amount,
-      collateral_asset: input_datum_typed.collateral_asset,
-      collateral_asset_amount: input_datum_typed.collateral_asset_amount,
+      stable_collateral_asset: input_datum_typed.stable_collateral_asset,
+      stable_collateral_asset_amount: input_datum_typed.stable_collateral_asset_amount,
       stop_loss_usd_price: input_datum_typed.stop_loss_usd_price,
       take_profit_usd_price: input_datum_typed.take_profit_usd_price,
       liquidate_usd_price: input_datum_typed.liquidate_usd_price,
@@ -171,9 +171,9 @@ pub fn close_position(
   let collateral_sent_to_owner_valid =
     quantity_of(
       output.value,
-      input_datum_typed.collateral_asset.policy_id,
-      input_datum_typed.collateral_asset.asset_name,
-    ) == input_datum_typed.collateral_asset_amount
+      input_datum_typed.stable_collateral_asset.policy_id,
+      input_datum_typed.stable_collateral_asset.asset_name,
+    ) == input_datum_typed.stable_collateral_asset_amount
 
   mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
 }
@@ -231,8 +231,8 @@ pub fn withdraw_liquidity(
   let expected_collateral_earnings_valid =
     quantity_of(
       output.value,
-      input_datum_typed.collateral_asset.policy_id,
-      input_datum_typed.collateral_asset.asset_name,
+      input_datum_typed.stable_collateral_asset.policy_id,
+      input_datum_typed.stable_collateral_asset.asset_name,
     ) == expected_collateral_earnings
 
   output_is_to_owner && mint_valid && asset_sent_to_owner_valid && expected_collateral_earnings_valid
@@ -285,8 +285,8 @@ pub fn cancel_close_position(
       leverage_factor: datum.leverage_factor,
       positions_mint_asset: datum.positions_mint_asset,
       positions_mint_asset_amount: datum.positions_mint_asset_amount,
-      collateral_asset: datum.collateral_asset,
-      collateral_asset_amount: datum.collateral_asset_amount,
+      stable_collateral_asset: datum.stable_collateral_asset,
+      stable_collateral_asset_amount: datum.stable_collateral_asset_amount,
       liquidate_usd_price: datum.liquidate_usd_price,
       stop_loss_usd_price: datum.stop_loss_usd_price,
       take_profit_usd_price: datum.take_profit_usd_price,
@@ -416,9 +416,9 @@ pub fn stop_loss(
   let collateral_sent_to_owner_valid =
     quantity_of(
       output.value,
-      input_datum_typed.collateral_asset.policy_id,
-      input_datum_typed.collateral_asset.asset_name,
-    ) == input_datum_typed.collateral_asset_amount
+      input_datum_typed.stable_collateral_asset.policy_id,
+      input_datum_typed.stable_collateral_asset.asset_name,
+    ) == input_datum_typed.stable_collateral_asset_amount
 
   mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
 }
@@ -468,9 +468,9 @@ pub fn take_profit(
   let collateral_sent_to_owner_valid =
     quantity_of(
       output.value,
-      input_datum_typed.collateral_asset.policy_id,
-      input_datum_typed.collateral_asset.asset_name,
-    ) == input_datum_typed.collateral_asset_amount
+      input_datum_typed.stable_collateral_asset.policy_id,
+      input_datum_typed.stable_collateral_asset.asset_name,
+    ) == input_datum_typed.stable_collateral_asset_amount
 
   mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
 }
