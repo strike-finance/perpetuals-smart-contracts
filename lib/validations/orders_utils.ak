@@ -93,18 +93,18 @@ pub fn open_position(input: Output, output: Output) -> Bool {
   let valid_asset_in_output: Bool =
     quantity_of(
       output.value,
-      input_datum_typed.positions_asset.policy_id,
-      input_datum_typed.positions_asset.asset_name,
+      input_datum_typed.positions_mint_asset.policy_id,
+      input_datum_typed.positions_mint_asset.asset_name,
     ) == 1
 
   let expected_output_datum =
     PositionDatum {
       owner_address_hash: input_datum_typed.owner_address_hash,
-      entered_at_price: input_datum_typed.entered_at_price,
+      entered_at_price: input_datum_typed.order_submission_usd_price,
       underlying_asset: input_datum_typed.underlying_asset,
       leverage_factor: input_datum_typed.leverage_factor,
-      positions_asset: input_datum_typed.positions_asset,
-      positions_asset_amount: input_datum_typed.positions_asset_amount,
+      positions_mint_asset: input_datum_typed.positions_mint_asset,
+      positions_mint_asset_amount: input_datum_typed.positions_mint_asset_amount,
       collateral_asset: input_datum_typed.collateral_asset,
       collateral_asset_amount: input_datum_typed.collateral_asset_amount,
       stop_loss_usd_price: input_datum_typed.stop_loss_usd_price,
@@ -141,16 +141,16 @@ pub fn close_position(
     input_datum_typed.order_submission_usd_price * input_datum_typed.leverage_factor
 
   let entry_position_amount: Int =
-    input_datum_typed.positions_asset_amount * input_datum_typed.leverage_factor
+    input_datum_typed.positions_mint_asset_amount * input_datum_typed.leverage_factor
 
   let expected_asset_amount_send_to_user: Int =
     current_position_amount - entry_position_amount
 
   let expected_mint =
     (
-      input_datum_typed.positions_asset.policy_id,
-      input_datum_typed.positions_asset.asset_name,
-      input_datum_typed.positions_asset_amount * -1,
+      input_datum_typed.positions_mint_asset.policy_id,
+      input_datum_typed.positions_mint_asset.asset_name,
+      input_datum_typed.positions_mint_asset_amount * -1,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
@@ -249,7 +249,11 @@ pub fn cancel_open_position(
   transaction: Transaction,
 ) -> Bool {
   let expected_mint =
-    (datum.positions_asset.policy_id, datum.positions_asset.asset_name, -1)
+    (
+      datum.positions_mint_asset.policy_id,
+      datum.positions_mint_asset.asset_name,
+      -1,
+    )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
@@ -277,10 +281,10 @@ pub fn cancel_close_position(
     PositionDatum {
       owner_address_hash: datum.owner_address_hash,
       underlying_asset: datum.underlying_asset,
-      entered_at_price: datum.entered_at_price,
+      entered_at_price: datum.order_submission_usd_price,
       leverage_factor: datum.leverage_factor,
-      positions_asset: datum.positions_asset,
-      positions_asset_amount: datum.positions_asset_amount,
+      positions_mint_asset: datum.positions_mint_asset,
+      positions_mint_asset_amount: datum.positions_mint_asset_amount,
       collateral_asset: datum.collateral_asset,
       collateral_asset_amount: datum.collateral_asset_amount,
       liquidate_usd_price: datum.liquidate_usd_price,
@@ -291,14 +295,14 @@ pub fn cancel_close_position(
       side: datum.side,
     }
 
-  let quantity_of_positions_asset: Int =
+  let quantity_of_positions_mint_asset: Int =
     quantity_of(
       output_to_positions.value,
-      datum.positions_asset.policy_id,
-      datum.positions_asset.asset_name,
+      datum.positions_mint_asset.policy_id,
+      datum.positions_mint_asset.asset_name,
     )
 
-  only_one_output_to_positions && output_datum_typed == expected_positions_datum && quantity_of_positions_asset == datum.positions_asset_amount
+  only_one_output_to_positions && output_datum_typed == expected_positions_datum && quantity_of_positions_mint_asset == datum.positions_mint_asset_amount
 }
 
 // assets are burned 
@@ -377,10 +381,10 @@ pub fn stop_loss(
   expect input_datum_typed: OrdersDatum = input_datum
 
   let position_amount: Int =
-    input_datum_typed.positions_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.entered_at_price
+    input_datum_typed.positions_mint_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.order_submission_usd_price
 
   let entry_position_amount: Int =
-    input_datum_typed.positions_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.stop_loss_usd_price
+    input_datum_typed.positions_mint_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.stop_loss_usd_price
 
   let loss_in_usd: Int = entry_position_amount - position_amount
 
@@ -389,9 +393,9 @@ pub fn stop_loss(
 
   let expected_mint =
     (
-      input_datum_typed.positions_asset.policy_id,
-      input_datum_typed.positions_asset.asset_name,
-      input_datum_typed.positions_asset_amount * -1,
+      input_datum_typed.positions_mint_asset.policy_id,
+      input_datum_typed.positions_mint_asset.asset_name,
+      input_datum_typed.positions_mint_asset_amount * -1,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
@@ -429,10 +433,10 @@ pub fn take_profit(
   expect input_datum_typed: OrdersDatum = input_datum
 
   let position_amount: Int =
-    input_datum_typed.positions_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.entered_at_price
+    input_datum_typed.positions_mint_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.order_submission_usd_price
 
   let entry_position_amount: Int =
-    input_datum_typed.positions_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.take_profit_usd_price
+    input_datum_typed.positions_mint_asset_amount * input_datum_typed.leverage_factor * input_datum_typed.take_profit_usd_price
 
   let loss_in_usd: Int = entry_position_amount - position_amount
 
@@ -441,9 +445,9 @@ pub fn take_profit(
 
   let expected_mint =
     (
-      input_datum_typed.positions_asset.policy_id,
-      input_datum_typed.positions_asset.asset_name,
-      input_datum_typed.positions_asset_amount * -1,
+      input_datum_typed.positions_mint_asset.policy_id,
+      input_datum_typed.positions_mint_asset.asset_name,
+      input_datum_typed.positions_mint_asset_amount * -1,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)

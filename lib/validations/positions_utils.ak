@@ -154,15 +154,15 @@ pub fn update_stop_loss(
       input_datum.collateral_asset.asset_name,
     )
 
-  let positions_asset_returned: Bool =
+  let positions_mint_asset_returned: Bool =
     quantity_of(
       input_from_script.output.value,
-      input_datum.positions_asset.policy_id,
-      input_datum.positions_asset.asset_name,
+      input_datum.positions_mint_asset.policy_id,
+      input_datum.positions_mint_asset.asset_name,
     ) == quantity_of(
       output_to_positions_validator.value,
-      input_datum.positions_asset.policy_id,
-      input_datum.positions_asset.asset_name,
+      input_datum.positions_mint_asset.policy_id,
+      input_datum.positions_mint_asset.asset_name,
     )
 
   let expected_output_datum =
@@ -171,8 +171,8 @@ pub fn update_stop_loss(
       entered_at_price: input_datum.entered_at_price,
       underlying_asset: input_datum.underlying_asset,
       leverage_factor: input_datum.leverage_factor,
-      positions_asset: input_datum.positions_asset,
-      positions_asset_amount: input_datum.positions_asset_amount,
+      positions_mint_asset: input_datum.positions_mint_asset,
+      positions_mint_asset_amount: input_datum.positions_mint_asset_amount,
       collateral_asset: input_datum.collateral_asset,
       collateral_asset_amount: input_datum.collateral_asset_amount,
       liquidate_usd_price: input_datum.liquidate_usd_price,
@@ -185,7 +185,7 @@ pub fn update_stop_loss(
 
   let output_datum_valid: Bool = output_datum_typed == expected_output_datum
 
-  only_one_input_from_script && collateral_asset_not_consumed && positions_asset_returned && output_datum_valid
+  only_one_input_from_script && collateral_asset_not_consumed && positions_mint_asset_returned && output_datum_valid
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
@@ -279,15 +279,15 @@ pub fn update_take_profit(
       output_datum_typed.collateral_asset.asset_name,
     )
 
-  let positions_asset_returned: Bool =
+  let positions_mint_asset_returned: Bool =
     quantity_of(
       input_from_script.output.value,
-      input_datum.positions_asset.policy_id,
-      input_datum.positions_asset.asset_name,
+      input_datum.positions_mint_asset.policy_id,
+      input_datum.positions_mint_asset.asset_name,
     ) == quantity_of(
       output_to_positions_validator.value,
-      output_datum_typed.positions_asset.policy_id,
-      output_datum_typed.positions_asset.asset_name,
+      output_datum_typed.positions_mint_asset.policy_id,
+      output_datum_typed.positions_mint_asset.asset_name,
     )
 
   let expected_output_datum =
@@ -296,8 +296,8 @@ pub fn update_take_profit(
       entered_at_price: input_datum.entered_at_price,
       underlying_asset: input_datum.underlying_asset,
       leverage_factor: input_datum.leverage_factor,
-      positions_asset: input_datum.positions_asset,
-      positions_asset_amount: input_datum.positions_asset_amount,
+      positions_mint_asset: input_datum.positions_mint_asset,
+      positions_mint_asset_amount: input_datum.positions_mint_asset_amount,
       collateral_asset: input_datum.collateral_asset,
       collateral_asset_amount: input_datum.collateral_asset_amount,
       liquidate_usd_price: input_datum.liquidate_usd_price,
@@ -310,7 +310,7 @@ pub fn update_take_profit(
 
   let output_datum_valid: Bool = output_datum_typed == expected_output_datum
 
-  only_one_input_from_script && only_one_output_to_positions_validator && collateral_asset_returned && positions_asset_returned && output_datum_valid
+  only_one_input_from_script && only_one_output_to_positions_validator && collateral_asset_returned && positions_mint_asset_returned && output_datum_valid
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
@@ -410,8 +410,8 @@ pub fn pay_lend(
 
   let expected_mint =
     (
-      datum.positions_asset.policy_id,
-      datum.positions_asset.asset_name,
+      datum.positions_mint_asset.policy_id,
+      datum.positions_mint_asset.asset_name,
       expected_burn_amount * -1,
     )
 
@@ -429,7 +429,7 @@ fn calculate_pay_borrow(
     pool_datum.underlying_asset_lended_amount / pool_datum.underlying_asset_amount
 
   let current_position_usd_value =
-    position_datum.positions_asset_amount * position_datum.leverage_factor * current_price_volume
+    position_datum.positions_mint_asset_amount * position_datum.leverage_factor * current_price_volume
 
   utilization * pool_datum.underlying_interest_rate * current_position_usd_value
 }
@@ -446,14 +446,14 @@ pub fn from_positions_to_orders_datum_valid(
   let underlying_asset_valid: Bool =
     position_datum.underlying_asset == orders_datum.underlying_asset
 
-  let positions_asset_amount_valid: Bool =
-    position_datum.positions_asset_amount == orders_datum.positions_asset_amount
+  let positions_mint_asset_amount_valid: Bool =
+    position_datum.positions_mint_asset_amount == orders_datum.positions_mint_asset_amount
 
   let leverage_factor_valid: Bool =
     position_datum.leverage_factor == orders_datum.leverage_factor
 
-  let positions_asset_valid: Bool =
-    position_datum.positions_asset == orders_datum.positions_asset
+  let positions_mint_asset_valid: Bool =
+    position_datum.positions_mint_asset == orders_datum.positions_mint_asset
 
   let side_valid: Bool = position_datum.side == orders_datum.side
 
@@ -472,13 +472,10 @@ pub fn from_positions_to_orders_datum_valid(
   let take_profit_usd_price_valid: Bool =
     position_datum.take_profit_usd_price == orders_datum.take_profit_usd_price
 
-  let enter_at_price_valid: Bool =
-    position_datum.entered_at_price == orders_datum.entered_at_price
-
   let order_type_valid: Bool = order_type == orders_datum.action
 
   let order_submission_usd_price_valid: Bool =
     current_price == orders_datum.order_submission_usd_price
 
-  owner_address_hash_valid && underlying_asset_valid && positions_asset_amount_valid && leverage_factor_valid && positions_asset_valid && side_valid && collateral_asset_valid && collateral_asset_amount_valid && validate_pool_ref_valid && last_pay_lend_time_valid && take_profit_usd_price_valid && enter_at_price_valid && order_type_valid && order_submission_usd_price_valid
+  owner_address_hash_valid && underlying_asset_valid && positions_mint_asset_amount_valid && leverage_factor_valid && positions_mint_asset_valid && side_valid && collateral_asset_valid && collateral_asset_amount_valid && validate_pool_ref_valid && last_pay_lend_time_valid && take_profit_usd_price_valid && order_type_valid && order_submission_usd_price_valid
 }

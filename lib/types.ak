@@ -48,16 +48,25 @@ pub type OrdersWithdrawRedeemer {
 }
 
 pub type OrdersDatum {
+  // Owner of the order
   owner_address_hash: AddressHash,
-  entered_at_price: Int,
+  // The underlying asset that the perpetual contract is trading on
   underlying_asset: Asset,
+  // Inital size of the position
   underlying_asset_amount: Int,
+  // Leverage used for the postion. Total positon size is underlying_asset_amount * leverage factor
   leverage_factor: Int,
+  // The script hash for the orders script that processes all the orders
   orders_script_hash: ScriptHash,
+  // The script hash for the positions script that holds all the positions of the trader
   positions_script_hash: ScriptHash,
-  positions_asset: Asset,
-  positions_asset_amount: Int,
+  // Minted asset to represent the trader total position size
+  positions_mint_asset: Asset,
+  // Total position size of the trader, ie, the inital size of position + leverage
+  positions_mint_asset_amount: Int,
+  // Minted asset to represent amount of liquidity that has been provided 
   liquidity_asset: Asset,
+  // Total amount of liquidity that has been provided 
   liquidity_asset_amount: Int,
   liquidity_positions_script_hash: ScriptHash,
   collateral_asset: Asset,
@@ -106,8 +115,8 @@ pub type PositionDatum {
   entered_at_price: Int,
   underlying_asset: Asset,
   leverage_factor: Int,
-  positions_asset: Asset,
-  positions_asset_amount: Int,
+  positions_mint_asset: Asset,
+  positions_mint_asset_amount: Int,
   collateral_asset: Asset,
   collateral_asset_amount: Int,
   liquidate_usd_price: Int,

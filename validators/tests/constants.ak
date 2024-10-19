@@ -41,6 +41,8 @@ pub const strike_collateral_asset_name = #"535452494b45"
 
 pub const underlying_asset = Asset { policy_id: "", asset_name: "" }
 
+pub const lovelace_asset = Asset { policy_id: "", asset_name: "" }
+
 pub const collateral_asset =
   Asset {
     policy_id: stable_collateral_policy_id,

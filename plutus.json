@@ -620,11 +620,11 @@
               "$ref": "#/definitions/ScriptHash"
             },
             {
-              "title": "positions_asset",
+              "title": "positions_mint_asset",
               "$ref": "#/definitions/types~1Asset"
             },
             {
-              "title": "positions_asset_amount",
+              "title": "positions_mint_asset_amount",
               "$ref": "#/definitions/Int"
             },
             {
@@ -761,11 +761,11 @@
               "$ref": "#/definitions/Int"
             },
             {
-              "title": "positions_asset",
+              "title": "positions_mint_asset",
               "$ref": "#/definitions/types~1Asset"
             },
             {
-              "title": "positions_asset_amount",
+              "title": "positions_mint_asset_amount",
               "$ref": "#/definitions/Int"
             },
             {
