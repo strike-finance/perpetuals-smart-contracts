@@ -7,10 +7,9 @@ use orders_validations.{
   cancel_withdraw_liquidity, valid_orders, validate_individual_order,
 }
 use types.{
-  AddMoreLiquidityOrder, AddressHash, BatchOrders, CancelOrders,
-  ClosePositionOrder, LiquidateOrder, OpenPositionOrder, OrdersDatum,
-  OrdersRedeemer, OrdersWithdrawRedeemer, ProvideLiquidityOrder, StopLossOrder,
-  TakeProfitOrder, WithdrawLiquidityOrder,
+  AddressHash, BatchOrders, CancelOrders, ClosePositionOrder, LiquidateOrder,
+  OpenPositionOrder, OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer,
+  ProvideLiquidityOrder, StopLossOrder, TakeProfitOrder, WithdrawLiquidityOrder,
 }
 use utils.{get_all_validators_inputs, is_withdrawal}
 
@@ -49,7 +48,6 @@ validator orders(
           ClosePositionOrder -> cancel_close_position(datum, transaction)
           StopLossOrder -> False
           TakeProfitOrder -> False
-          AddMoreLiquidityOrder -> todo
           ProvideLiquidityOrder ->
             cancel_contribute_liquidity(datum, transaction)
           WithdrawLiquidityOrder ->

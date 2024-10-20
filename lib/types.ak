@@ -30,7 +30,6 @@ pub type OrderAction {
   StopLossOrder
   TakeProfitOrder
   ProvideLiquidityOrder
-  AddMoreLiquidityOrder
   WithdrawLiquidityOrder
   LiquidateOrder
 }
@@ -156,7 +155,6 @@ pub type LiquidityParams {
 }
 
 pub type LiquidityRedeemer {
-  AddMoreLiquidity
   WithdrawPartialLiquidity
   WithdrawLiquidity
 }

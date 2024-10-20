@@ -6,10 +6,9 @@ use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  AddMoreLiquidityOrder, ClosePositionOrder, LiquidateOrder,
-  LiquidityPositionDatum, OpenPositionOrder, OrdersDatum, PoolDatum,
-  PositionDatum, ProvideLiquidityOrder, StopLossOrder, TakeProfitOrder,
-  WithdrawLiquidityOrder,
+  ClosePositionOrder, LiquidateOrder, LiquidityPositionDatum, OpenPositionOrder,
+  OrdersDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder, StopLossOrder,
+  TakeProfitOrder, WithdrawLiquidityOrder,
 }
 use utils.{get_all_validators_inputs, validate_token_mint}
 
@@ -78,7 +77,6 @@ pub fn validate_individual_order(
     StopLossOrder -> stop_loss(input, output, transaction)
     TakeProfitOrder -> take_profit(input, output, transaction)
     ProvideLiquidityOrder -> contribute_liquidity(input, output)
-    AddMoreLiquidityOrder -> todo
     WithdrawLiquidityOrder -> withdraw_liquidity(input, output, transaction)
     LiquidateOrder -> False
   }

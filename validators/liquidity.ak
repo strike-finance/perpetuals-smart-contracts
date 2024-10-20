@@ -4,10 +4,9 @@ use cardano/transaction.{
   InlineDatum, OutputReference, Transaction, find_script_outputs,
 }
 use types.{
-  AddMoreLiquidity, BurnLiquidity, LiquidityMintsRedeemer, LiquidityParams,
-  LiquidityPositionDatum, LiquidityRedeemer, MintLiquidity, OrdersDatum,
-  ProvideLiquidityOrder, WithdrawLiquidity, WithdrawLiquidityOrder,
-  WithdrawPartialLiquidity,
+  BurnLiquidity, LiquidityMintsRedeemer, LiquidityParams, LiquidityPositionDatum,
+  LiquidityRedeemer, MintLiquidity, OrdersDatum, ProvideLiquidityOrder,
+  WithdrawLiquidity, WithdrawLiquidityOrder, WithdrawPartialLiquidity,
 }
 use utils.{validate_token_mint}
 
@@ -20,7 +19,7 @@ validator liquidity(params: LiquidityParams) {
     transaction: Transaction,
   ) {
     when redeemer is {
-      AddMoreLiquidity -> {
+      WithdrawLiquidity -> {
         expect Some(datum) = datum
 
         let outputs_to_orders_address =
@@ -46,7 +45,6 @@ validator liquidity(params: LiquidityParams) {
 
         only_one_output_to_orders && signed_by_owner && action_valid && earnings_per_share_valid
       }
-      WithdrawLiquidity -> todo
       WithdrawPartialLiquidity -> todo
     }
   }
