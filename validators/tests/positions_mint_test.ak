@@ -5,7 +5,7 @@ use cardano/assets.{from_lovelace}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
-use enter_position_mint
+use positions
 use tests/constants.{
   admin_pkh, enter_position_policy_id, liquidity_positions_script_hash,
   long_asset_name, long_position_asset, lovelace_asset, orders_script_hash,
@@ -13,8 +13,8 @@ use tests/constants.{
   strike__collateral_asset, trader_pkh, underlying_asset,
 }
 use types.{
-  Asset, BurnLong, BurnShort, EnterPositionParams, Long, MintLong, MintShort,
-  OrdersDatum, PoolDatum, ProcessOpenPositionOrder,
+  Asset, Burn, Long, MintLong, MintShort, OpenPositionOrder, OrdersDatum,
+  PoolDatum, PositionsParams,
 }
 
 test test_enter_long_positions_mint() {
@@ -79,7 +79,7 @@ test test_enter_long_positions_mint() {
       order_submission_time: 1727453227635,
       order_submission_usd_price: 100,
       validate_pool_ref,
-      action: ProcessOpenPositionOrder,
+      action: OpenPositionOrder,
       side: Long,
     }
 
@@ -127,7 +127,7 @@ test test_enter_long_positions_mint() {
       treasury_donation: None,
     }
   let params =
-    EnterPositionParams {
+    PositionsParams {
       orders_script_hash,
       long_asset_name,
       short_asset_name,
@@ -135,12 +135,7 @@ test test_enter_long_positions_mint() {
       admin_pkh,
     }
   let redeemer = MintLong(100)
-  enter_position_mint.enter_position_mint.mint(
-    params,
-    redeemer,
-    enter_position_policy_id,
-    tx,
-  )
+  positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
 }
 
 test test_enter_short_positions_mint() {
@@ -202,7 +197,7 @@ test test_enter_short_positions_mint() {
       order_submission_time: 1727453227635,
       order_submission_usd_price: 100,
       validate_pool_ref,
-      action: ProcessOpenPositionOrder,
+      action: OpenPositionOrder,
       side: Long,
     }
 
@@ -251,7 +246,7 @@ test test_enter_short_positions_mint() {
       treasury_donation: None,
     }
   let params =
-    EnterPositionParams {
+    PositionsParams {
       orders_script_hash,
       long_asset_name,
       short_asset_name,
@@ -259,12 +254,7 @@ test test_enter_short_positions_mint() {
       admin_pkh,
     }
   let redeemer = MintShort(100)
-  enter_position_mint.enter_position_mint.mint(
-    params,
-    redeemer,
-    enter_position_policy_id,
-    tx,
-  )
+  positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
 }
 // test test_burn_long_positions_mint() {
 //   let validate_pool_ref =

@@ -2,20 +2,18 @@ use aiken/collection/list
 use cardano/address.{Credential, Script}
 use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{Input, OutputReference, Transaction}
-use types.{
-  AddressHash, BatchOrders, CancelOrders, OrdersDatum, OrdersRedeemer,
-  OrdersWithdrawRedeemer, ProcessClosePositionOrder, ProcessLiquidateOrder,
-  ProcessOpenPositionOrder, ProcessProvideLiquidityOrder, ProcessStopLossOrder,
-  ProcessTakeProfitOrder, ProcessWithdrawLiquidityOrder,
-}
-use utils.{get_all_validators_inputs, is_withdrawal}
-use validations/orders_utils.{
+use orders_validations.{
   cancel_close_position, cancel_contribute_liquidity, cancel_open_position,
   cancel_withdraw_liquidity, valid_orders, validate_individual_order,
 }
+use types.{
+  AddMoreLiquidityOrder, AddressHash, BatchOrders, CancelOrders,
+  ClosePositionOrder, LiquidateOrder, OpenPositionOrder, OrdersDatum,
+  OrdersRedeemer, OrdersWithdrawRedeemer, ProvideLiquidityOrder, StopLossOrder,
+  TakeProfitOrder, WithdrawLiquidityOrder,
+}
+use utils.{get_all_validators_inputs, is_withdrawal}
 
-// Users will be placing their orders here. The funds for their position will be here until the the batcher puts it into the pool.
-// When they close their position, their utxo will also be here. 
 validator orders(
   admin_pkh: AddressHash,
   _underlying_asset_policy_id: PolicyId,
@@ -47,15 +45,16 @@ validator orders(
         expect signed_by_owner && only_one_input_from_script
 
         when datum.action is {
-          ProcessOpenPositionOrder -> cancel_open_position(datum, transaction)
-          ProcessClosePositionOrder -> cancel_close_position(datum, transaction)
-          ProcessStopLossOrder -> False
-          ProcessTakeProfitOrder -> False
-          ProcessProvideLiquidityOrder ->
+          OpenPositionOrder -> cancel_open_position(datum, transaction)
+          ClosePositionOrder -> cancel_close_position(datum, transaction)
+          StopLossOrder -> False
+          TakeProfitOrder -> False
+          AddMoreLiquidityOrder -> todo
+          ProvideLiquidityOrder ->
             cancel_contribute_liquidity(datum, transaction)
-          ProcessWithdrawLiquidityOrder ->
+          WithdrawLiquidityOrder ->
             cancel_withdraw_liquidity(datum, transaction)
-          ProcessLiquidateOrder -> False
+          LiquidateOrder -> False
         }
       }
     }

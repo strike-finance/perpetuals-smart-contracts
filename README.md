@@ -77,7 +77,7 @@ Since all actions will go through the orders script, this means that there is so
 
 The orders script will not be looking at the oracles prices, but instead the datum values of the orders.
 
-For liquidate, it will look at the field `liquidate_usd_price`, for `stop_loss`, it will look at the `stop_loss_usd_price` etc... And will trust that the positions script had already done the validations for the datum values. This ensures the most up to date prices are used when processing orders.
+For liquidate, it will look at the field `liquidate_usd_price`, for `stop_loss`, it will look at the `stop_loss_usd_price` etc... And will trust that the positions script had already done the validations for the datum values. This ensures the most up to date prices are used when ing orders.
 
 ## UTxOs
 
@@ -664,7 +664,7 @@ Users are able to cancel their orders.
 
 Once the UTxO is at the positions validator, traders can close their position.
 
-- UTxO is sent to the orders validator for processing
+- UTxO is sent to the orders validator for ing
 - Position assets in the position UTxO are all sent to the orders validator
 - The datum in the order UTxO is valid
 - The transaction is sent to the owner
@@ -703,7 +703,7 @@ Traders can cancel their provide liquidity order.
 
 ### Withdraw Liquidity
 
-If the users want to withdraw their liquidity, they will send the liquidity asset to be processed in the orders validator. The tokens rewarded from provided liquidity will be the same tokens that they used to supply the liquidity
+If the users want to withdraw their liquidity, they will send the liquidity asset to be ed in the orders validator. The tokens rewarded from provided liquidity will be the same tokens that they used to supply the liquidity
 
 Once it reaches the order validator, the validator will perform the following checks:
 
@@ -758,7 +758,7 @@ Once it reaches the order validator, the validator will perform the following ch
 
 In long positions, when the price drops below the liquidation price, the trader's position will be liquidated. In short positions, when the price rises higher than the liquidation price, the trader's position will be liquidated. Losses will be covered by the trader's collateral. Once the collateral reaches 2.5% of its original value, the position will be liquidated. An off-chain bot will be monitoring transactions and liquidate once liquidation criteria is met.
 
-- The collaterals are sent to the orders validator to be processed
+- The collaterals are sent to the orders validator to be ed
 - The liquidation price has been met
   - Since each hour the borrowed fee is deducted from the user, the smart contract will get the current value of the position which will be `current price * position size amount` then subtract it by the amount of positions assets in the UTxO. Then we will subtract the initial collateral amount with that value. The final value will be compared to see if it is less than 2.5% of the original collateral amount
 

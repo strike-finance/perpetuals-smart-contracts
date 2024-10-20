@@ -10,7 +10,7 @@
 //   strike__collateral_asset, trader_pkh, underlying_asset,
 // }
 // use types.{
-//   Long, OrdersDatum, ProcessProvideLiquidityOrder, ProvideLiquidityMintParams,
+//   Long, OrdersDatum, ProvideLiquidityOrder, ProvideLiquidityMintParams,
 // }
 
 // test test_burn_short_positions_mint() {
@@ -45,7 +45,7 @@
 //       order_submission_time: 1751111000,
 //       validate_pool_ref,
 //       order_submission_usd_price: 100,
-//       action: ProcessProvideLiquidityOrder,
+//       action: ProvideLiquidityOrder,
 //       side: Long,
 //     }
 

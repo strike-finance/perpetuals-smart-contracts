@@ -25,13 +25,14 @@ pub type PositionSide {
 }
 
 pub type OrderAction {
-  ProcessOpenPositionOrder
-  ProcessClosePositionOrder
-  ProcessStopLossOrder
-  ProcessTakeProfitOrder
-  ProcessProvideLiquidityOrder
-  ProcessWithdrawLiquidityOrder
-  ProcessLiquidateOrder
+  OpenPositionOrder
+  ClosePositionOrder
+  StopLossOrder
+  TakeProfitOrder
+  ProvideLiquidityOrder
+  AddMoreLiquidityOrder
+  WithdrawLiquidityOrder
+  LiquidateOrder
 }
 
 pub type OrdersRedeemer {
@@ -56,7 +57,7 @@ pub type OrdersDatum {
   underlying_asset_amount: Int,
   // Leverage used for the postion. Total positon size is underlying_asset_amount * leverage factor
   leverage_factor: Int,
-  // The script hash for the orders script that processes all the orders
+  // The script hash for the orders script that es all the orders
   orders_script_hash: ScriptHash,
   // The script hash for the positions script that holds all the positions of the trader
   positions_script_hash: ScriptHash,
@@ -95,19 +96,18 @@ pub type PositionsRedeemer {
   PayLend(Int)
 }
 
-pub type EnterPositionParams {
+pub type PositionsMintRedeemer {
+  MintLong(Int)
+  MintShort(Int)
+  Burn(Int, ByteArray)
+}
+
+pub type PositionsParams {
   orders_script_hash: ScriptHash,
   long_asset_name: ByteArray,
   short_asset_name: ByteArray,
   validate_pool_ref: OutputReference,
   admin_pkh: AddressHash,
-}
-
-pub type PositionsMintRedeemer {
-  MintLong(Int)
-  MintShort(Int)
-  BurnLong(Int)
-  BurnShort(Int)
 }
 
 pub type PositionDatum {
@@ -148,9 +148,20 @@ pub type LiquidityPositionDatum {
   entered_collateral_earnings_per_share: Int,
 }
 
-pub type ProvideLiquidityMintParams {
-  orders_validator: ByteArray,
+pub type LiquidityParams {
+  orders_script_hash: ByteArray,
   asset_name: AssetName,
   provided_asset_policy_id: PolicyId,
   provided_asset_name: AssetName,
+}
+
+pub type LiquidityRedeemer {
+  AddMoreLiquidity
+  WithdrawPartialLiquidity
+  WithdrawLiquidity
+}
+
+pub type LiquidityMintsRedeemer {
+  MintLiquidity
+  BurnLiquidity(Int)
 }

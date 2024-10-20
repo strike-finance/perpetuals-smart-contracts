@@ -6,10 +6,10 @@ use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  LiquidityPositionDatum, OrdersDatum, PoolDatum, PositionDatum,
-  ProcessClosePositionOrder, ProcessLiquidateOrder, ProcessOpenPositionOrder,
-  ProcessProvideLiquidityOrder, ProcessStopLossOrder, ProcessTakeProfitOrder,
-  ProcessWithdrawLiquidityOrder,
+  AddMoreLiquidityOrder, ClosePositionOrder, LiquidateOrder,
+  LiquidityPositionDatum, OpenPositionOrder, OrdersDatum, PoolDatum,
+  PositionDatum, ProvideLiquidityOrder, StopLossOrder, TakeProfitOrder,
+  WithdrawLiquidityOrder,
 }
 use utils.{get_all_validators_inputs, validate_token_mint}
 
@@ -73,14 +73,14 @@ pub fn validate_individual_order(
   expect input_datum_typed: OrdersDatum = input_datum
 
   when input_datum_typed.action is {
-    ProcessOpenPositionOrder -> open_position(input, output)
-    ProcessClosePositionOrder -> close_position(input, output, transaction)
-    ProcessStopLossOrder -> stop_loss(input, output, transaction)
-    ProcessTakeProfitOrder -> take_profit(input, output, transaction)
-    ProcessProvideLiquidityOrder -> contribute_liquidity(input, output)
-    ProcessWithdrawLiquidityOrder ->
-      withdraw_liquidity(input, output, transaction)
-    ProcessLiquidateOrder -> False
+    OpenPositionOrder -> open_position(input, output)
+    ClosePositionOrder -> close_position(input, output, transaction)
+    StopLossOrder -> stop_loss(input, output, transaction)
+    TakeProfitOrder -> take_profit(input, output, transaction)
+    ProvideLiquidityOrder -> contribute_liquidity(input, output)
+    AddMoreLiquidityOrder -> todo
+    WithdrawLiquidityOrder -> withdraw_liquidity(input, output, transaction)
+    LiquidateOrder -> False
   }
 }
 
