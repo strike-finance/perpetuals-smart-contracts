@@ -1,5 +1,22 @@
 # Strike Finance Perpetuals Smart Contract
 
+## Structure
+
+- Main contracts:
+  - [Liquidity Validators](/validators/liquidity.ak)
+  - [Orders Validator](/validators/orders.ak)
+  - [Positions Validator](/validators/pools.ak)
+  - [Pool Validator](/validators/positions.ak)
+
+### Prerequisites
+
+- Install [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
+- Install [Aiken](https://aiken-lang.org/installation-instructions)
+
+## Testing
+
+- Run `aiken check` to run all unit tests of the contract
+
 ## What are Perpetuals
 
 Perpetual futures are a type of derivative contract that allows traders to speculate on the continuous price movement of an underlying asset without an expiration date, enabling positions to be held indefinitely. These contracts typically offer leverage, meaning traders can control larger positions with a relatively small amount of capital by essentially borrowing, which amplifies both potential gains and losses. To manage the increased risk associated with leveraged trading, perpetual futures require maintenance margins—minimum account balances that must be maintained to keep positions open.
