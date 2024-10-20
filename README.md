@@ -4,13 +4,15 @@
 
 - [What are Perpetuals](#what-are-perpetuals)
 - [Product](#product)
-- [Technical High-Level Overview](#technical-high-level-overview)
-  - [Prices](#prices)
-  - [UTxOs](#utxos)
 - [Calculations](#calculations)
   - [User Profits And Loss](#user-profits-and-loss)
   - [Hourly Borrowed Rate](#hourly-borrowed-rate)
   - [Liquidity Provider Earned Fees](#liquidity-provider-earned-fees)
+- [Technical High-Level Overview](#technical-high-level-overview)
+  - [Scripts](#scripts)
+  - [Prices](#prices)
+  - [UTxOs](#utxos)
+  - [Liquidity Positions](#liquidity-positions)
 - [Smart Contract Implementation](#smart-contract-implementation)
   - [Batcher](#batcher)
   - [Enter Position](#enter-position)
@@ -54,36 +56,7 @@ There are two positions that a trader can take: a long and a short. Traders will
 3. When positions get liquidated they also keep 100% of the collateral
 4. They will keep 100% of the on-chain fee.
 5. They can withdraw their position anytime they want
-
-## Technical High-Level Overview
-
-There are 3 Minting Scripts and 3 Validator Scripts used. We also use a batcher. All liquidity users will be used to borrow and take profits from will be in a singular UTxO.
-
-The `orders.ak` script is a script that holds all pending transactions. All actions on the platform will have to go through the `orders.ak` script.
-
-The `pools.ak` file is a multivalidator that has a minting script and a spending script. The minting script validates that the singular UTxO that contains the liquidity is a valid UTxO and created by us. The `pools.ak` script is parameterized by the staking credential of the `orders.ak` script. The only way to consume anything from the `pools.ak` script is if the withdrawal script in `orders.ak` is called.
-
-The `enter_position_mint.ak` script handles minting of assets that validates the trader's position is valid. If their position is valid, i.e., the trader deposited the correct amount of collateral, the datum values are correct, and the UTxO is being sent to the `orders.ak` script.
-
-The `position.ak` script handles logic for stop loss, take profit, and interest payment for borrowing funds. Stop loss and take profits are things the traders can set to close their position once it reaches a certain value automatically.
-
-The `liquidity_mint.ak` script mints assets that liquidity providers will hold in their wallet. To withdraw their liquidity, they simply send their assets to the `orders.ak` script, and the batcher will burn the minted assets and send the liquidity assets as well as the fees earned for providing liquidity back to them.
-
-### Prices
-
-Currently, all prices are fed through redeemer. This will not be for mainnet. We have been exploring different oracles solutions. For now it's just passed as redeemer.
-
-Since all actions will go through the orders script, this means that there is some delay between the users action and finalization on-chain. This can take over 30 seconds in some cases and with leverage, this becomes a problem.
-
-The orders script will not be looking at the oracles prices, but instead the datum values of the orders.
-
-For liquidate, it will look at the field `liquidate_usd_price`, for `stop_loss`, it will look at the `stop_loss_usd_price` etc... And will trust that the positions script had already done the validations for the datum values. This ensures the most up to date prices are used when ing orders.
-
-## UTxOs
-
-A single UTxO will hold all the liquidity from the liquidity providers.As well as the hourly borrow rate fees, trading fees, and earned collateral from the traders.
-
-When traders enter a position, the collateral they put up will be in a seperate UTxO.
+6. They only get the fees generated from when they deposited liquidity
 
 ## Calculations
 
@@ -127,7 +100,7 @@ Certainly! Below is the updated version of your document, incorporating the **Re
 
 ---
 
-### **Liquidity Provider Earned Fees (Updated with Reward Debt Method)**
+### Liquidity Provider Earned Fees
 
 Liquidity providers will keep profits earned from the perpetual protocol.
 
@@ -553,6 +526,26 @@ Let's consider both assets and collateral earnings in this example.
 - **Total Funds Impact on Future Earnings:**
 
   - When users withdraw liquidity, **TotalFunds** decreases, affecting future increments of AccEPS.
+
+## Technical High-Level Overview
+
+### Prices
+
+Currently, all prices are fed through redeemer. This will not be for mainnet. We have been exploring different oracles solutions. For now it's just passed as redeemer.
+
+Since all actions will go through the orders script, this means that there is some delay between the users action and finalization on-chain. This can take over 30 seconds in some cases and with leverage, this becomes a problem.
+
+The orders script will not be looking at the oracles prices, but instead the datum values of the orders.
+
+For liquidate, it will look at the field `liquidate_usd_price`, for `stop_loss`, it will look at the `stop_loss_usd_price` etc... And will trust that the positions script had already done the validations for the datum values. This ensures the most up to date prices are used when ing orders.
+
+## UTxOs
+
+A single UTxO will hold all the liquidity from the liquidity providers.As well as the hourly borrow rate fees, trading fees, and earned collateral from the traders. Since most actions will involve this single UTxO, we will build a batcher for this.
+
+## Liquidity Positions
+
+When someone provides liquidity, in order to keep track of the earnings per share when the provided the liquidity, there will be a UTxO sitting at the liquidity script. The UTxO will have a datum that has the amount of earnings per share info, which will be used when they want to withdraw liquidity.
 
 ```
 pub type OrdersDatum {
