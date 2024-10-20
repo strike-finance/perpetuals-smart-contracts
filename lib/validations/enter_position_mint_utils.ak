@@ -177,7 +177,6 @@ pub fn enter_short_mint(
       pool_ref_datum_typed.liquidate_margin,
     )
 
-  // trace @"liquidate_usd_price 111": liquidate_usd_price
   let datum_values_valid =
     valid_datum_values(
       orders_datum_typed,
@@ -189,7 +188,7 @@ pub fn enter_short_mint(
     )
 
   expect
-    mint_valid && only_one_output_to_orders && assets_match && datum_values_valid
+    mint_valid && only_one_output_to_orders && assets_match && datum_values_valid && expected_usd_collateral_valid
 
   let contains_strike_collateral: Bool =
     quantity_of(
