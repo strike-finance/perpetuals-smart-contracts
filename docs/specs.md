@@ -14,20 +14,20 @@
 
 There a 4 total contracts that are used.
 
-- Positions Validator: This validator handles the validation of user's positions mangement such as opening positions, closing positions, and liquidating their positions.
+- **Positions Validator**: This validator handles the validation of user's positions mangement such as opening positions, closing positions, and liquidating their positions.
 
-- Liquidity Validator: This validator handles the validations of liquidity providers such as providing liquidity and withdrawing liquidity.
+- **Liquidity Validator**: This validator handles the validations of liquidity providers such as providing liquidity and withdrawing liquidity.
 
-- Pool Validator: This validator handles the validation of creating a pool and holds all the assets used for trading
+- **Pool Validator**: This validator handles the validation of creating a pool and holds all the assets used for trading
 
-- Orders Validator: This script will be validating that the movements of assets are correct, ie when some closes a postion, they get the correct amount of assets back.
+- **Orders Validator**: This script will be validating that the movements of assets are correct, ie when some closes a postion, they get the correct amount of assets back.
 
 ## Tokens
 
-- Positions Token: Represents the total position value of the trader. This is 1:1 of the his total position size. Example: 1_000_000 position token == 1_000_000 Lovelace
-- Liquidity Tokens: Represent the amount of liquidity the lp has provided
-- Batcher License: Only holder of this license token can batch orders
-- Pool NFT: This can only be minted once per asset pool. It will be in the pool UTxO to validate the pool is valid
+- **Positions Token**: Represents the total position value of the trader. This is 1:1 of the his total position size. Example: 1_000_000 position token == 1_000_000 Lovelace
+- **Liquidity Tokens**: Represent the amount of liquidity the lp has provided
+- **Batcher License**: Only holder of this license token can batch orders
+- **Pool NFT**: This can only be minted once per asset pool. It will be in the pool UTxO to validate the pool is valid
 
 ## Positions Validator
 
@@ -80,44 +80,44 @@ pub type PositionsMintRedeemer {
 
 #### Actions
 
-- Open positions
+- **Open positions**
 
   - When opening a short position, the trader must deposit a stable coin as collateral. When opening a long position, the trader must deposit the underlying asset as collateral
   - The pool ref will pull in the Pool UTxo, where it's datum sepcifies the largest leverage the trader can use.
   - They will mint the amount of assets of their total position
   - A UTxO must be sent to the orders validator with the minted assets, collateral, and valid datum values.
 
-- Close Position
+- **Close Position**
 
   - Only the owner of the position can close the positon
   - To close a position the trader must sent a UTxO to the orders validtor with the minted assets, collateral, and valid datum values.
 
-- Stop Loss
+- **Stop Loss**
 
   - An off-chain bot will be monitoring all UTxOs at the script, and once the stop loss usd of the position is met, the position will be closed automatically
   - The bot must sent the a UTxO to the orders validator with the minted assets, collateral, and valid datum values.
 
-- Update Stop Loss
+- **Update Stop Loss**
 
   - Traders will be able to update their stop loss amount, only the owner of the position can update it
   - The UTxO must be returned back to the positions validator with the minted assets, collateral, and only the `stop_loss_usd_price` datum is changed
 
-- Take profit
+- **Take profit**
 
   - An off-chain bot will be monitoring all UTxOs at the script, and once the take profit usd of the position is met, the position will be closed automatically
   - The bot must sent the a UTxO to the orders validator with the minted assets, collateral, and valid datum values.
 
-- Update Take Profit
+- **Update Take Profit**
 
   - Traders will be able to update their take profit amount, only the owner of the position can update it
   - The UTxO must be returned back to the positions validator with the minted assets, collateral, and only the `take_profit_usd_price` datum is changed
 
-- Liquidate
+- **Liquidate**
 
   - An off-chain bot will be monitoring all UTxOs at the script, and once the `liquidate_usd_price` of the position is met, the position will be closed automatically
   - The bot must sent the a UTxO to the orders validator with the minted assets, collateral, and valid datum values.
 
-- Pay Lend
+- **Pay Lend**
 
   - An off-chain bot will and see for all positions that has a datum value of `last_pay_lend_time` that was over 1 hour ago
   - The bot will burn the amount of minted tokens that represents the amount that the trader will pay
@@ -155,11 +155,11 @@ pub type PositionsMintRedeemer {
 
 #### Actions
 
-- Add Liquidity
+- **Add Liquidity**
 
   - To add liquidity, they must mint the amount of assets they will supply and send a UTxO to the orders script that contains all the minted assets amount and the correct datum value
 
-- Remove Liquidity
+- **Remove Liquidity**
   - To remove liquidity they will consume the UTxO sitting at the liquidity script and send it to be processed at the orders script. The UTxO must contain all the liquidity assets, and the correct datum values
 
 ## Pool Validator
@@ -274,30 +274,47 @@ pub type OrdersDatum {
 #### Actions
 
 A Multi-UTxO indexer is used to match the input to the output.
-
-- Cancel Open Position Order
-  - The minted assets must be burnt, the owner must signed the transaction
-- Cancel Close Position Order
-  - Collateral assets and minted position assets are sent back to the positions validator with the correct datum values
-- Cancel Provide Liquidity Order
-  - Liquidity assets must be burnt, the owner must signed the transaction
-- Cancel Withdraw Liquidity Order
-
-  - Collateral assets and minted assets are sent back to the positions validator with the correct datum values
+** Batching Orders and Their Individual Validations **
 
 - **Open Position Order**
+
   - To open a position a UTxO must be sent to the positions validator with all the minted positions asset, the collateral, and that the datum values are correct
+
 - **Close Position Order**
+
   - The validator will look at the current price of the asset and check that the output is going to the owner contains the correct amount of assets and all positions
-- Provide Liquidity Order
+
+- **Provide Liquidity Order**
+
   - The UTxO must be send to the positions validator, the minted assets are not consumed and the datum values are correct
+
 - **Withdraw Liquidity Order**
 
   - The UTxO is going to the owner and it contains the correct amount assets
 
-- Liquidate Order
+- **Liquidate Order**
 
   - There are no outputs corresponding to a liquidate order. The collateral will simply be consumed by the pool UTxO
 
 - **Final validation**
+
   - After processing through all those orders. The validator will be looping through all the inputs and outputs through a reduce method and throw an exception when any of the above validation fails. The validator checks that the output pool UTxO has the correct amount of assets, and that the datum values are updated correctly. It will also check that the correct amount of assets are burnt. Example if 2 people closed their position, the validator will check that all the positions assets are burnt. If someone provided liquidity, it will check that the pool increased in assets.
+  - The batcher license must be present in the transaction so we know that the batcher initiated the transaction
+
+** Canceling Orders **
+
+- **Cancel Open Position Order**
+
+  - The minted assets must be burnt, the owner must signed the transaction
+
+- **Cancel Close Position Order**
+
+  - Collateral assets and minted position assets are sent back to the positions validator with the correct datum values
+
+- **Cancel Provide Liquidity Order**
+
+  - Liquidity assets must be burnt, the owner must signed the transaction
+
+- **Cancel Withdraw Liquidity Order**
+
+  - Collateral assets and minted assets are sent back to the positions validator with the correct datum values
