@@ -18,25 +18,25 @@ There a 4 total contracts that are used.
 
 - **Liquidity Validator**: This validator handles the validations of liquidity providers such as providing liquidity and withdrawing liquidity.
 
-- **Pool Validator**: This validator handles the validation of creating a pool and holds all the assets used for trading
+- **Pool Validator**: This validator handles the validation of creating a pool and holds all the assets used for trading.
 
 - **Orders Validator**: This script will be validating that the movements of assets are correct, ie when some closes a postion, they get the correct amount of assets back.
 
 ## Tokens
 
-- **Positions Token**: Represents the total position value of the trader. This is 1:1 of the the total position size. Example: 1_000_000 position token == 1_000_000 Lovelace
-- **Liquidity Tokens**: Represent the amount of liquidity the lp has provided. This is 1:1 of the liquidity provided
-- **Batcher License**: Only holder of this license token can batch orders
-- **Pool NFT**: This can only be minted once per asset pool. It will be in the pool UTxO to validate the pool is valid
+- **Positions Token**: Represents the total position value of the trader. This is 1:1 of the the total position size.
+- **Liquidity Tokens**: Represent the amount of liquidity the lp has provided. This is 1:1 of the liquidity provided.
+- **Batcher License**: Only holder of this license token can batch orders.
+- **Pool NFT**: This can only be minted once per asset pool. It will be in the pool UTxO to validate the pool is valid.
 
 ## Positions Validator
 
-This is a multivalidator with a spending and minting script. When the traders opens a position, they will first mint assets from the positions validator corresponding to his total position size. A UTxO will be sent to the orders validator for processing. Once the processing is done, the UTxO will be sent back to the positions validator. The trader will be able to close his position, specify stop loss and take profit by interacting with the UTxO here once it has been send back from the orders validator.
+This is a multivalidator with a spending and minting script. When the traders opens a position, they will first mint assets from the positions validator corresponding to his total position size(inital position size \* leverage). A UTxO will be sent to the orders validator for processing. Once the processing is done, the UTxO will be sent back to the positions validator. The trader will be able to close his position, specify stop loss and take profit by interacting with the UTxO here once it has been send back from the orders validator.
 
 #### Params
 
-- orders_script_hash: ScriptHash: The script hash of the orders validator
-- validate_pool_ref: OutputReference: A reference to the Pool UTxO
+- orders_script_hash: The script hash of the orders validator to make sure that UTxO is sent there
+- validate_pool_ref: OutputReference: A reference to the Pool UTxO, to make sure that the max leverage have not been exceeded
 
 #### Datum
 
@@ -78,19 +78,19 @@ pub type PositionsMintRedeemer {
 
 - **Open positions**
 
-  - When opening a short position, the trader must deposit a stable coin as collateral. When opening a long position, the trader must deposit the underlying asset as collateral
+  - When opening a short position, the trader must deposit a stable coin as collateral. When opening a long position, the trader must deposit the underlying asset as collateral.
   - The pool ref will pull in the Pool UTxo, where it's datum sepcifies the largest leverage the trader can use.
-  - They will mint the amount of assets of their total position
+  - They will mint the amount of assets of their total position.
   - A UTxO must be sent to the orders validator with the minted assets, collateral, and valid datum values.
 
 - **Close Position**
 
-  - Only the owner of the position can close the positon
+  - Only the owner of the position can close the positon.
   - To close a position the trader must sent a UTxO to the orders validtor with the minted assets, collateral, and valid datum values.
 
 - **Stop Loss**
 
-  - An off-chain bot will be monitoring all UTxOs at the script, and once the stop loss usd of the position is met, the position will be closed automatically
+  - An off-chain bot will be monitoring all UTxOs at the script, and once the stop loss usd of the position is met, the position will be closed automatically.
   - The bot must sent the a UTxO to the orders validator with the minted assets, collateral, and valid datum values.
 
 - **Update Stop Loss**
@@ -125,10 +125,10 @@ This is a multivalidator with a spending and minting script. When someone wants 
 
 #### Params
 
-- orders_script_hash: ByteArray,
-- asset_name: AssetName,
-- provided_asset_policy_id: PolicyId,
-- provided_asset_name: AssetName,
+- orders_script_hash: The script hash of the orders validator to make sure that UTxO is sent there
+- asset_name: Asset name of the liquidity asset
+- underlying_asset_policy_id: The policy id of the asset provided
+- underlying_asset_name: The asset name of the asset provided
 
 #### Datum
 
@@ -154,14 +154,16 @@ pub type PositionsMintRedeemer {
 - **Remove Liquidity**
   - To remove liquidity they will consume the UTxO sitting at the liquidity script and send it to be processed at the orders script. The UTxO must contain all the liquidity assets, and the correct datum values
 
+// TODO, not sure if this is the best way. A few problems, what happens when they want to add more liquidity? Do we really need a UTxO that has the datums to calculate how much fees has been earned??
+
 ## Pool Validator
 
-This is a multivalidator with a spending and minting script
+This is a multivalidator with a spending and minting script. The pool validator contains the UTxO that traders will consume their profits from, pay their losings and where liquidity providers will deposit liquidity into and withdraw liquidity. The datum in the pool UTxO contains params for perpetual trading such as the hourly pay rate, max leverage etc...
 
 #### Params
 
-- orders_stake_cred: Credential
-- admin_pkh: AddressHash
+- orders_stake_cred: The stake credential of the orders validator. The orders validator handles the logic of consuming / depositing unds of the pool UTxO. Anytime the pool validator is used, it checks if the orders stake validator is called
+- admin_pkh: The admin will be able to mint an asset and create the pool UTxO. The admin will also be able to update the parameters of the script.
 
 #### Redeemer
 
@@ -169,41 +171,43 @@ None
 
 #### Datum
 
-```
-pub type PoolDatum {
-  underlying_asset: Asset,
-  underlying_asset_amount: Int,
-  underlying_asset_lended_amount: Int,
-  underlying_interest_rate: Int,
-  liquidate_margin: Int,
-  stable_collateral_asset: Asset,
-  max_leverage_factor: Int,
-  max_strike_holder_leverage_factor: Int,
-  maintain_margin_amount: Int,
-  is_valid_pool_asset: Asset,
-  earnings_per_share: Int,
-  collateral_earnings_per_share: Int,
-}
-```
+_underlying_asset_: The underlying asset that the pool is trading on
+_underlying_asset_amount_: Total amount of underlying asset in the pool
+_underlying_asset_lended_amount_: Total amount of underlying asset that has been lended out
+_underlying_interest_rate_: The interest rate for the underlying asset
+_liquidate_margin_: The margin required to liquidate the pool
+_stable_collateral_asset_: The stable collateral asset used for the pool
+_max_leverage_factor_: The max leverage factor for the pool
+_max_strike_holder_leverage_factor_: The max leverage factor for the strike holder
+_maintain_margin_amount_: The amount of margin to maintain for the pool
+_is_valid_pool_asset_: Asset that determines if the pool is valid
+_earnings_per_share_: The earnings per share for the pool, will increase each time the pool earns the underlying asset
+_collateral_earnings_per_share_: The earnings per share for the collateral for the pool, will increase each time the pool earns the collateral asset
 
 #### Actions
 
 - Create Pool
-- Only the admin can create a pool, they will mint an asset, specify the datums, and lock the UTxO at the pool validator with the minted asset.
+
+  - Only the admin can create a pool, they will mint an asset, specify the datums, and lock the UTxO at the pool validator with the minted asset.
+
 - Utilize Pool
-- To utilize the Pool, it will check if the withdrawal script of the orders validator was called
+
+  - To utilize the Pool, it will check if the withdrawal script of the orders validator was called
+
 - Update Pool Params
-- Pool params can be updated only by the admin. The admin must consume the UTxO, consume no assets, return the UTxO back to the pool validator with the updated datum
+
+  - Pool params can be updated only by the admin. The admin must consume the UTxO, consume no assets, return the UTxO back to the pool validator with the updated datum
 
 ## Orders Validator
 
-This is a multivalidator with a spending and withdrawal script
+This is a multivalidator with a spending and withdrawal script. Traders can cancel their transactions sitting here before the batcher picks it up. The batcher utilized a multi-utxo indexer to make sure the transactions are applied correctly, ie the input has the correct corressponding output.
 
 #### Params
 
-batcher_license: PolicyId,
-underlying_asset_policy_id: PolicyId,
-underlying_asset_name: AssetName,
+batcher_license: The license of the batcer. Only batcher holding the license can apply the orders
+maximum_deadline_range: The deadline for the batcher license
+underlying_asset_policy_id: The underyling policy_id of what the contract is trading on
+underlying_asset_name: The underlying
 
 #### Redeemer
 

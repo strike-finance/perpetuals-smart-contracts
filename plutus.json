@@ -474,11 +474,11 @@
               "$ref": "#/definitions/AssetName"
             },
             {
-              "title": "provided_asset_policy_id",
+              "title": "underlying_asset_policy_id",
               "$ref": "#/definitions/PolicyId"
             },
             {
-              "title": "provided_asset_name",
+              "title": "underlying_asset_name",
               "$ref": "#/definitions/AssetName"
             }
           ]

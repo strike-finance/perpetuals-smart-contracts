@@ -97,8 +97,8 @@
 //     ProvideLiquidityMintParams {
 //       orders_validator: orders_script_hash,
 //       asset_name: provide_liquidty_asset_name,
-//       provided_asset_policy_id: underlying_asset.policy_id,
-//       provided_asset_name: underlying_asset.asset_name,
+//       underlying_asset_policy_id: underlying_asset.policy_id,
+//       underlying_asset_name: underlying_asset.asset_name,
 //     }
 //   let redeemer = 1
 

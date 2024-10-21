@@ -65,8 +65,8 @@ validator liquidity(params: LiquidityParams) {
         let pool_asset_deposited_amount: Int =
           quantity_of(
             output_to_orders_validator.value,
-            params.provided_asset_policy_id,
-            params.provided_asset_name,
+            params.underlying_asset_policy_id,
+            params.underlying_asset_name,
           )
 
         let expected_mint =

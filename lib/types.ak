@@ -197,8 +197,8 @@ pub type LiquidityPositionDatum {
 pub type LiquidityParams {
   orders_script_hash: ByteArray,
   asset_name: AssetName,
-  provided_asset_policy_id: PolicyId,
-  provided_asset_name: AssetName,
+  underlying_asset_policy_id: PolicyId,
+  underlying_asset_name: AssetName,
 }
 
 pub type LiquidityRedeemer {
