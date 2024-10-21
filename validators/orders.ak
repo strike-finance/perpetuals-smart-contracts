@@ -1,6 +1,5 @@
 use aiken/collection/list
 use cardano/address.{Credential, Script}
-use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{Input, OutputReference, Transaction}
 use orders_validations.{
   cancel_close_position, cancel_contribute_liquidity, cancel_open_position,

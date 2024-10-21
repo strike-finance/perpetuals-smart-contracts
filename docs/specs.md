@@ -1,7 +1,7 @@
 - [Overview](#overview)
 - [Architecture](#scripts)
 - [Positions Validator](#positions-validator)
-- [Liquidity Validator](#pool-validator)
+- [Liquidity Validator](#liquidity-validator)
 - [Pool Validator](#pool-validator)
 - [Orders Validator](orders-smart-validator)
 - [Prices](#prices)
@@ -31,7 +31,7 @@ There a 4 total contracts that are used.
 
 ## Positions Validator
 
-This is a multivalidator with a spending and minting script
+This is a multivalidator with a spending and minting script. When the traders opens a position, they will first mint assets from the positions validator corresponding to his total position size. A UTxO will be sent to the orders validator for processing. Once the processing is done, the UTxO will be sent back to the positions validator. The trader will be able to close his position, specify stop loss and take profit by interacting with the UTxO here once it has been send back from the orders validator.
 
 #### Params
 
@@ -40,24 +40,20 @@ validate_pool_ref: OutputReference: A reference to the Pool UTxO
 
 #### Datum
 
-```
-pub type PositionDatum {
-  owner_address_hash: AddressHash,
-  entered_at_price: Int,
-  underlying_asset: Asset,
-  leverage_factor: Int,
-  positions_mint_asset: Asset,
-  positions_mint_asset_amount: Int,
-  collateral_asset: Asset,
-  collateral_asset_amount: Int,
-  liquidate_usd_price: Int,
-  stop_loss_usd_price: Int,
-  take_profit_usd_price: Int,
-  last_pay_lend_time: POSIXTime,
-  validate_pool_ref: OutputReference,
-  side: PositionSide,
-}
-```
+- _owner_address_hash_: Owner of the position
+- _entered_at_price_: Price at which the position was entered
+- _underlying_asset_: The underlying asset that the perpetual contract is trading on
+- _leverage_factor_: Leverage used for the position
+- _positions_mint_asset_: Minted asset to represent the trader total position size
+- _positions_mint_asset_amount_: Total position size of the trader, i.e., the initial size of position \* leverage
+- _collateral_asset_: Stable collateral asset
+- _collateral_asset_amount_: Total stable collateral amount
+- _liquidate_usd_price_: Price at which the position will be liquidated
+- _stop_loss_usd_price_: Stop loss price where the position will be closed
+- _take_profit_usd_price_: Take profit price where the position will be closed
+- _last_pay_lend_time_: Last time the hourly lend was paid
+- _validate_pool_ref_: Reference to the pool validator
+- _side_: Side of the position
 
 #### Redeemer
 
@@ -123,9 +119,9 @@ pub type PositionsMintRedeemer {
   - The bot will burn the amount of minted tokens that represents the amount that the trader will pay
   - The UTxO must be returned back to the positions validator with the minted assets, collateral, and only the `last_pay_lend_time` and `liquidate_usd_price` datum is changed
 
-# Liquidity Validator
+## Liquidity Validator
 
-This is a multivalidator with a spending and minting script
+This is a multivalidator with a spending and minting script. When someone wants to provide liquidity they will first mint the liquidity assets. The liquidity assets are 1:1 of the amount of assets provided. Then it will be sent to the orders validator. The order validator will send back the assets back to the liquidity validator. The UTxO sent back will contain datum values that will be used to calculate how much fees the provider has earned.
 
 #### Params
 
@@ -136,13 +132,9 @@ provided_asset_name: AssetName,
 
 #### Datum
 
-```
-pub type LiquidityPositionDatum {
-  owner_address_hash: AddressHash,
-  entered_earnings_per_share: Int,
-  entered_collateral_earnings_per_share: Int,
-}
-```
+- _owner_address_hash_: Only the owner can withdraw liquidity
+- _entered_earnings_per_share_: Will be used to compared with the earnings per share of the singular pool UTxO to calculate earnings
+- _entered_collateral_earnings_per_share_: Will be used to compared with the collateral per share of the singular pool UTxO to calculate earnings by subtracting
 
 #### Redeemer
 
@@ -233,43 +225,31 @@ pub type OrdersWithdrawRedeemer {
 
 #### Datum
 
-```
-pub type OrderAction {
-  OpenPositionOrder
-  ClosePositionOrder
-  ProvideLiquidityOrder
-  WithdrawLiquidityOrder
-  LiquidateOrder
-}
-
-pub type OrdersDatum {
-  owner_address_hash: AddressHash,
-  underlying_asset: Asset,
-  underlying_asset_amount: Int,
-  leverage_factor: Int,
-  orders_script_hash: ScriptHash,
-  positions_script_hash: ScriptHash,
-  positions_mint_asset: Asset,
-  positions_mint_asset_amount: Int,
-  liquidity_asset: Asset,
-  liquidity_asset_amount: Int,
-  liquidity_positions_script_hash: ScriptHash,
-  collateral_asset: Asset,
-  collateral_asset_amount: Int,
-  strike_collateral_asset: Asset,
-  strike_collateral_amount: Int,
-  entered_earnings_per_share: Int,
-  entered_collateral_earnings_per_share: Int,
-  stop_loss_usd_price: Int,
-  take_profit_usd_price: Int,
-  liquidate_usd_price: Int,
-  order_submission_usd_price: Int,
-  order_submission_time: POSIXTime,
-  validate_pool_ref: OutputReference,
-  action: OrderAction,
-  side: PositionSide,
-}
-```
+- _owner_address_hash_: Owner of the order
+- _underlying_asset_: The underlying asset that the perpetual contract is trading on
+- _underlying_asset_amount_: Initial size of the position
+- _leverage_factor_: Leverage used for the position
+- _orders_script_hash_: The script hash for the orders script that handles all the orders
+- _positions_script_hash_: The script hash for the positions script that holds all the positions of the trader
+- _positions_mint_asset_: Minted asset to represent the trader total position size
+- _positions_mint_asset_amount_: Total position size of the trader,
+- _liquidity_asset_: Minted asset to represent amount of liquidity that has been provided
+- _liquidity_asset_amount_: Total amount of liquidity that has been provided
+- _liquidity_positions_script_hash_: Script hash of the liquidity script that holds the providers' liquidity positions
+- _collateral_asset_: The collateral asset used for the position
+- _collateral_asset_amount_: Total amount of collateral asset used for the position
+- _strike_collateral_asset_: The collateral asset used for the strike position
+- _strike_collateral_amount_: Total amount of strike collateral asset used for the position
+- _entered_earnings_per_share_: Earnings per share for the position
+- _entered_collateral_earnings_per_share_: Earnings per share for the strike position
+- _stop_loss_usd_price_: Stop loss USD price for the position
+- _take_profit_usd_price_: Take profit USD price for the position
+- _liquidate_usd_price_: Liquidate USD price for the position
+- _order_submission_usd_price_: Price of asset when the order was submitted
+- _order_submission_time_: The time the order was submitted
+- _validate_pool_ref_: Reference to the pool validator
+- _action_: Action to be taken for the order OpenPositionOrder/ClosePositionOrder/ProvideLiquidityOrder/WithdrawLiquidityOrder/LiquidateOrder
+- _side_: Side of the position, Long/Short
 
 #### Actions
 

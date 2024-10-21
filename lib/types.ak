@@ -68,26 +68,41 @@ pub type OrdersDatum {
   positions_script_hash: ScriptHash,
   // Minted asset to represent the trader total position size
   positions_mint_asset: Asset,
-  // Total position size of the trader, ie, the inital size of position + leverage
+  // Total position size of the trader
   positions_mint_asset_amount: Int,
   // Minted asset to represent amount of liquidity that has been provided 
   liquidity_asset: Asset,
   // Total amount of liquidity that has been provided 
   liquidity_asset_amount: Int,
+  // Script hash of the liquidty script that holds the providers liquidit positions
   liquidity_positions_script_hash: ScriptHash,
+  // The collateral asset used for the position
   collateral_asset: Asset,
+  // Total amount of collateral asset used for the position
   collateral_asset_amount: Int,
+  // The collateral asset used for the strike position
   strike_collateral_asset: Asset,
+  // Total amount of strike collateral asset used for the position
   strike_collateral_asset_amount: Int,
+  // Earnings per share for the position
   entered_earnings_per_share: Int,
+  // Earnings per share for the strike position
   entered_collateral_earnings_per_share: Int,
+  // Stop loss USD price for the position
   stop_loss_usd_price: Int,
+  // Take profit USD price for the position
   take_profit_usd_price: Int,
+  // Liquidate USD price for the position
   liquidate_usd_price: Int,
+  // Price of asset when the order was submitted
   order_submission_usd_price: Int,
+  // The time the order was submitted
   order_submission_time: POSIXTime,
+  // Reference to the pool validator
   validate_pool_ref: OutputReference,
+  // Action to be taken for the order
   action: OrderAction,
+  // Side of the position
   side: PositionSide,
 }
 
@@ -122,7 +137,7 @@ pub type PositionDatum {
   entered_at_price: Int,
   // The underlying asset that the perpetual contract is trading on
   underlying_asset: Asset,
-  // Leverage used for the postion. Total positon size is underlying_asset_amount * leverage factor
+  // Leverage used for the postion.
   leverage_factor: Int,
   // Minted asset to represent the trader total position size
   positions_mint_asset: Asset,
@@ -147,17 +162,29 @@ pub type PositionDatum {
 }
 
 pub type PoolDatum {
+  // The underlying asset that the pool is trading on
   underlying_asset: Asset,
+  // Total amount of underlying asset in the pool
   underlying_asset_amount: Int,
+  // Total amount of underlying asset that has been lended out
   underlying_asset_lended_amount: Int,
+  // The interest rate for the underlying asset
   underlying_interest_rate: Int,
+  // The margin required to liquidate the pool
   liquidate_margin: Int,
+  // The stable collateral asset used for the pool
   stable_collateral_asset: Asset,
+  // The max leverage factor for the pool
   max_leverage_factor: Int,
+  // The max leverage factor for the strike holder
   max_strike_holder_leverage_factor: Int,
+  // The amount of margin to maintain for the pool
   maintain_margin_amount: Int,
+  // Asset the determines if the pool is valid
   is_valid_pool_asset: Asset,
+  // The earnings per share for the pool, will increase each time the pool earns the underlying asset
   earnings_per_share: Int,
+  // The earnings per share for the collateral for the pool, will increase each time the pool earns the collateral asset
   collateral_earnings_per_share: Int,
 }
 
