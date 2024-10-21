@@ -84,8 +84,14 @@ pub type OrdersDatum {
   side: PositionSide,
 }
 
+pub type CloseType {
+  TraderClose
+  StopLossClose
+  TakeProfitClose
+}
+
 pub type PositionsRedeemer {
-  Close(Int)
+  Close(Int, CloseType)
   UpdateStopLoss(Int)
   UpdateTakeProfit(Int)
   Liquidate(Int)

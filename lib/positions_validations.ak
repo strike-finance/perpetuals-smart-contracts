@@ -5,8 +5,9 @@ use cardano/transaction.{
 }
 use constants.{batcher_fee}
 use types.{
-  AddressHash, Asset, ClosePositionOrder, LiquidateOrder, OrderAction,
+  AddressHash, Asset, ClosePositionOrder, CloseType, LiquidateOrder, OrderAction,
   OrdersDatum, POSIXTime, PoolDatum, PositionDatum, PositionsParams,
+  StopLossClose, TakeProfitClose, TraderClose,
 }
 use utils.{
   get_address_outputs, get_all_validators_inputs, get_lower_bound,
@@ -18,6 +19,7 @@ pub fn close_position(
   datum: Option<PositionDatum>,
   current_price: Int,
   orders_script_hash: ByteArray,
+  close_type: CloseType,
 ) -> Bool {
   expect Some(input_datum) = datum
 
@@ -53,9 +55,6 @@ pub fn close_position(
       input_datum.collateral_asset.asset_name,
     )
 
-  let signed_by_owner: Bool =
-    list.has(transaction.extra_signatories, input_datum.owner_address_hash)
-
   let orders_datum_valid: Bool =
     from_positions_to_orders_datum_valid(
       input_datum,
@@ -64,7 +63,24 @@ pub fn close_position(
       ClosePositionOrder,
     )
 
-  signed_by_owner && valid_asset_in_output && orders_datum_valid && only_one_input_from_script && stable_collateral_asset_not_consumed
+  expect
+    valid_asset_in_output && orders_datum_valid && only_one_input_from_script && stable_collateral_asset_not_consumed
+
+  if close_type == TraderClose {
+    let signed_by_owner: Bool =
+      list.has(transaction.extra_signatories, input_datum.owner_address_hash)
+    signed_by_owner
+  } else if close_type == StopLossClose {
+    let stop_loss_reached: Bool =
+      current_price <= input_datum.liquidate_usd_price
+    stop_loss_reached
+  } else if close_type == TakeProfitClose {
+    let take_profit_reached: Bool =
+      current_price >= input_datum.take_profit_usd_price
+    take_profit_reached
+  } else {
+    False
+  }
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 

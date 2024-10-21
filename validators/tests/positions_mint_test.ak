@@ -13,8 +13,8 @@ use tests/constants.{
   strike_collateral_asset, trader_pkh, underlying_asset,
 }
 use types.{
-  Asset, Burn, Long, MintLong, MintShort, OpenPositionOrder, OrdersDatum,
-  PoolDatum, PositionsParams,
+  Asset, Long, MintPosition, OpenPositionOrder, OrdersDatum, PoolDatum,
+  PositionsParams, Short,
 }
 
 test test_enter_long_positions_mint() {
@@ -127,7 +127,7 @@ test test_enter_long_positions_mint() {
       treasury_donation: None,
     }
   let params = PositionsParams { orders_script_hash, validate_pool_ref }
-  let redeemer = MintLong(100)
+  let redeemer = MintPosition(100)
   positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
 }
 
@@ -191,7 +191,7 @@ test test_enter_short_positions_mint() {
       order_submission_usd_price: 100,
       validate_pool_ref,
       action: OpenPositionOrder,
-      side: Long,
+      side: Short,
     }
 
   let mint = assets.from_asset(enter_position_policy_id, short_asset_name, 20)
@@ -239,7 +239,7 @@ test test_enter_short_positions_mint() {
       treasury_donation: None,
     }
   let params = PositionsParams { orders_script_hash, validate_pool_ref }
-  let redeemer = MintShort(100)
+  let redeemer = MintPosition(100)
   positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
 }
 // test test_burn_long_positions_mint() {

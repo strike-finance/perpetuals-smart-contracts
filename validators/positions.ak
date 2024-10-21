@@ -6,8 +6,8 @@ use positions_validations.{
 }
 use types.{
   BurnPosition, Close, Liquidate, MintPosition, PayLend, PositionDatum,
-  PositionsMintRedeemer, PositionsParams, PositionsRedeemer, TakeProfit,
-  UpdateStopLoss, UpdateTakeProfit,
+  PositionsMintRedeemer, PositionsParams, PositionsRedeemer, UpdateStopLoss,
+  UpdateTakeProfit,
 }
 use utils.{validate_token_mint}
 
@@ -19,12 +19,13 @@ validator positions(params: PositionsParams) {
     transaction: Transaction,
   ) {
     when redeemer is {
-      Close(current_price) ->
+      Close(current_price, close_type) ->
         close_position(
           transaction,
           datum,
           current_price,
           params.orders_script_hash,
+          close_type,
         )
       UpdateStopLoss(stop_loss_price) ->
         update_stop_loss(transaction, datum, stop_loss_price)
