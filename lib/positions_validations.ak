@@ -474,7 +474,6 @@ pub fn mint_position(
       orders_datum_typed,
       current_price,
     )
-
   expect
     only_one_output_to_orders && datum_values_valid && minted_assets_amount_valid && assets_locked_valid && mint_valid
 
@@ -506,7 +505,9 @@ fn minted_assets_amount_valid(
   if position_side == Long {
     orders_datum.positions_mint_asset_amount / orders_datum.leverage_factor <= orders_datum.collateral_asset_amount
   } else {
-    orders_datum.positions_mint_asset_amount / orders_datum.leverage_factor <= current_price * orders_datum.collateral_asset_amount
+    let testing =
+      orders_datum.positions_mint_asset_amount / orders_datum.leverage_factor <= orders_datum.collateral_asset_amount / current_price
+    testing
   }
 }
 
@@ -556,5 +557,5 @@ pub fn valid_datum_values(
   let owner_address_hash_valid: Bool =
     list.has(transaction.extra_signatories, owner_address_hash)
 
-  minted_asset_valid && liquidate_usd_price_valid && valid_pool_ref && entered_at_price_valid && submission_time_valid && owner_address_hash_valid
+  minted_asset_valid && liquidate_usd_price_valid && valid_pool_ref && submission_time_valid && owner_address_hash_valid && entered_at_price_valid
 }

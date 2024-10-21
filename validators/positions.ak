@@ -51,7 +51,7 @@ validator positions(params: PositionsParams) {
       MintPosition(current_price) ->
         mint_position(transaction, params, current_price, policy_id)
       BurnPosition(burn_amount, asset_name) -> {
-        let mint = (policy_id, asset_name, burn_amount)
+        let mint = (policy_id, asset_name, -burn_amount)
         validate_token_mint(transaction.mint, mint)
       }
     }
