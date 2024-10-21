@@ -8,9 +8,8 @@ use cardano/transaction.{
 use positions
 use tests/constants.{
   admin_pkh, enter_position_policy_id, liquidity_positions_script_hash,
-  long_asset_name, long_position_asset, lovelace_asset, orders_script_hash,
-  pool_asset, short_asset_name, short_position_asset, stable_collateral_asset,
-  strike_collateral_asset, trader_pkh, underlying_asset,
+  lovelace_asset, orders_script_hash, pool_asset, positions_mint_asset,
+  stable_collateral_asset, strike_collateral_asset, trader_pkh, underlying_asset,
 }
 use types.{
   Asset, Long, MintPosition, OpenPositionOrder, OrdersDatum, PoolDatum,
@@ -51,8 +50,7 @@ test test_enter_long_positions_mint() {
       },
     }
 
-  let mint =
-    assets.from_asset(enter_position_policy_id, long_asset_name, 10_000_000)
+  let mint = assets.from_asset(enter_position_policy_id, trader_pkh, 10_000_000)
 
   let orders_datum =
     OrdersDatum {
@@ -62,8 +60,8 @@ test test_enter_long_positions_mint() {
       leverage_factor: 10,
       orders_script_hash,
       positions_script_hash: orders_script_hash,
-      positions_mint_asset: long_position_asset,
-      positions_mint_asset_amount: 10,
+      positions_mint_asset,
+      positions_mint_asset_amount: 10_000_000,
       liquidity_asset: underlying_asset,
       liquidity_asset_amount: 10,
       liquidity_positions_script_hash,
@@ -93,6 +91,11 @@ test test_enter_long_positions_mint() {
             lovelace_asset.policy_id,
             lovelace_asset.asset_name,
             1_000_000,
+          )
+        |> assets.add(
+            strike_collateral_asset.policy_id,
+            strike_collateral_asset.asset_name,
+            10,
           ),
       datum: InlineDatum(orders_datum),
       reference_script: None,

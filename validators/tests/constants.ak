@@ -6,10 +6,6 @@ pub const enter_position_policy_id =
 pub const provide_liquidity_policy_id =
   #"7b41055e0f57c0c938af3373a7e1785b6569393c85cce9ddc5f246e8"
 
-pub const long_asset_name = #"6c6f6e67"
-
-pub const short_asset_name = #"73686f7274"
-
 pub const provide_liquidty_asset_name = #"6c6f6e67"
 
 pub const pool_policy_id =
@@ -49,11 +45,8 @@ pub const stable_collateral_asset =
     asset_name: stable_collateral_asset_name,
   }
 
-pub const long_position_asset =
-  Asset { policy_id: enter_position_policy_id, asset_name: long_asset_name }
-
-pub const short_position_asset =
-  Asset { policy_id: enter_position_policy_id, asset_name: short_asset_name }
+pub const positions_mint_asset =
+  Asset { policy_id: enter_position_policy_id, asset_name: trader_pkh }
 
 pub const pool_asset =
   Asset { policy_id: pool_policy_id, asset_name: pool_asset_name }

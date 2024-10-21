@@ -476,7 +476,7 @@ pub fn mint_position(
     )
 
   expect
-    only_one_output_to_orders && datum_values_valid && mint_valid && mint_valid && assets_locked_valid && minted_assets_amount_valid
+    only_one_output_to_orders && datum_values_valid && minted_assets_amount_valid && assets_locked_valid && mint_valid
 
   let contains_strike_collateral: Bool =
     quantity_of(
