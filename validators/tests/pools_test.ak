@@ -6,7 +6,7 @@
 // use provide_liquidity_mint
 // use tests/constants.{
 //   long_position_asset, orders_script_hash, provide_liquidity_policy_id,
-//   provide_liquidty_asset_name, stable_collateral_asset, strike__collateral_asset,
+//   provide_liquidty_asset_name, stable_collateral_asset, strike_collateral_asset,
 //   trader_pkh, underlying_asset,
 // }
 // use types.{Long, OrdersDatum, ProvideLiquidity, ProvideLiquidityMintParams}
@@ -33,7 +33,7 @@
 //       liquidity_asset_amount: 10,
 //       stable_collateral_asset,
 //       stable_collateral_asset_amount: 10,
-//       strike__collateral_asset,
+//       strike_collateral_asset,
 //       strike_collateral_amount: 10,
 //       entered_earnings_per_share: 0,
 //       entered_collateral_earnings_per_share: 0,

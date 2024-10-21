@@ -45,12 +45,12 @@ pub fn close_position(
   let stable_collateral_asset_not_consumed =
     quantity_of(
       input_from_script.output.value,
-      input_datum.stable_collateral_asset.policy_id,
-      input_datum.stable_collateral_asset.asset_name,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
     ) == quantity_of(
       output_to_orders_validator.value,
-      input_datum.stable_collateral_asset.policy_id,
-      input_datum.stable_collateral_asset.asset_name,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
     )
 
   let signed_by_owner: Bool =
@@ -99,12 +99,12 @@ pub fn stop_loss(
   let stable_collateral_asset_not_consumed =
     quantity_of(
       input_from_script.output.value,
-      input_datum.stable_collateral_asset.policy_id,
-      input_datum.stable_collateral_asset.asset_name,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
     ) == quantity_of(
       output_to_orders_validator.value,
-      input_datum.stable_collateral_asset.policy_id,
-      input_datum.stable_collateral_asset.asset_name,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
     )
 
   let orders_datum_valid: Bool =
@@ -146,12 +146,12 @@ pub fn update_stop_loss(
   let stable_collateral_asset_not_consumed: Bool =
     quantity_of(
       input_from_script.output.value,
-      input_datum.stable_collateral_asset.policy_id,
-      input_datum.stable_collateral_asset.asset_name,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
     ) == quantity_of(
       output_to_positions_validator.value,
-      input_datum.stable_collateral_asset.policy_id,
-      input_datum.stable_collateral_asset.asset_name,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
     )
 
   let positions_mint_asset_returned: Bool =
@@ -173,8 +173,8 @@ pub fn update_stop_loss(
       leverage_factor: input_datum.leverage_factor,
       positions_mint_asset: input_datum.positions_mint_asset,
       positions_mint_asset_amount: input_datum.positions_mint_asset_amount,
-      stable_collateral_asset: input_datum.stable_collateral_asset,
-      stable_collateral_asset_amount: input_datum.stable_collateral_asset_amount,
+      collateral_asset: input_datum.collateral_asset,
+      collateral_asset_amount: input_datum.collateral_asset_amount,
       liquidate_usd_price: input_datum.liquidate_usd_price,
       stop_loss_usd_price,
       take_profit_usd_price: input_datum.take_profit_usd_price,
@@ -221,12 +221,12 @@ pub fn take_profit(
   let stable_collateral_asset_not_consumed =
     quantity_of(
       input_from_script.output.value,
-      input_datum.stable_collateral_asset.policy_id,
-      input_datum.stable_collateral_asset.asset_name,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
     ) == quantity_of(
       output_to_orders_validator.value,
-      input_datum.stable_collateral_asset.policy_id,
-      input_datum.stable_collateral_asset.asset_name,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
     )
 
   let orders_datum_valid: Bool =
@@ -271,12 +271,12 @@ pub fn update_take_profit(
   let stable_collateral_asset_returned: Bool =
     quantity_of(
       input_from_script.output.value,
-      input_datum.stable_collateral_asset.policy_id,
-      input_datum.stable_collateral_asset.asset_name,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
     ) == quantity_of(
       output_to_positions_validator.value,
-      output_datum_typed.stable_collateral_asset.policy_id,
-      output_datum_typed.stable_collateral_asset.asset_name,
+      output_datum_typed.collateral_asset.policy_id,
+      output_datum_typed.collateral_asset.asset_name,
     )
 
   let positions_mint_asset_returned: Bool =
@@ -298,8 +298,8 @@ pub fn update_take_profit(
       leverage_factor: input_datum.leverage_factor,
       positions_mint_asset: input_datum.positions_mint_asset,
       positions_mint_asset_amount: input_datum.positions_mint_asset_amount,
-      stable_collateral_asset: input_datum.stable_collateral_asset,
-      stable_collateral_asset_amount: input_datum.stable_collateral_asset_amount,
+      collateral_asset: input_datum.collateral_asset,
+      collateral_asset_amount: input_datum.collateral_asset_amount,
       liquidate_usd_price: input_datum.liquidate_usd_price,
       stop_loss_usd_price: input_datum.stop_loss_usd_price,
       take_profit_usd_price,
@@ -346,12 +346,12 @@ pub fn liquidate_position(
   let stable_collateral_asset_not_consumed =
     quantity_of(
       input_from_script.output.value,
-      input_datum.stable_collateral_asset.policy_id,
-      input_datum.stable_collateral_asset.asset_name,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
     ) == quantity_of(
       output_to_orders_validator.value,
-      input_datum.stable_collateral_asset.policy_id,
-      input_datum.stable_collateral_asset.asset_name,
+      input_datum.collateral_asset.policy_id,
+      input_datum.collateral_asset.asset_name,
     )
 
   let orders_datum_valid: Bool =
@@ -457,11 +457,11 @@ pub fn from_positions_to_orders_datum_valid(
 
   let side_valid: Bool = position_datum.side == orders_datum.side
 
-  let stable_collateral_asset_valid: Bool =
-    position_datum.stable_collateral_asset == orders_datum.stable_collateral_asset
+  let collateral_asset_valid: Bool =
+    position_datum.collateral_asset == orders_datum.collateral_asset
 
-  let stable_collateral_asset_amount_valid: Bool =
-    position_datum.stable_collateral_asset_amount == orders_datum.stable_collateral_asset_amount
+  let collateral_asset_amount_valid: Bool =
+    position_datum.collateral_asset_amount == orders_datum.collateral_asset_amount
 
   let validate_pool_ref_valid: Bool =
     position_datum.validate_pool_ref == orders_datum.validate_pool_ref
@@ -477,7 +477,7 @@ pub fn from_positions_to_orders_datum_valid(
   let order_submission_usd_price_valid: Bool =
     current_price == orders_datum.order_submission_usd_price
 
-  owner_address_hash_valid && underlying_asset_valid && positions_mint_asset_amount_valid && leverage_factor_valid && positions_mint_asset_valid && side_valid && stable_collateral_asset_valid && stable_collateral_asset_amount_valid && validate_pool_ref_valid && last_pay_lend_time_valid && take_profit_usd_price_valid && order_type_valid && order_submission_usd_price_valid
+  owner_address_hash_valid && underlying_asset_valid && positions_mint_asset_amount_valid && leverage_factor_valid && positions_mint_asset_valid && side_valid && collateral_asset_valid && collateral_asset_amount_valid && validate_pool_ref_valid && last_pay_lend_time_valid && take_profit_usd_price_valid && order_type_valid && order_submission_usd_price_valid
 }
 
 pub fn enter_long_mint(
@@ -512,7 +512,7 @@ pub fn enter_long_mint(
   expect pool_ref_datum_typed: PoolDatum = pool_ref_datum
 
   let expected_minted_amount =
-    orders_datum_typed.stable_collateral_asset_amount * orders_datum_typed.leverage_factor
+    orders_datum_typed.collateral_asset_amount * orders_datum_typed.leverage_factor
 
   let expected_mint: (PolicyId, ByteArray, Int) =
     (policy_id, params.long_asset_name, expected_minted_amount)
@@ -527,9 +527,9 @@ pub fn enter_long_mint(
           expected_minted_amount,
         )
       |> assets.add(
-          orders_datum_typed.stable_collateral_asset.policy_id,
-          orders_datum_typed.stable_collateral_asset.asset_name,
-          orders_datum_typed.stable_collateral_asset_amount,
+          orders_datum_typed.collateral_asset.policy_id,
+          orders_datum_typed.collateral_asset.asset_name,
+          orders_datum_typed.collateral_asset_amount,
         )
 
   let assets_match: Bool =
@@ -560,8 +560,8 @@ pub fn enter_long_mint(
   let contains_strike_collateral: Bool =
     quantity_of(
       output_to_orders_validator.value,
-      orders_datum_typed.strike__collateral_asset.policy_id,
-      orders_datum_typed.strike__collateral_asset.asset_name,
+      orders_datum_typed.strike_collateral_asset.policy_id,
+      orders_datum_typed.strike_collateral_asset.asset_name,
     ) > 0
 
   if contains_strike_collateral {
@@ -615,8 +615,8 @@ pub fn enter_short_mint(
   let stable_collateral_asset_deposited_amount: Int =
     quantity_of(
       output_to_orders_validator.value,
-      orders_datum_typed.stable_collateral_asset.policy_id,
-      orders_datum_typed.stable_collateral_asset.asset_name,
+      orders_datum_typed.collateral_asset.policy_id,
+      orders_datum_typed.collateral_asset.asset_name,
     )
 
   let expected_usd_collateral_valid: Bool =
@@ -634,9 +634,9 @@ pub fn enter_short_mint(
     assets.from_lovelace(batcher_fee)
       |> assets.add(policy_id, params.short_asset_name, expected_minted_amount)
       |> assets.add(
-          orders_datum_typed.stable_collateral_asset.policy_id,
-          orders_datum_typed.stable_collateral_asset.asset_name,
-          orders_datum_typed.stable_collateral_asset_amount,
+          orders_datum_typed.collateral_asset.policy_id,
+          orders_datum_typed.collateral_asset.asset_name,
+          orders_datum_typed.collateral_asset_amount,
         )
 
   let assets_match: Bool =
@@ -665,8 +665,8 @@ pub fn enter_short_mint(
   let contains_strike_collateral: Bool =
     quantity_of(
       output_to_orders_validator.value,
-      orders_datum_typed.strike__collateral_asset.policy_id,
-      orders_datum_typed.strike__collateral_asset.asset_name,
+      orders_datum_typed.strike_collateral_asset.policy_id,
+      orders_datum_typed.strike_collateral_asset.asset_name,
     ) > 0
 
   if contains_strike_collateral {

@@ -69,9 +69,9 @@ pub type OrdersDatum {
   // Total amount of liquidity that has been provided 
   liquidity_asset_amount: Int,
   liquidity_positions_script_hash: ScriptHash,
-  stable_collateral_asset: Asset,
-  stable_collateral_asset_amount: Int,
-  strike__collateral_asset: Asset,
+  collateral_asset: Asset,
+  collateral_asset_amount: Int,
+  strike_collateral_asset: Asset,
   strike_collateral_amount: Int,
   entered_earnings_per_share: Int,
   entered_collateral_earnings_per_share: Int,
@@ -106,23 +106,36 @@ pub type PositionsParams {
   long_asset_name: ByteArray,
   short_asset_name: ByteArray,
   validate_pool_ref: OutputReference,
-  admin_pkh: AddressHash,
 }
 
 pub type PositionDatum {
+  // Owner of the position
   owner_address_hash: AddressHash,
+  // Price at which the position was entered
   entered_at_price: Int,
+  // The underlying asset that the perpetual contract is trading on
   underlying_asset: Asset,
+  // Leverage used for the postion. Total positon size is underlying_asset_amount * leverage factor
   leverage_factor: Int,
+  // Minted asset to represent the trader total position size
   positions_mint_asset: Asset,
+  // Total position size of the trader, ie, the inital size of position + leverage
   positions_mint_asset_amount: Int,
-  stable_collateral_asset: Asset,
-  stable_collateral_asset_amount: Int,
+  // Stable collateral asset
+  collateral_asset: Asset,
+  // Total stable collateral amount
+  collateral_asset_amount: Int,
+  // Price at which the position will be liquidated
   liquidate_usd_price: Int,
+  // Stop loss price where the position will be closed
   stop_loss_usd_price: Int,
+  // Take profit price where the position will be closed
   take_profit_usd_price: Int,
+  // Last time the hourly lend was paid
   last_pay_lend_time: POSIXTime,
+  // Reference to the pool validator
   validate_pool_ref: OutputReference,
+  // Side of the position
   side: PositionSide,
 }
 

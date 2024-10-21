@@ -10,7 +10,7 @@ use tests/constants.{
   admin_pkh, enter_position_policy_id, liquidity_positions_script_hash,
   long_asset_name, long_position_asset, lovelace_asset, orders_script_hash,
   pool_asset, short_asset_name, short_position_asset, stable_collateral_asset,
-  strike__collateral_asset, trader_pkh, underlying_asset,
+  strike_collateral_asset, trader_pkh, underlying_asset,
 }
 use types.{
   Asset, Burn, Long, MintLong, MintShort, OpenPositionOrder, OrdersDatum,
@@ -67,9 +67,9 @@ test test_enter_long_positions_mint() {
       liquidity_asset: underlying_asset,
       liquidity_asset_amount: 10,
       liquidity_positions_script_hash,
-      stable_collateral_asset: lovelace_asset,
-      stable_collateral_asset_amount: 1_000_000,
-      strike__collateral_asset,
+      collateral_asset: lovelace_asset,
+      collateral_asset_amount: 1_000_000,
+      strike_collateral_asset,
       strike_collateral_amount: 10,
       entered_earnings_per_share: 0,
       entered_collateral_earnings_per_share: 0,
@@ -132,7 +132,6 @@ test test_enter_long_positions_mint() {
       long_asset_name,
       short_asset_name,
       validate_pool_ref,
-      admin_pkh,
     }
   let redeemer = MintLong(100)
   positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
@@ -185,9 +184,9 @@ test test_enter_short_positions_mint() {
       liquidity_asset: underlying_asset,
       liquidity_asset_amount: 10,
       liquidity_positions_script_hash,
-      stable_collateral_asset,
-      stable_collateral_asset_amount: 10,
-      strike__collateral_asset,
+      collateral_asset: stable_collateral_asset,
+      collateral_asset_amount: 10,
+      strike_collateral_asset,
       strike_collateral_amount: 10,
       entered_earnings_per_share: 0,
       entered_collateral_earnings_per_share: 0,
@@ -251,7 +250,6 @@ test test_enter_short_positions_mint() {
       long_asset_name,
       short_asset_name,
       validate_pool_ref,
-      admin_pkh,
     }
   let redeemer = MintShort(100)
   positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
