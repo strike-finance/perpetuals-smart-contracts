@@ -19,6 +19,13 @@ pub type POSIXTime =
 pub type LovelaceAmount =
   Int
 
+pub type OrdersParams {
+  batcher_license: PolicyId,
+  maximum_deadline_range: Int,
+  underlying_asset_policy_id: PolicyId,
+  underlying_asset_name: AssetName,
+}
+
 pub type PositionSide {
   Long
   Short
@@ -71,7 +78,7 @@ pub type OrdersDatum {
   collateral_asset: Asset,
   collateral_asset_amount: Int,
   strike_collateral_asset: Asset,
-  strike_collateral_amount: Int,
+  strike_collateral_asset_amount: Int,
   entered_earnings_per_share: Int,
   entered_collateral_earnings_per_share: Int,
   stop_loss_usd_price: Int,

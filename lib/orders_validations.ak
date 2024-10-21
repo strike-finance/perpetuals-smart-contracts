@@ -1,7 +1,7 @@
 use aiken/collection/list
 use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script, from_verification_key}
-use cardano/assets.{quantity_of}
+use cardano/assets.{PolicyId, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
@@ -10,7 +10,10 @@ use types.{
   OrdersDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder,
   WithdrawLiquidityOrder,
 }
-use utils.{get_all_validators_inputs, validate_token_mint}
+use utils.{
+  find_license_deadline, find_posix_time_range, get_all_validators_inputs,
+  validate_token_mint,
+}
 
 pub fn valid_orders(
   validation_logic: fn(Output, Output, Transaction) -> Bool,
@@ -60,6 +63,22 @@ pub fn valid_orders(
       },
     )
   (script_input_count == input_index_count)?
+}
+
+pub fn validate_batcher_license(
+  transaction: Transaction,
+  batcher_license: PolicyId,
+  batcher_index: Int,
+  maximum_deadline_range: Int,
+) -> Bool {
+  expect Some(Input { output: Output { value: batcher_value, .. }, .. }) =
+    list.at(transaction.inputs, batcher_index)
+  let license_deadline = find_license_deadline(batcher_license, batcher_value)
+
+  let (lower_bound, upper_bound) =
+    find_posix_time_range(transaction.validity_range)
+
+  license_deadline >= lower_bound && license_deadline <= upper_bound + maximum_deadline_range
 }
 
 pub fn validate_individual_order(

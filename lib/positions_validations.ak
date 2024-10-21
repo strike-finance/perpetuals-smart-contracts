@@ -459,6 +459,11 @@ pub fn mint_position(
           orders_datum_typed.collateral_asset.asset_name,
           orders_datum_typed.collateral_asset_amount,
         )
+      |> assets.add(
+          orders_datum_typed.strike_collateral_asset.policy_id,
+          orders_datum_typed.strike_collateral_asset.asset_name,
+          orders_datum_typed.strike_collateral_asset_amount,
+        )
 
   let assets_locked_valid =
     match(output_to_orders_validator.value, expected_assets_locked, >=)

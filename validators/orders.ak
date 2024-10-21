@@ -4,20 +4,17 @@ use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{Input, OutputReference, Transaction}
 use orders_validations.{
   cancel_close_position, cancel_contribute_liquidity, cancel_open_position,
-  cancel_withdraw_liquidity, valid_orders, validate_individual_order,
+  cancel_withdraw_liquidity, valid_orders, validate_batcher_license,
+  validate_individual_order,
 }
 use types.{
   BatchOrders, CancelOrders, ClosePositionOrder, LiquidateOrder,
-  OpenPositionOrder, OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer,
-  ProvideLiquidityOrder, WithdrawLiquidityOrder,
+  OpenPositionOrder, OrdersDatum, OrdersParams, OrdersRedeemer,
+  OrdersWithdrawRedeemer, ProvideLiquidityOrder, WithdrawLiquidityOrder,
 }
 use utils.{get_all_validators_inputs, is_withdrawal}
 
-validator orders(
-  batcher_license: PolicyId,
-  _underlying_asset_policy_id: PolicyId,
-  _underlying_asset_name: AssetName,
-) {
+validator orders(params: OrdersParams) {
   spend(
     datum: Option<OrdersDatum>,
     redeemer: OrdersRedeemer,
@@ -59,12 +56,23 @@ validator orders(
   ) {
     expect Script(own_validator) = credential
 
-    valid_orders(
-      validate_individual_order,
-      redeemer.indexer,
-      transaction,
-      own_validator,
-    )
+    let order_valid =
+      valid_orders(
+        validate_individual_order,
+        redeemer.indexer,
+        transaction,
+        own_validator,
+      )
+
+    let batcher_license_valid =
+      validate_batcher_license(
+        transaction,
+        params.batcher_license,
+        redeemer.batcher_index,
+        params.maximum_deadline_range,
+      )
+
+    order_valid && batcher_license_valid
   }
 
   else(_) {
