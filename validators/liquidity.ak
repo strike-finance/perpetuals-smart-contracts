@@ -6,47 +6,40 @@ use cardano/transaction.{
 use types.{
   BurnLiquidity, LiquidityMintsRedeemer, LiquidityParams, LiquidityPositionDatum,
   LiquidityRedeemer, MintLiquidity, OrdersDatum, ProvideLiquidityOrder,
-  WithdrawLiquidity, WithdrawLiquidityOrder, WithdrawPartialLiquidity,
+  WithdrawLiquidityOrder,
 }
 use utils.{validate_token_mint}
 
-// Users liquidity positions are held here. When they want to withdraw their liquidity, they will spend from this script and send to the orders
 validator liquidity(params: LiquidityParams) {
   spend(
     datum: Option<LiquidityPositionDatum>,
-    redeemer: LiquidityRedeemer,
+    _redeemer: LiquidityRedeemer,
     _out_ref: OutputReference,
     transaction: Transaction,
   ) {
-    when redeemer is {
-      WithdrawLiquidity -> {
-        expect Some(datum) = datum
+    expect Some(datum) = datum
 
-        let outputs_to_orders_address =
-          find_script_outputs(transaction.outputs, params.orders_script_hash)
+    let outputs_to_orders_address =
+      find_script_outputs(transaction.outputs, params.orders_script_hash)
 
-        let only_one_output_to_orders =
-          list.length(outputs_to_orders_address) == 1
+    let only_one_output_to_orders = list.length(outputs_to_orders_address) == 1
 
-        expect Some(output_to_orders_validator) =
-          list.head(outputs_to_orders_address)
+    expect Some(output_to_orders_validator) =
+      list.head(outputs_to_orders_address)
 
-        expect InlineDatum(orders_datum) = output_to_orders_validator.datum
+    expect InlineDatum(orders_datum) = output_to_orders_validator.datum
 
-        expect orders_datum_typed: OrdersDatum = orders_datum
+    expect orders_datum_typed: OrdersDatum = orders_datum
 
-        let action_valid = orders_datum_typed.action == WithdrawLiquidityOrder
+    let action_valid = orders_datum_typed.action == WithdrawLiquidityOrder
 
-        let earnings_per_share_valid =
-          orders_datum_typed.entered_earnings_per_share == datum.entered_earnings_per_share && orders_datum_typed.entered_collateral_earnings_per_share == datum.entered_collateral_earnings_per_share
+    let earnings_per_share_valid =
+      orders_datum_typed.entered_earnings_per_share == datum.entered_earnings_per_share && orders_datum_typed.entered_collateral_earnings_per_share == datum.entered_collateral_earnings_per_share
 
-        let signed_by_owner =
-          list.has(transaction.extra_signatories, datum.owner_address_hash)
+    let signed_by_owner =
+      list.has(transaction.extra_signatories, datum.owner_address_hash)
 
-        only_one_output_to_orders && signed_by_owner && action_valid && earnings_per_share_valid
-      }
-      WithdrawPartialLiquidity -> todo
-    }
+    only_one_output_to_orders && signed_by_owner && action_valid && earnings_per_share_valid
   }
 
   mint(

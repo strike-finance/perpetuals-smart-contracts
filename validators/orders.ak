@@ -9,12 +9,12 @@ use orders_validations.{
 use types.{
   AddressHash, BatchOrders, CancelOrders, ClosePositionOrder, LiquidateOrder,
   OpenPositionOrder, OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer,
-  ProvideLiquidityOrder, StopLossOrder, TakeProfitOrder, WithdrawLiquidityOrder,
+  ProvideLiquidityOrder, WithdrawLiquidityOrder,
 }
 use utils.{get_all_validators_inputs, is_withdrawal}
 
 validator orders(
-  admin_pkh: AddressHash,
+  batcher_license: PolicyId,
   _underlying_asset_policy_id: PolicyId,
   _underlying_asset_name: AssetName,
 ) {
@@ -25,11 +25,7 @@ validator orders(
     transaction: Transaction,
   ) {
     when redeemer is {
-      BatchOrders -> {
-        let signed_by_admin = list.has(transaction.extra_signatories, admin_pkh)
-
-        is_withdrawal(transaction, own_ref) && signed_by_admin
-      }
+      BatchOrders -> is_withdrawal(transaction, own_ref)
       CancelOrders -> {
         expect Some(datum) = datum
 
@@ -46,8 +42,6 @@ validator orders(
         when datum.action is {
           OpenPositionOrder -> cancel_open_position(datum, transaction)
           ClosePositionOrder -> cancel_close_position(datum, transaction)
-          StopLossOrder -> False
-          TakeProfitOrder -> False
           ProvideLiquidityOrder ->
             cancel_contribute_liquidity(datum, transaction)
           WithdrawLiquidityOrder ->

@@ -27,8 +27,6 @@ pub type PositionSide {
 pub type OrderAction {
   OpenPositionOrder
   ClosePositionOrder
-  StopLossOrder
-  TakeProfitOrder
   ProvideLiquidityOrder
   WithdrawLiquidityOrder
   LiquidateOrder
@@ -39,11 +37,12 @@ pub type OrdersRedeemer {
   CancelOrders
 }
 
-pub type RedeemerIndexer =
+pub type UTxOIndexer =
   List<(Int, Int)>
 
 pub type OrdersWithdrawRedeemer {
-  indexer: RedeemerIndexer,
+  indexer: UTxOIndexer,
+  batcher_index: Int,
   current_price: Int,
 }
 
@@ -87,24 +86,19 @@ pub type OrdersDatum {
 
 pub type PositionsRedeemer {
   Close(Int)
-  StopLoss(Int)
   UpdateStopLoss(Int)
-  TakeProfit(Int)
   UpdateTakeProfit(Int)
   Liquidate(Int)
   PayLend(Int)
 }
 
 pub type PositionsMintRedeemer {
-  MintLong(Int)
-  MintShort(Int)
-  Burn(Int, ByteArray)
+  MintPosition(Int)
+  BurnPosition(Int, ByteArray)
 }
 
 pub type PositionsParams {
   orders_script_hash: ScriptHash,
-  long_asset_name: ByteArray,
-  short_asset_name: ByteArray,
   validate_pool_ref: OutputReference,
 }
 

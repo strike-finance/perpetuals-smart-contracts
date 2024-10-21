@@ -7,8 +7,8 @@ use cardano/transaction.{
 }
 use types.{
   ClosePositionOrder, LiquidateOrder, LiquidityPositionDatum, OpenPositionOrder,
-  OrdersDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder, StopLossOrder,
-  TakeProfitOrder, WithdrawLiquidityOrder,
+  OrdersDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder,
+  WithdrawLiquidityOrder,
 }
 use utils.{get_all_validators_inputs, validate_token_mint}
 
@@ -74,8 +74,6 @@ pub fn validate_individual_order(
   when input_datum_typed.action is {
     OpenPositionOrder -> open_position(input, output)
     ClosePositionOrder -> close_position(input, output, transaction)
-    StopLossOrder -> stop_loss(input, output, transaction)
-    TakeProfitOrder -> take_profit(input, output, transaction)
     ProvideLiquidityOrder -> contribute_liquidity(input, output)
     WithdrawLiquidityOrder -> withdraw_liquidity(input, output, transaction)
     LiquidateOrder -> False

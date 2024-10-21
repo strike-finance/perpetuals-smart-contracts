@@ -126,13 +126,7 @@ test test_enter_long_positions_mint() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params =
-    PositionsParams {
-      orders_script_hash,
-      long_asset_name,
-      short_asset_name,
-      validate_pool_ref,
-    }
+  let params = PositionsParams { orders_script_hash, validate_pool_ref }
   let redeemer = MintLong(100)
   positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
 }
@@ -244,13 +238,7 @@ test test_enter_short_positions_mint() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params =
-    PositionsParams {
-      orders_script_hash,
-      long_asset_name,
-      short_asset_name,
-      validate_pool_ref,
-    }
+  let params = PositionsParams { orders_script_hash, validate_pool_ref }
   let redeemer = MintShort(100)
   positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
 }

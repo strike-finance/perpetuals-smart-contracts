@@ -5,8 +5,8 @@ use cardano/transaction.{
 }
 use constants.{batcher_fee}
 use types.{
-  Asset, ClosePositionOrder, LiquidateOrder, OrderAction, OrdersDatum, POSIXTime,
-  PoolDatum, PositionDatum, PositionsParams, StopLossOrder, TakeProfitOrder,
+  AddressHash, Asset, ClosePositionOrder, LiquidateOrder, OrderAction,
+  OrdersDatum, POSIXTime, PoolDatum, PositionDatum, PositionsParams,
 }
 use utils.{
   get_address_outputs, get_all_validators_inputs, get_lower_bound,
@@ -65,59 +65,6 @@ pub fn close_position(
     )
 
   signed_by_owner && valid_asset_in_output && orders_datum_valid && only_one_input_from_script && stable_collateral_asset_not_consumed
-}
-
-pub fn stop_loss(
-  transaction: Transaction,
-  datum: Option<PositionDatum>,
-  current_price: Int,
-  orders_script_hash: ByteArray,
-) -> Bool {
-  expect Some(input_datum) = datum
-
-  let all_validators_inputs: List<Input> =
-    get_all_validators_inputs(transaction)
-  let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
-  expect Some(input_from_script) = list.head(all_validators_inputs)
-
-  let outputs_to_orders_validator: List<Output> =
-    find_script_outputs(transaction.outputs, orders_script_hash)
-
-  expect Some(output_to_orders_validator) =
-    list.head(outputs_to_orders_validator)
-
-  expect InlineDatum(orders_datum) = output_to_orders_validator.datum
-  expect orders_datum_typed: OrdersDatum = orders_datum
-
-  let valid_asset_in_output: Bool =
-    quantity_of(
-      output_to_orders_validator.value,
-      input_datum.underlying_asset.policy_id,
-      input_datum.underlying_asset.asset_name,
-    ) == 1
-
-  let stable_collateral_asset_not_consumed =
-    quantity_of(
-      input_from_script.output.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
-    ) == quantity_of(
-      output_to_orders_validator.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
-    )
-
-  let orders_datum_valid: Bool =
-    from_positions_to_orders_datum_valid(
-      input_datum,
-      orders_datum_typed,
-      current_price,
-      StopLossOrder,
-    )
-
-  let stop_loss_reached: Bool = current_price <= input_datum.stop_loss_usd_price
-
-  valid_asset_in_output && orders_datum_valid && only_one_input_from_script && stable_collateral_asset_not_consumed && stop_loss_reached
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
@@ -186,61 +133,6 @@ pub fn update_stop_loss(
   let output_datum_valid: Bool = output_datum_typed == expected_output_datum
 
   only_one_input_from_script && stable_collateral_asset_not_consumed && positions_mint_asset_returned && output_datum_valid
-}
-
-// assets are not consumed, user signed transaction, only stop lose is updated 
-pub fn take_profit(
-  transaction: Transaction,
-  datum: Option<PositionDatum>,
-  current_price: Int,
-  orders_script_hash: ByteArray,
-) -> Bool {
-  expect Some(input_datum) = datum
-
-  let all_validators_inputs: List<Input> =
-    get_all_validators_inputs(transaction)
-  let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
-  expect Some(input_from_script) = list.head(all_validators_inputs)
-
-  let outputs_to_orders_validator: List<Output> =
-    find_script_outputs(transaction.outputs, orders_script_hash)
-
-  expect Some(output_to_orders_validator) =
-    list.head(outputs_to_orders_validator)
-
-  expect InlineDatum(orders_datum) = output_to_orders_validator.datum
-  expect orders_datum_typed: OrdersDatum = orders_datum
-
-  let valid_asset_in_output: Bool =
-    quantity_of(
-      output_to_orders_validator.value,
-      input_datum.underlying_asset.policy_id,
-      input_datum.underlying_asset.asset_name,
-    ) == 1
-
-  let stable_collateral_asset_not_consumed =
-    quantity_of(
-      input_from_script.output.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
-    ) == quantity_of(
-      output_to_orders_validator.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
-    )
-
-  let orders_datum_valid: Bool =
-    from_positions_to_orders_datum_valid(
-      input_datum,
-      orders_datum_typed,
-      current_price,
-      TakeProfitOrder,
-    )
-
-  let stop_loss_reached: Bool =
-    current_price <= input_datum.take_profit_usd_price
-
-  valid_asset_in_output && orders_datum_valid && only_one_input_from_script && stable_collateral_asset_not_consumed && stop_loss_reached
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
@@ -515,15 +407,15 @@ pub fn enter_long_mint(
     orders_datum_typed.collateral_asset_amount * orders_datum_typed.leverage_factor
 
   let expected_mint: (PolicyId, ByteArray, Int) =
-    (policy_id, params.long_asset_name, expected_minted_amount)
+    (policy_id, orders_datum_typed.owner_address_hash, expected_minted_amount)
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
   let expected_assets_locked: Value =
     assets.from_lovelace(batcher_fee)
       |> assets.add(
-          orders_datum_typed.positions_mint_asset.policy_id,
-          orders_datum_typed.positions_mint_asset.asset_name,
+          policy_id,
+          orders_datum_typed.owner_address_hash,
           expected_minted_amount,
         )
       |> assets.add(
@@ -542,20 +434,19 @@ pub fn enter_long_mint(
       pool_ref_datum_typed.liquidate_margin,
     )
 
-  let liquidate_usd_price_valid: Bool =
-    liquidate_usd_price == orders_datum_typed.liquidate_usd_price
-
-  let valid_pool_ref: Bool =
-    orders_datum_typed.validate_pool_ref == params.validate_pool_ref
-
-  let entered_at_price_valid: Bool =
-    current_price == orders_datum_typed.order_submission_usd_price
-
-  let submission_time_valid =
-    get_lower_bound(transaction.validity_range) >= orders_datum_typed.order_submission_time
+  let datum_values_valid =
+    valid_datum_values(
+      orders_datum_typed,
+      params,
+      current_price,
+      policy_id,
+      transaction,
+      liquidate_usd_price,
+      orders_datum_typed.owner_address_hash,
+    )
 
   expect
-    only_one_output_to_orders && valid_pool_ref && entered_at_price_valid && liquidate_usd_price_valid && mint_valid && assets_match && submission_time_valid
+    only_one_output_to_orders && datum_values_valid && mint_valid && assets_match
 
   let contains_strike_collateral: Bool =
     quantity_of(
@@ -626,13 +517,17 @@ pub fn enter_short_mint(
     orders_datum_typed.positions_mint_asset_amount * orders_datum_typed.leverage_factor
 
   let expected_mint: (PolicyId, ByteArray, Int) =
-    (policy_id, params.short_asset_name, expected_minted_amount)
+    (policy_id, orders_datum_typed.owner_address_hash, expected_minted_amount)
 
   let mint_valid = validate_token_mint(transaction.mint, expected_mint)
 
   let expected_assets_locked: Value =
     assets.from_lovelace(batcher_fee)
-      |> assets.add(policy_id, params.short_asset_name, expected_minted_amount)
+      |> assets.add(
+          policy_id,
+          orders_datum_typed.owner_address_hash,
+          expected_minted_amount,
+        )
       |> assets.add(
           orders_datum_typed.collateral_asset.policy_id,
           orders_datum_typed.collateral_asset.asset_name,
@@ -657,6 +552,7 @@ pub fn enter_short_mint(
       policy_id,
       transaction,
       liquidate_usd_price,
+      orders_datum_typed.owner_address_hash,
     )
 
   expect
@@ -726,6 +622,7 @@ pub fn valid_datum_values(
   policy_id: PolicyId,
   transaction: Transaction,
   liquidate_usd_price: Int,
+  owner_address_hash: AddressHash,
 ) {
   let liquidate_usd_price_valid: Bool =
     orders_datum_typed.liquidate_usd_price >= liquidate_usd_price
@@ -740,7 +637,10 @@ pub fn valid_datum_values(
     get_lower_bound(transaction.validity_range) >= orders_datum_typed.order_submission_time
 
   let minted_asset_valid: Bool =
-    orders_datum_typed.positions_mint_asset.policy_id == policy_id && orders_datum_typed.positions_mint_asset.asset_name == params.short_asset_name
+    orders_datum_typed.positions_mint_asset.policy_id == policy_id && orders_datum_typed.positions_mint_asset.asset_name == orders_datum_typed.owner_address_hash
 
-  minted_asset_valid && liquidate_usd_price_valid && valid_pool_ref && entered_at_price_valid && submission_time_valid
+  let owner_address_hash_valid: Bool =
+    list.has(transaction.extra_signatories, owner_address_hash)
+
+  minted_asset_valid && liquidate_usd_price_valid && valid_pool_ref && entered_at_price_valid && submission_time_valid && owner_address_hash_valid
 }
