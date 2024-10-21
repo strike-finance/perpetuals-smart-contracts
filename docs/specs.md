@@ -1,9 +1,9 @@
 - [Overview](#overview)
-- [Architecture](#scripts)
+- [Architecture](#architecture)
 - [Positions Validator](#positions-validator)
 - [Liquidity Validator](#liquidity-validator)
 - [Pool Validator](#pool-validator)
-- [Orders Validator](orders-smart-validator)
+- [Orders Validator](orders-validator)
 - [Prices](#prices)
 
 ## Overview
@@ -24,8 +24,8 @@ There a 4 total contracts that are used.
 
 ## Tokens
 
-- **Positions Token**: Represents the total position value of the trader. This is 1:1 of the his total position size. Example: 1_000_000 position token == 1_000_000 Lovelace
-- **Liquidity Tokens**: Represent the amount of liquidity the lp has provided
+- **Positions Token**: Represents the total position value of the trader. This is 1:1 of the the total position size. Example: 1_000_000 position token == 1_000_000 Lovelace
+- **Liquidity Tokens**: Represent the amount of liquidity the lp has provided. This is 1:1 of the liquidity provided
 - **Batcher License**: Only holder of this license token can batch orders
 - **Pool NFT**: This can only be minted once per asset pool. It will be in the pool UTxO to validate the pool is valid
 
@@ -35,8 +35,8 @@ This is a multivalidator with a spending and minting script. When the traders op
 
 #### Params
 
-orders_script_hash: ScriptHash: The script hash of the orders validator
-validate_pool_ref: OutputReference: A reference to the Pool UTxO
+- orders_script_hash: ScriptHash: The script hash of the orders validator
+- validate_pool_ref: OutputReference: A reference to the Pool UTxO
 
 #### Datum
 
@@ -125,10 +125,10 @@ This is a multivalidator with a spending and minting script. When someone wants 
 
 #### Params
 
-orders_script_hash: ByteArray,
-asset_name: AssetName,
-provided_asset_policy_id: PolicyId,
-provided_asset_name: AssetName,
+- orders_script_hash: ByteArray,
+- asset_name: AssetName,
+- provided_asset_policy_id: PolicyId,
+- provided_asset_name: AssetName,
 
 #### Datum
 
@@ -160,8 +160,8 @@ This is a multivalidator with a spending and minting script
 
 #### Params
 
-orders_stake_cred: Credential
-admin_pkh: AddressHash
+- orders_stake_cred: Credential
+- admin_pkh: AddressHash
 
 #### Redeemer
 
