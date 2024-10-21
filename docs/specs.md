@@ -73,8 +73,8 @@ pub type PositionsRedeemer {
 }
 
 pub type PositionsMintRedeemer {
-  Mint
-  Burn
+  MintPosition
+  BurnPosition
 }
 ```
 

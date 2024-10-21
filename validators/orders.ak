@@ -7,7 +7,7 @@ use orders_validations.{
   cancel_withdraw_liquidity, valid_orders, validate_individual_order,
 }
 use types.{
-  AddressHash, BatchOrders, CancelOrders, ClosePositionOrder, LiquidateOrder,
+  BatchOrders, CancelOrders, ClosePositionOrder, LiquidateOrder,
   OpenPositionOrder, OrdersDatum, OrdersRedeemer, OrdersWithdrawRedeemer,
   ProvideLiquidityOrder, WithdrawLiquidityOrder,
 }

@@ -1,7 +1,7 @@
 use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
 use positions_validations.{
-  close_position, liquidate_position, pay_lend, update_stop_loss,
+  close_position, liquidate_position, mint_position, pay_lend, update_stop_loss,
   update_take_profit,
 }
 use types.{
@@ -48,7 +48,8 @@ validator positions(params: PositionsParams) {
     transaction: Transaction,
   ) {
     when redeemer is {
-      MintPosition(mint_amount) -> todo
+      MintPosition(current_price) ->
+        mint_position(transaction, params, current_price, policy_id)
       BurnPosition(burn_amount, asset_name) -> {
         let mint = (policy_id, asset_name, burn_amount)
         validate_token_mint(transaction.mint, mint)
