@@ -436,17 +436,6 @@ pub fn mint_position(
       orders_datum_typed.side,
     )
 
-  let datum_values_valid: Bool =
-    valid_datum_values(
-      orders_datum_typed,
-      params,
-      current_price,
-      policy_id,
-      transaction,
-      liquidate_usd_price,
-      orders_datum_typed.owner_address_hash,
-    )
-
   let expected_assets_locked: Value =
     assets.from_lovelace(batcher_fee)
       |> assets.add(
@@ -465,17 +454,41 @@ pub fn mint_position(
           orders_datum_typed.strike_collateral_asset_amount,
         )
 
-  let assets_locked_valid =
+  let assets_locked_valid: Bool =
     match(output_to_orders_validator.value, expected_assets_locked, >=)
 
-  let minted_assets_amount_valid =
+  let minted_assets_amount_valid: Bool =
     minted_assets_amount_valid(
       orders_datum_typed.side,
       orders_datum_typed,
       current_price,
     )
+
+  let liquidate_usd_price_valid: Bool =
+    orders_datum_typed.liquidate_usd_price >= liquidate_usd_price
+
+  let valid_pool_ref: Bool =
+    orders_datum_typed.validate_pool_ref == params.validate_pool_ref
+
+  let entered_at_price_valid: Bool =
+    current_price == orders_datum_typed.order_submission_usd_price
+
+  let submission_time_valid: Bool =
+    get_lower_bound(transaction.validity_range) >= orders_datum_typed.order_submission_time
+
+  let minted_asset_valid: Bool =
+    orders_datum_typed.positions_mint_asset.policy_id == policy_id && orders_datum_typed.positions_mint_asset.asset_name == orders_datum_typed.owner_address_hash
+
+  let owner_address_hash_valid: Bool =
+    list.has(
+      transaction.extra_signatories,
+      orders_datum_typed.owner_address_hash,
+    )
+  let underlying_asset_valid: Bool =
+    orders_datum_typed.underlying_asset == pool_ref_datum_typed.underlying_asset
+
   expect
-    only_one_output_to_orders && datum_values_valid && minted_assets_amount_valid && assets_locked_valid && mint_valid
+    only_one_output_to_orders && minted_assets_amount_valid && assets_locked_valid && mint_valid && liquidate_usd_price_valid && valid_pool_ref && entered_at_price_valid && submission_time_valid && minted_asset_valid && owner_address_hash_valid && underlying_asset_valid
 
   let contains_strike_collateral: Bool =
     quantity_of(
@@ -505,9 +518,17 @@ fn minted_assets_amount_valid(
   if position_side == Long {
     orders_datum.positions_mint_asset_amount / orders_datum.leverage_factor <= orders_datum.collateral_asset_amount
   } else {
-    let testing =
-      orders_datum.positions_mint_asset_amount / orders_datum.leverage_factor <= orders_datum.collateral_asset_amount / current_price
-    testing
+    let minted_assets_to_ada = minted_assets_to_ada(orders_datum)
+
+    minted_assets_to_ada <= orders_datum.collateral_asset_amount / current_price
+  }
+}
+
+fn minted_assets_to_ada(orders_datum: OrdersDatum) -> Int {
+  if orders_datum.underlying_asset.policy_id == "" {
+    orders_datum.positions_mint_asset_amount / orders_datum.leverage_factor / 1_000_000
+  } else {
+    orders_datum.positions_mint_asset_amount
   }
 }
 
@@ -528,34 +549,4 @@ fn calculate_liquidate_amount(
       1 + ( 1 - formatted_liquidate_margin ) / orders_datum.leverage_factor
     )
   }
-}
-
-pub fn valid_datum_values(
-  orders_datum_typed: OrdersDatum,
-  params: PositionsParams,
-  current_price: Int,
-  policy_id: PolicyId,
-  transaction: Transaction,
-  liquidate_usd_price: Int,
-  owner_address_hash: AddressHash,
-) {
-  let liquidate_usd_price_valid: Bool =
-    orders_datum_typed.liquidate_usd_price >= liquidate_usd_price
-
-  let valid_pool_ref: Bool =
-    orders_datum_typed.validate_pool_ref == params.validate_pool_ref
-
-  let entered_at_price_valid: Bool =
-    current_price == orders_datum_typed.order_submission_usd_price
-
-  let submission_time_valid: Bool =
-    get_lower_bound(transaction.validity_range) >= orders_datum_typed.order_submission_time
-
-  let minted_asset_valid: Bool =
-    orders_datum_typed.positions_mint_asset.policy_id == policy_id && orders_datum_typed.positions_mint_asset.asset_name == orders_datum_typed.owner_address_hash
-
-  let owner_address_hash_valid: Bool =
-    list.has(transaction.extra_signatories, owner_address_hash)
-
-  minted_asset_valid && liquidate_usd_price_valid && valid_pool_ref && submission_time_valid && owner_address_hash_valid && entered_at_price_valid
 }
