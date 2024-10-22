@@ -6,9 +6,9 @@ use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  ClosePositionOrder, LiquidateOrder, LiquidityPositionDatum, OpenPositionOrder,
-  OrdersDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder,
-  WithdrawLiquidityOrder,
+  ClosePositionOrder, LiquidatePositionOrder, LiquidityPositionDatum,
+  OpenPositionOrder, OrdersDatum, PoolDatum, PositionDatum,
+  ProvideLiquidityOrder, WithdrawLiquidityOrder,
 }
 use utils.{
   find_license_deadline, find_posix_time_range, get_all_validators_inputs,
@@ -95,7 +95,7 @@ pub fn validate_individual_order(
     ClosePositionOrder -> close_position(input, output, transaction)
     ProvideLiquidityOrder -> contribute_liquidity(input, output)
     WithdrawLiquidityOrder -> withdraw_liquidity(input, output, transaction)
-    LiquidateOrder -> False
+    LiquidatePositionOrder -> False
   }
 }
 
@@ -115,13 +115,15 @@ pub fn open_position(input: Output, output: Output) -> Bool {
   let expected_output_datum =
     PositionDatum {
       owner_address_hash: input_datum_typed.owner_address_hash,
-      entered_at_price: input_datum_typed.order_submission_usd_price,
+      entered_at_usd_price: input_datum_typed.order_submission_usd_price,
       underlying_asset: input_datum_typed.underlying_asset,
       leverage_factor: input_datum_typed.leverage_factor,
       positions_mint_asset: input_datum_typed.positions_mint_asset,
       positions_mint_asset_amount: input_datum_typed.positions_mint_asset_amount,
       collateral_asset: input_datum_typed.collateral_asset,
       collateral_asset_amount: input_datum_typed.collateral_asset_amount,
+      strike_collateral_asset: input_datum_typed.strike_collateral_asset,
+      strike_collateral_asset_amount: input_datum_typed.strike_collateral_asset_amount,
       stop_loss_usd_price: input_datum_typed.stop_loss_usd_price,
       take_profit_usd_price: input_datum_typed.take_profit_usd_price,
       liquidate_usd_price: input_datum_typed.liquidate_usd_price,
@@ -296,12 +298,14 @@ pub fn cancel_close_position(
     PositionDatum {
       owner_address_hash: datum.owner_address_hash,
       underlying_asset: datum.underlying_asset,
-      entered_at_price: datum.order_submission_usd_price,
+      entered_at_usd_price: datum.order_submission_usd_price,
       leverage_factor: datum.leverage_factor,
       positions_mint_asset: datum.positions_mint_asset,
       positions_mint_asset_amount: datum.positions_mint_asset_amount,
       collateral_asset: datum.collateral_asset,
       collateral_asset_amount: datum.collateral_asset_amount,
+      strike_collateral_asset: datum.strike_collateral_asset,
+      strike_collateral_asset_amount: datum.strike_collateral_asset_amount,
       liquidate_usd_price: datum.liquidate_usd_price,
       stop_loss_usd_price: datum.stop_loss_usd_price,
       take_profit_usd_price: datum.take_profit_usd_price,

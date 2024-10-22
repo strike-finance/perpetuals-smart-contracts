@@ -1,11 +1,10 @@
 use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
 use positions_validations.{
-  close_position, liquidate_position, mint_position, pay_lend, update_stop_loss,
-  update_take_profit,
+  close_position, mint_position, pay_lend, update_stop_loss, update_take_profit,
 }
 use types.{
-  BurnPosition, Close, Liquidate, MintPosition, PayLend, PositionDatum,
+  BurnPosition, Close, MintPosition, PayLend, PositionDatum,
   PositionsMintRedeemer, PositionsParams, PositionsRedeemer, UpdateStopLoss,
   UpdateTakeProfit,
 }
@@ -31,13 +30,6 @@ validator positions(params: PositionsParams) {
         update_stop_loss(transaction, datum, stop_loss_price)
       UpdateTakeProfit(take_profit_price) ->
         update_take_profit(transaction, datum, take_profit_price)
-      Liquidate(current_price) ->
-        liquidate_position(
-          transaction,
-          datum,
-          current_price,
-          params.orders_script_hash,
-        )
       PayLend(current_price) -> pay_lend(transaction, datum, current_price)
     }
   }

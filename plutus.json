@@ -755,7 +755,7 @@
               "$ref": "#/definitions/AddressHash"
             },
             {
-              "title": "entered_at_price",
+              "title": "entered_at_usd_price",
               "$ref": "#/definitions/Int"
             },
             {

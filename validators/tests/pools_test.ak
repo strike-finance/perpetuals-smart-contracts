@@ -21,7 +21,7 @@
 //   let orders_datum =
 //     OrdersDatum {
 //       owner_address_hash: trader_pkh,
-//       entered_at_price: 100,
+//       entered_at_usd_price: 100,
 //       underlying_asset,
 //       underlying_asset_amount: 5000000,
 //       leverage_factor: 2,

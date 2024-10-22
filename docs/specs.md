@@ -41,7 +41,7 @@ This is a multivalidator with a spending and minting script. When the traders op
 #### Datum
 
 - _owner_address_hash_: Owner of the position
-- _entered_at_price_: Price at which the position was entered
+- _entered_at_usd_price_: Price at which the position was entered
 - _underlying_asset_: The underlying asset that the perpetual contract is trading on
 - _leverage_factor_: Leverage used for the position
 - _positions_mint_asset_: Minted asset to represent the trader total position size

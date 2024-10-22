@@ -1,3 +1,4 @@
+use cardano/transaction.{OutputReference}
 use types.{Asset}
 
 pub const enter_position_policy_id =
@@ -15,6 +16,9 @@ pub const pool_asset_name = #"6c6f6e67"
 
 pub const orders_script_hash =
   #"bcbc44bd78bff976123ad00e496f855df46d6af2c7a2de30133cd7f0"
+
+pub const positions_script_hash =
+  #"581c333c9be905ebcc5ee49448d9061dab762dc0b0f96afc5d96e20f"
 
 pub const liquidity_positions_script_hash =
   #"bcbc44bd78bff976123ad00e496f855df46d6af2c7a2de30133cd7f0"
@@ -55,4 +59,10 @@ pub const strike_collateral_asset =
   Asset {
     policy_id: strike_collateral_policy_id,
     asset_name: strike_collateral_asset_name,
+  }
+
+pub const validate_pool_ref =
+  OutputReference {
+    transaction_id: #"b4971034feee28d07f157faf99b850f856d8da3494c70b19b521cfe690258e26",
+    output_index: 0,
   }

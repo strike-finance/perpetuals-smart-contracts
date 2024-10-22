@@ -36,7 +36,7 @@ pub type OrderAction {
   ClosePositionOrder
   ProvideLiquidityOrder
   WithdrawLiquidityOrder
-  LiquidateOrder
+  LiquidatePositionOrder
 }
 
 pub type OrdersRedeemer {
@@ -96,6 +96,8 @@ pub type OrdersDatum {
   liquidate_usd_price: Int,
   // Price of asset when the order was submitted
   order_submission_usd_price: Int,
+  // Entered at price for positions
+  entered_at_usd_price: Int,
   // The time the order was submitted
   order_submission_time: POSIXTime,
   // Reference to the pool validator
@@ -110,13 +112,13 @@ pub type CloseType {
   TraderClose
   StopLossClose
   TakeProfitClose
+  LiquidateClose
 }
 
 pub type PositionsRedeemer {
   Close(Int, CloseType)
   UpdateStopLoss(Int)
   UpdateTakeProfit(Int)
-  Liquidate(Int)
   PayLend(Int)
 }
 
@@ -134,7 +136,7 @@ pub type PositionDatum {
   // Owner of the position
   owner_address_hash: AddressHash,
   // Price at which the position was entered
-  entered_at_price: Int,
+  entered_at_usd_price: Int,
   // The underlying asset that the perpetual contract is trading on
   underlying_asset: Asset,
   // Leverage used for the postion.
@@ -147,6 +149,10 @@ pub type PositionDatum {
   collateral_asset: Asset,
   // Total stable collateral amount
   collateral_asset_amount: Int,
+  // Strike Collateral Asset
+  strike_collateral_asset: Asset,
+  // Total strike collateral amount
+  strike_collateral_asset_amount: Int,
   // Price at which the position will be liquidated
   liquidate_usd_price: Int,
   // Stop loss price where the position will be closed

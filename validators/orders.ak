@@ -7,7 +7,7 @@ use orders_validations.{
   validate_individual_order,
 }
 use types.{
-  BatchOrders, CancelOrders, ClosePositionOrder, LiquidateOrder,
+  BatchOrders, CancelOrders, ClosePositionOrder, LiquidatePositionOrder,
   OpenPositionOrder, OrdersDatum, OrdersParams, OrdersRedeemer,
   OrdersWithdrawRedeemer, ProvideLiquidityOrder, WithdrawLiquidityOrder,
 }
@@ -42,7 +42,7 @@ validator orders(params: OrdersParams) {
             cancel_contribute_liquidity(datum, transaction)
           WithdrawLiquidityOrder ->
             cancel_withdraw_liquidity(datum, transaction)
-          LiquidateOrder -> False
+          LiquidatePositionOrder -> False
         }
       }
     }
