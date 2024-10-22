@@ -464,6 +464,9 @@ pub fn mint_position(
       current_price,
     )
 
+  let is_valid_collateral =
+    is_valid_collateral(pool_ref_datum_typed, orders_datum_typed)
+
   let liquidate_usd_price_valid: Bool =
     orders_datum_typed.liquidate_usd_price >= liquidate_usd_price
 
@@ -488,7 +491,7 @@ pub fn mint_position(
     orders_datum_typed.underlying_asset == pool_ref_datum_typed.underlying_asset
 
   expect
-    only_one_output_to_orders && minted_assets_amount_valid && assets_locked_valid && mint_valid && liquidate_usd_price_valid && valid_pool_ref && entered_at_price_valid && submission_time_valid && minted_asset_valid && owner_address_hash_valid && underlying_asset_valid
+    only_one_output_to_orders && minted_assets_amount_valid && assets_locked_valid && mint_valid && liquidate_usd_price_valid && valid_pool_ref && entered_at_price_valid && submission_time_valid && minted_asset_valid && owner_address_hash_valid && underlying_asset_valid && is_valid_collateral
 
   let contains_strike_collateral: Bool =
     quantity_of(
@@ -507,6 +510,14 @@ pub fn mint_position(
       pool_ref_datum_typed.max_leverage_factor >= orders_datum_typed.leverage_factor
 
     leverage_factor_valid
+  }
+}
+
+fn is_valid_collateral(pool_ref: PoolDatum, orders_datum: OrdersDatum) -> Bool {
+  if orders_datum.side == Long {
+    orders_datum.collateral_asset == pool_ref.underlying_asset
+  } else {
+    orders_datum.collateral_asset == pool_ref.stable_collateral_asset
   }
 }
 
