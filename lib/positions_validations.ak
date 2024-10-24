@@ -306,9 +306,6 @@ pub fn pay_lend(
       expected_burn_amount * -1,
     )
 
-  trace @"expected_mint": expected_mint
-  trace @"transaction.mint": transaction.mint
-
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
   let current_time: POSIXTime = get_lower_bound(transaction.validity_range)
