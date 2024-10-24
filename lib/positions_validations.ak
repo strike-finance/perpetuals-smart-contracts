@@ -1,4 +1,5 @@
 use aiken/collection/list
+use aiken/math/rational
 use cardano/assets.{PolicyId, Value, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
@@ -22,11 +23,9 @@ pub fn close_position(
   close_type: CloseType,
 ) -> Bool {
   expect Some(datum) = datum
-
   let all_validators_inputs: List<Input> =
     get_all_validators_inputs(transaction)
   let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
-  expect Some(input_from_script) = list.head(all_validators_inputs)
 
   let outputs_to_orders_validator: List<Output> =
     find_script_outputs(transaction.outputs, orders_script_hash)
@@ -56,7 +55,7 @@ pub fn close_position(
         )
 
   let assets_match: Bool =
-    match(input_from_script.output.value, expected_assets_locked, >=)
+    match(output_to_orders_validator.value, expected_assets_locked, >=)
 
   let orders_datum_valid: Bool =
     from_positions_to_orders_datum_valid(
@@ -266,15 +265,38 @@ pub fn pay_lend(
   let outputs_back_to_positions_validator: List<Output> =
     get_address_outputs(transaction, input_from_script.output.address)
 
+  expect Some(output_to_positions_validator) =
+    list.head(outputs_back_to_positions_validator)
+
+  expect InlineDatum(output_datum) = output_to_positions_validator.datum
+  expect output_datum_typed: PositionDatum = output_datum
+
+  let expected_datum =
+    PositionDatum {
+      owner_address_hash: datum.owner_address_hash,
+      entered_at_usd_price: datum.entered_at_usd_price,
+      underlying_asset: datum.underlying_asset,
+      leverage_factor: datum.leverage_factor,
+      positions_mint_asset: datum.positions_mint_asset,
+      positions_mint_asset_amount: datum.positions_mint_asset_amount,
+      collateral_asset: datum.collateral_asset,
+      collateral_asset_amount: datum.collateral_asset_amount,
+      strike_collateral_asset: datum.strike_collateral_asset,
+      strike_collateral_asset_amount: datum.strike_collateral_asset_amount,
+      liquidate_usd_price: datum.liquidate_usd_price,
+      stop_loss_usd_price: datum.stop_loss_usd_price,
+      take_profit_usd_price: datum.take_profit_usd_price,
+      last_pay_lend_time: datum.last_pay_lend_time + 3_600_000,
+      validate_pool_ref: datum.validate_pool_ref,
+      side: datum.side,
+    }
+
+  let datum_valid: Bool = output_datum_typed == expected_datum
+
   let only_one_output_to_positions_validator: Bool =
     list.length(outputs_back_to_positions_validator) == 1
 
-  let current_time: POSIXTime = get_lower_bound(transaction.validity_range)
-
-  let one_hour_has_passed: Bool =
-    current_time > datum.last_pay_lend_time + 3_600_000
-
-  let expected_burn_amount =
+  let expected_burn_amount: Int =
     calculate_pay_borrow(datum, pool_ref_datum_typed, current_price)
 
   let expected_mint =
@@ -284,9 +306,40 @@ pub fn pay_lend(
       expected_burn_amount * -1,
     )
 
+  trace @"expected_mint": expected_mint
+  trace @"transaction.mint": transaction.mint
+
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
-  only_one_input_from_script && only_one_output_to_positions_validator && one_hour_has_passed && mint_valid
+  let current_time: POSIXTime = get_lower_bound(transaction.validity_range)
+
+  let one_hour_has_passed: Bool =
+    current_time >= datum.last_pay_lend_time + 3_600_000
+
+  let position_mint_asset_amount: Int =
+    datum.positions_mint_asset_amount - expected_burn_amount
+
+  let expected_assets_locked: Value =
+    assets.from_asset(
+      datum.collateral_asset.policy_id,
+      datum.collateral_asset.asset_name,
+      datum.collateral_asset_amount,
+    )
+      |> assets.add(
+          datum.strike_collateral_asset.policy_id,
+          datum.strike_collateral_asset.asset_name,
+          datum.strike_collateral_asset_amount,
+        )
+      |> assets.add(
+          datum.positions_mint_asset.policy_id,
+          datum.positions_mint_asset.asset_name,
+          position_mint_asset_amount,
+        )
+
+  let assets_locked_valid: Bool =
+    match(output_to_positions_validator.value, expected_assets_locked, ==)
+
+  only_one_input_from_script && only_one_output_to_positions_validator && one_hour_has_passed && datum_valid && mint_valid && assets_locked_valid
 }
 
 pub fn mint_position(
@@ -537,13 +590,23 @@ fn price_reached_liquidate(current_price: Int, datum: PositionDatum) -> Bool {
 fn calculate_pay_borrow(
   position_datum: PositionDatum,
   pool_datum: PoolDatum,
-  current_price_volume: Int,
+  current_price: Int,
 ) -> Int {
-  let utilization =
-    pool_datum.underlying_asset_lended_amount / pool_datum.underlying_asset_amount
+  expect Some(utilization) =
+    rational.new(
+      pool_datum.underlying_asset_lended_amount,
+      pool_datum.underlying_asset_amount,
+    )
+
+  let utilization_percentage = rational.ceil(utilization)
 
   let current_position_usd_value =
-    position_datum.positions_mint_asset_amount * position_datum.leverage_factor * current_price_volume
+    position_datum.positions_mint_asset_amount * current_price
 
-  utilization * pool_datum.underlying_interest_rate * current_position_usd_value
+  let pay_borrow_usd_amount =
+    utilization_percentage * pool_datum.underlying_interest_rate * current_position_usd_value / 100
+
+  expect Some(token_amount) = rational.new(pay_borrow_usd_amount, current_price)
+
+  rational.ceil(token_amount)
 }

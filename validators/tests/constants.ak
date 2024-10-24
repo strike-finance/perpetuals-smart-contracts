@@ -43,6 +43,8 @@ pub const underlying_asset = Asset { policy_id: "", asset_name: "" }
 
 pub const lovelace_asset = Asset { policy_id: "", asset_name: "" }
 
+pub const batcher_fee = 2_000_000
+
 pub const stable_collateral_asset =
   Asset {
     policy_id: stable_collateral_policy_id,
