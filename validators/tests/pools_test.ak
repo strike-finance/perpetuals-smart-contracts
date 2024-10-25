@@ -1,103 +1,423 @@
-// use aiken/collection/dict
-// use aiken/interval.{Finite, Interval, IntervalBound}
-// use cardano/address.{from_script}
-// use cardano/assets
-// use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction}
-// use provide_liquidity_mint
-// use tests/constants.{
-//   lovelace_asset, orders_script_hash, pool_asset, provide_liquidity_policy_id,
-//   provide_liquidty_asset_name, stable_collateral_asset, strike_collateral_asset,
-//   trader_pkh, underlying_asset,
-// }
-// use types.{Long, PoolDatum}
+use aiken/collection/dict
+use aiken/interval.{Finite, Interval, IntervalBound}
+use cardano/address.{Script, from_script}
+use cardano/assets.{from_lovelace}
+use cardano/transaction.{InlineDatum, Input, Output, Transaction}
+use pools
+use tests/constants.{
+  admin_pkh, lovelace_asset, orders_script_hash, out_ref, pool_asset,
+  pool_asset_name, pool_license, pool_script_hash, stable_collateral_asset,
+  trader_pkh,
+}
+use types.{
+  PoolDatum, PoolsParams, PoolsRedeemer, UpdateInterestRate,
+  UpdateLiquidateMargin, UpdateMaxLeverageFactor,
+  UpdateMaxStrikeHolderLeverageFactor, UpdateParams, UtilizePool,
+}
 
-// const pool_ref_datum =
-//   PoolDatum {
-//     underlying_asset: lovelace_asset,
-//     underlying_asset_amount: 100_000_000,
-//     underlying_asset_lended_amount: 1_000_000,
-//     underlying_interest_rate: 2,
-//     stable_collateral_asset,
-//     max_leverage_factor: 10,
-//     liquidate_margin: 5,
-//     max_strike_holder_leverage_factor: 20,
-//     maintain_margin_amount: 0,
-//     is_valid_pool_asset: pool_asset,
-//     earnings_per_share: 0,
-//     collateral_earnings_per_share: 0,
-//     stable_collateral_asset_amount: 100_000_000,
-//   }
+const pool_datum =
+  PoolDatum {
+    underlying_asset: lovelace_asset,
+    underlying_asset_amount: 100_000_000,
+    underlying_asset_lended_amount: 1_000_000,
+    underlying_interest_rate: 2,
+    stable_collateral_asset,
+    max_leverage_factor: 10,
+    liquidate_margin: 5,
+    max_strike_holder_leverage_factor: 20,
+    maintain_margin_amount: 0,
+    is_valid_pool_asset: pool_asset,
+    earnings_per_share: 0,
+    collateral_earnings_per_share: 0,
+    stable_collateral_asset_amount: 100_000_000,
+  }
 
-// const pool_ref_input =
-//   Input {
-//     output_reference: pool_license,
-//     output: Output {
-//       address: from_script(#""),
-//       value: from_lovelace(2_000_000),
-//       datum: InlineDatum(pool_ref_datum),
-//       reference_script: None,
-//     },
-//   }
+const pool_input =
+  Input {
+    output_reference: out_ref,
+    output: Output {
+      address: from_script(pool_script_hash),
+      value: from_lovelace(2_000_000)
+        |> assets.add(pool_license, pool_asset_name, 1)
+        |> assets.add(
+            pool_datum.underlying_asset.policy_id,
+            pool_datum.underlying_asset.asset_name,
+            pool_datum.underlying_asset_amount,
+          )
+        |> assets.add(
+            pool_datum.stable_collateral_asset.policy_id,
+            pool_datum.stable_collateral_asset.asset_name,
+            pool_datum.stable_collateral_asset_amount,
+          ),
+      datum: InlineDatum(pool_datum),
+      reference_script: None,
+    },
+  }
+
+const stake_cred = Script(orders_script_hash)
 
 test utilize_pool() {
-  True
-  //   let mint =
-  //     assets.from_asset(
-  //       provide_liquidity_policy_id,
-  //       provide_liquidty_asset_name,
-  //       5_000_000,
-  //     )
+  let withdrawals = [Pair(Script(orders_script_hash), 1)]
 
-  //   let orders_output =
-  //     Output {
-  //       address: from_script(orders_script_hash),
-  //       value: mint
-  //         |> assets.merge(assets.from_lovelace(5_000_000)),
-  //       datum: InlineDatum(orders_datum),
-  //       reference_script: None,
-  //     }
+  let tx =
+    Transaction {
+      inputs: [pool_input],
+      reference_inputs: [],
+      outputs: [],
+      fee: 0,
+      mint: assets.zero,
+      certificates: [],
+      withdrawals,
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [trader_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
 
-  //   let tx =
-  //     Transaction {
-  //       inputs: [],
-  //       reference_inputs: [],
-  //       outputs: [orders_output],
-  //       fee: 0,
-  //       mint,
-  //       certificates: [],
-  //       withdrawals: [],
-  //       validity_range: Interval {
-  //         lower_bound: IntervalBound {
-  //           bound_type: Finite(1727453227635),
-  //           is_inclusive: False,
-  //         },
-  //         upper_bound: IntervalBound {
-  //           bound_type: Finite(1727456400000),
-  //           is_inclusive: False,
-  //         },
-  //       },
-  //       extra_signatories: [trader_pkh],
-  //       redeemers: [],
-  //       datums: dict.empty,
-  //       id: #"0000000000000000000000000000000000000000000000000000000000000000",
-  //       votes: [],
-  //       proposal_procedures: [],
-  //       current_treasury_amount: None,
-  //       treasury_donation: None,
-  //     }
-  //   let params =
-  //     ProvideLiquidityMintParams {
-  //       orders_validator: orders_script_hash,
-  //       asset_name: provide_liquidty_asset_name,
-  //       underlying_asset_policy_id: underlying_asset.policy_id,
-  //       underlying_asset_name: underlying_asset.asset_name,
-  //     }
-  //   let redeemer = 1
+  let params =
+    PoolsParams {
+      orders_stake_cred: stake_cred,
+      admin_pkh,
+      asset_name: pool_asset_name,
+    }
+  let redeemer =
+    PoolsRedeemer {
+      action: UtilizePool,
+      update_param_type: UpdateInterestRate(0),
+    }
+  pools.pools.spend(params, Some(pool_datum), redeemer, out_ref, tx)
+}
 
-  //   provide_liquidity_mint.provide_liquidity_mint.mint(
-  //     params,
-  //     redeemer,
-  //     provide_liquidity_policy_id,
-  //     tx,
-  //   )
+test update_interest_rate() {
+  let updated_pool_datum =
+    PoolDatum {
+      underlying_asset: pool_datum.underlying_asset,
+      underlying_asset_amount: pool_datum.underlying_asset_amount,
+      underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
+      underlying_interest_rate: 20,
+      stable_collateral_asset: pool_datum.stable_collateral_asset,
+      max_leverage_factor: pool_datum.max_leverage_factor,
+      liquidate_margin: pool_datum.liquidate_margin,
+      max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
+      maintain_margin_amount: pool_datum.maintain_margin_amount,
+      is_valid_pool_asset: pool_datum.is_valid_pool_asset,
+      earnings_per_share: pool_datum.earnings_per_share,
+      collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
+      stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+    }
+
+  let output =
+    Output {
+      address: from_script(pool_script_hash),
+      value: from_lovelace(2_000_000)
+        |> assets.add(pool_license, pool_asset_name, 1)
+        |> assets.add(
+            pool_datum.underlying_asset.policy_id,
+            pool_datum.underlying_asset.asset_name,
+            pool_datum.underlying_asset_amount,
+          )
+        |> assets.add(
+            pool_datum.stable_collateral_asset.policy_id,
+            pool_datum.stable_collateral_asset.asset_name,
+            pool_datum.stable_collateral_asset_amount,
+          ),
+      datum: InlineDatum(updated_pool_datum),
+      reference_script: None,
+    }
+
+  let tx =
+    Transaction {
+      inputs: [pool_input],
+      reference_inputs: [],
+      outputs: [output],
+      fee: 0,
+      mint: assets.zero,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [admin_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  let params =
+    PoolsParams {
+      orders_stake_cred: stake_cred,
+      admin_pkh,
+      asset_name: pool_asset_name,
+    }
+  let redeemer =
+    PoolsRedeemer {
+      action: UpdateParams,
+      update_param_type: UpdateInterestRate(20),
+    }
+  pools.pools.spend(params, Some(pool_datum), redeemer, out_ref, tx)
+}
+
+test update_liquidate_margin() {
+  let updated_pool_datum =
+    PoolDatum {
+      underlying_asset: pool_datum.underlying_asset,
+      underlying_asset_amount: pool_datum.underlying_asset_amount,
+      underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
+      underlying_interest_rate: pool_datum.underlying_interest_rate,
+      stable_collateral_asset: pool_datum.stable_collateral_asset,
+      max_leverage_factor: pool_datum.max_leverage_factor,
+      liquidate_margin: 30,
+      max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
+      maintain_margin_amount: pool_datum.maintain_margin_amount,
+      is_valid_pool_asset: pool_datum.is_valid_pool_asset,
+      earnings_per_share: pool_datum.earnings_per_share,
+      collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
+      stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+    }
+
+  let output =
+    Output {
+      address: from_script(pool_script_hash),
+      value: from_lovelace(2_000_000)
+        |> assets.add(pool_license, pool_asset_name, 1)
+        |> assets.add(
+            pool_datum.underlying_asset.policy_id,
+            pool_datum.underlying_asset.asset_name,
+            pool_datum.underlying_asset_amount,
+          )
+        |> assets.add(
+            pool_datum.stable_collateral_asset.policy_id,
+            pool_datum.stable_collateral_asset.asset_name,
+            pool_datum.stable_collateral_asset_amount,
+          ),
+      datum: InlineDatum(updated_pool_datum),
+      reference_script: None,
+    }
+
+  let tx =
+    Transaction {
+      inputs: [pool_input],
+      reference_inputs: [],
+      outputs: [output],
+      fee: 0,
+      mint: assets.zero,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [admin_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  let params =
+    PoolsParams {
+      orders_stake_cred: stake_cred,
+      admin_pkh,
+      asset_name: pool_asset_name,
+    }
+  let redeemer =
+    PoolsRedeemer {
+      action: UpdateParams,
+      update_param_type: UpdateLiquidateMargin(30),
+    }
+  pools.pools.spend(params, Some(pool_datum), redeemer, out_ref, tx)
+}
+
+test update_max_leverage_factor() {
+  let updated_pool_datum =
+    PoolDatum {
+      underlying_asset: pool_datum.underlying_asset,
+      underlying_asset_amount: pool_datum.underlying_asset_amount,
+      underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
+      underlying_interest_rate: pool_datum.underlying_interest_rate,
+      stable_collateral_asset: pool_datum.stable_collateral_asset,
+      max_leverage_factor: 30,
+      liquidate_margin: pool_datum.liquidate_margin,
+      max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
+      maintain_margin_amount: pool_datum.maintain_margin_amount,
+      is_valid_pool_asset: pool_datum.is_valid_pool_asset,
+      earnings_per_share: pool_datum.earnings_per_share,
+      collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
+      stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+    }
+
+  let output =
+    Output {
+      address: from_script(pool_script_hash),
+      value: from_lovelace(2_000_000)
+        |> assets.add(pool_license, pool_asset_name, 1)
+        |> assets.add(
+            pool_datum.underlying_asset.policy_id,
+            pool_datum.underlying_asset.asset_name,
+            pool_datum.underlying_asset_amount,
+          )
+        |> assets.add(
+            pool_datum.stable_collateral_asset.policy_id,
+            pool_datum.stable_collateral_asset.asset_name,
+            pool_datum.stable_collateral_asset_amount,
+          ),
+      datum: InlineDatum(updated_pool_datum),
+      reference_script: None,
+    }
+
+  let tx =
+    Transaction {
+      inputs: [pool_input],
+      reference_inputs: [],
+      outputs: [output],
+      fee: 0,
+      mint: assets.zero,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [trader_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  let params =
+    PoolsParams {
+      orders_stake_cred: stake_cred,
+      admin_pkh,
+      asset_name: pool_asset_name,
+    }
+  let redeemer =
+    PoolsRedeemer {
+      action: UpdateParams,
+      update_param_type: UpdateMaxLeverageFactor(30),
+    }
+  pools.pools.spend(params, Some(pool_datum), redeemer, out_ref, tx)
+}
+
+test update_max_strike_holder_leverage_factor() {
+  let updated_pool_datum =
+    PoolDatum {
+      underlying_asset: pool_datum.underlying_asset,
+      underlying_asset_amount: pool_datum.underlying_asset_amount,
+      underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
+      underlying_interest_rate: pool_datum.underlying_interest_rate,
+      stable_collateral_asset: pool_datum.stable_collateral_asset,
+      max_leverage_factor: pool_datum.max_leverage_factor,
+      liquidate_margin: pool_datum.liquidate_margin,
+      max_strike_holder_leverage_factor: 30,
+      maintain_margin_amount: pool_datum.maintain_margin_amount,
+      is_valid_pool_asset: pool_datum.is_valid_pool_asset,
+      earnings_per_share: pool_datum.earnings_per_share,
+      collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
+      stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+    }
+
+  let output =
+    Output {
+      address: from_script(pool_script_hash),
+      value: from_lovelace(2_000_000)
+        |> assets.add(pool_license, pool_asset_name, 1)
+        |> assets.add(
+            pool_datum.underlying_asset.policy_id,
+            pool_datum.underlying_asset.asset_name,
+            pool_datum.underlying_asset_amount,
+          )
+        |> assets.add(
+            pool_datum.stable_collateral_asset.policy_id,
+            pool_datum.stable_collateral_asset.asset_name,
+            pool_datum.stable_collateral_asset_amount,
+          ),
+      datum: InlineDatum(updated_pool_datum),
+      reference_script: None,
+    }
+
+  let tx =
+    Transaction {
+      inputs: [pool_input],
+      reference_inputs: [],
+      outputs: [output],
+      fee: 0,
+      mint: assets.zero,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [admin_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  let params =
+    PoolsParams {
+      orders_stake_cred: stake_cred,
+      admin_pkh,
+      asset_name: pool_asset_name,
+    }
+  let redeemer =
+    PoolsRedeemer {
+      action: UpdateParams,
+      update_param_type: UpdateMaxStrikeHolderLeverageFactor(30),
+    }
+  pools.pools.spend(params, Some(pool_datum), redeemer, out_ref, tx)
 }

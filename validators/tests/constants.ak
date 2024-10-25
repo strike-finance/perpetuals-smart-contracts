@@ -10,7 +10,10 @@ pub const provide_liquidity_policy_id =
 pub const provide_liquidty_asset_name = #"6c6f6e67"
 
 pub const pool_policy_id =
-  #"400df17fee0ea6de308fd1867fcc494ace5ca924b509ea7c42df9f75"
+  #"d6ffbc9038719c18a1f993c2d2bd7cd4cf33209b3ad2f75342382365"
+
+pub const pool_script_hash =
+  #"d6ffbc9038719c18a1f993c2d2bd7cd4cf33209b3ad2f75342382365"
 
 pub const pool_asset_name = #"6c6f6e67"
 
@@ -70,4 +73,4 @@ pub const out_ref =
   }
 
 pub const pool_license =
-  #"400df17fee0ea6de308fd1867fcc494ace5ca924b509ea7c42df9f75"
+  #"d6ffbc9038719c18a1f993c2d2bd7cd4cf33209b3ad2f75342382365"

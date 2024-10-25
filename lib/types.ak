@@ -1,4 +1,5 @@
 use aiken/crypto.{Blake2b_224, Hash, Script, VerificationKey}
+use cardano/address.{Credential}
 use cardano/assets.{AssetName, PolicyId}
 
 pub type Asset {
@@ -195,16 +196,27 @@ pub type PoolDatum {
   collateral_earnings_per_share: Int,
 }
 
+pub type PoolsParams {
+  orders_stake_cred: Credential,
+  admin_pkh: AddressHash,
+  asset_name: AssetName,
+}
+
 pub type UpdateParamsType {
-  UpdateInterestRate
-  UpdateLiquidateMargin
-  UpdateMaxLeverageFactor
-  UpdateMaxStrikeHolderLeverageFactor
+  UpdateInterestRate(Int)
+  UpdateLiquidateMargin(Int)
+  UpdateMaxLeverageFactor(Int)
+  UpdateMaxStrikeHolderLeverageFactor(Int)
+}
+
+pub type PoolsRedeemerAction {
+  UtilizePool
+  UpdateParams
 }
 
 pub type PoolsRedeemer {
-  UtilizePool
-  UpdateParams(UpdateParamsType, Int)
+  action: PoolsRedeemerAction,
+  update_param_type: UpdateParamsType,
 }
 
 pub type LiquidityPositionDatum {
