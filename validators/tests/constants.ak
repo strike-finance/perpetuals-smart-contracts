@@ -63,8 +63,11 @@ pub const strike_collateral_asset =
     asset_name: strike_collateral_asset_name,
   }
 
-pub const validate_pool_ref =
+pub const out_ref =
   OutputReference {
     transaction_id: #"b4971034feee28d07f157faf99b850f856d8da3494c70b19b521cfe690258e26",
     output_index: 0,
   }
+
+pub const pool_license =
+  #"400df17fee0ea6de308fd1867fcc494ace5ca924b509ea7c42df9f75"

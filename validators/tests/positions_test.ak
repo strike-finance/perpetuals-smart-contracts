@@ -8,10 +8,9 @@ use cardano/transaction.{
 use positions
 use tests/constants.{
   admin_pkh, batcher_fee, enter_position_policy_id,
-  liquidity_positions_script_hash, lovelace_asset, orders_script_hash,
-  pool_asset, positions_mint_asset, positions_script_hash,
+  liquidity_positions_script_hash, lovelace_asset, orders_script_hash, out_ref,
+  pool_asset, pool_license, positions_mint_asset, positions_script_hash,
   stable_collateral_asset, strike_collateral_asset, trader_pkh, underlying_asset,
-  validate_pool_ref,
 }
 use types.{
   Asset, BurnPosition, Close, ClosePositionOrder, LiquidateClose,
@@ -36,7 +35,7 @@ const position_datum =
     stop_loss_usd_price: 90,
     take_profit_usd_price: 0,
     last_pay_lend_time: 1727453227635,
-    validate_pool_ref,
+    pool_license,
     side: Long,
   }
 
@@ -59,10 +58,11 @@ const pool_ref_datum =
 
 const pool_ref_input =
   Input {
-    output_reference: validate_pool_ref,
+    output_reference: out_ref,
     output: Output {
       address: from_script(#""),
-      value: from_lovelace(2_000_000),
+      value: from_lovelace(2_000_000)
+        |> assets.add(pool_license, "", 1),
       datum: InlineDatum(pool_ref_datum),
       reference_script: None,
     },
@@ -96,7 +96,7 @@ test enter_long_positions_mint() {
       order_submission_time: 1727453227635,
       entered_at_usd_price: 100,
       order_submission_usd_price: 100,
-      validate_pool_ref,
+      pool_license,
       action: OpenPositionOrder,
       side: Long,
     }
@@ -148,7 +148,7 @@ test enter_long_positions_mint() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params = PositionsParams { orders_script_hash, validate_pool_ref }
+  let params = PositionsParams { orders_script_hash, pool_license }
   let redeemer = MintPosition(100)
   positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
 }
@@ -179,7 +179,7 @@ test enter_short_positions_mint() {
       order_submission_time: 1727453227635,
       order_submission_usd_price: 1,
       entered_at_usd_price: 100,
-      validate_pool_ref,
+      pool_license,
       action: OpenPositionOrder,
       side: Short,
     }
@@ -233,7 +233,7 @@ test enter_short_positions_mint() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params = PositionsParams { orders_script_hash, validate_pool_ref }
+  let params = PositionsParams { orders_script_hash, pool_license }
   let redeemer = MintPosition(1)
   positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
 }
@@ -269,7 +269,7 @@ test burn_positions_mint() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params = PositionsParams { orders_script_hash, validate_pool_ref }
+  let params = PositionsParams { orders_script_hash, pool_license }
   let redeemer = BurnPosition(5_000_000, trader_pkh)
   positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
 }
@@ -331,7 +331,7 @@ test close_position_signed_by_owner() {
       order_submission_time: 1727453227635,
       order_submission_usd_price: 100,
       entered_at_usd_price: 100,
-      validate_pool_ref,
+      pool_license,
       action: ClosePositionOrder,
       side: Long,
     }
@@ -383,7 +383,7 @@ test close_position_signed_by_owner() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params = PositionsParams { orders_script_hash, validate_pool_ref }
+  let params = PositionsParams { orders_script_hash, pool_license }
   let redeemer = Close(100, TraderClose)
   positions.positions.spend(params, Some(position_datum), redeemer, own_ref, tx)
 }
@@ -445,7 +445,7 @@ test close_position_take_profit() {
       order_submission_time: 1727453227635,
       order_submission_usd_price: 120,
       entered_at_usd_price: 100,
-      validate_pool_ref,
+      pool_license,
       action: ClosePositionOrder,
       side: Long,
     }
@@ -497,7 +497,7 @@ test close_position_take_profit() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params = PositionsParams { orders_script_hash, validate_pool_ref }
+  let params = PositionsParams { orders_script_hash, pool_license }
   let redeemer = Close(120, TakeProfitClose)
   positions.positions.spend(params, Some(position_datum), redeemer, own_ref, tx)
 }
@@ -559,7 +559,7 @@ test close_position_stop_loss() {
       order_submission_time: 1727453227635,
       order_submission_usd_price: 10,
       entered_at_usd_price: 100,
-      validate_pool_ref,
+      pool_license,
       action: ClosePositionOrder,
       side: Long,
     }
@@ -611,7 +611,7 @@ test close_position_stop_loss() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params = PositionsParams { orders_script_hash, validate_pool_ref }
+  let params = PositionsParams { orders_script_hash, pool_license }
   let redeemer = Close(10, StopLossClose)
   positions.positions.spend(params, Some(position_datum), redeemer, own_ref, tx)
 }
@@ -673,7 +673,7 @@ test close_position_liquidate() {
       order_submission_time: 1727453227635,
       order_submission_usd_price: 10,
       entered_at_usd_price: 100,
-      validate_pool_ref,
+      pool_license,
       action: LiquidatePositionOrder,
       side: Long,
     }
@@ -725,7 +725,7 @@ test close_position_liquidate() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params = PositionsParams { orders_script_hash, validate_pool_ref }
+  let params = PositionsParams { orders_script_hash, pool_license }
   let redeemer = Close(10, LiquidateClose)
   positions.positions.spend(params, Some(position_datum), redeemer, own_ref, tx)
 }
@@ -778,7 +778,7 @@ test update_stop_loss() {
       stop_loss_usd_price: 10,
       take_profit_usd_price: 0,
       last_pay_lend_time: 1727453227635,
-      validate_pool_ref,
+      pool_license,
       side: Long,
     }
 
@@ -828,7 +828,7 @@ test update_stop_loss() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params = PositionsParams { orders_script_hash, validate_pool_ref }
+  let params = PositionsParams { orders_script_hash, pool_license }
   let redeemer = UpdateStopLoss(10)
   positions.positions.spend(params, Some(position_datum), redeemer, own_ref, tx)
 }
@@ -881,7 +881,7 @@ test update_take_profit() {
       stop_loss_usd_price: 90,
       take_profit_usd_price: 10,
       last_pay_lend_time: 1727453227635,
-      validate_pool_ref,
+      pool_license,
       side: Long,
     }
 
@@ -931,7 +931,7 @@ test update_take_profit() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params = PositionsParams { orders_script_hash, validate_pool_ref }
+  let params = PositionsParams { orders_script_hash, pool_license }
   let redeemer = UpdateTakeProfit(10)
   positions.positions.spend(params, Some(position_datum), redeemer, own_ref, tx)
 }
@@ -984,7 +984,7 @@ test pay_lend() {
       stop_loss_usd_price: position_datum.stop_loss_usd_price,
       take_profit_usd_price: position_datum.take_profit_usd_price,
       last_pay_lend_time: position_datum.last_pay_lend_time + 3_600_000,
-      validate_pool_ref: position_datum.validate_pool_ref,
+      pool_license: position_datum.pool_license,
       side: position_datum.side,
     }
 
@@ -1045,7 +1045,7 @@ test pay_lend() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  let params = PositionsParams { orders_script_hash, validate_pool_ref }
+  let params = PositionsParams { orders_script_hash, pool_license }
   let redeemer = PayLend(90)
   positions.positions.spend(params, Some(position_datum), redeemer, own_ref, tx)
 }

@@ -12,7 +12,7 @@ use types.{
 }
 use utils.{
   get_address_outputs, get_all_validators_inputs, get_lower_bound,
-  validate_token_mint,
+  policy_in_value, validate_token_mint,
 }
 
 pub fn close_position(
@@ -152,7 +152,7 @@ pub fn update_stop_loss(
       stop_loss_usd_price,
       take_profit_usd_price: input_datum.take_profit_usd_price,
       last_pay_lend_time: input_datum.last_pay_lend_time,
-      validate_pool_ref: input_datum.validate_pool_ref,
+      pool_license: input_datum.pool_license,
       side: input_datum.side,
     }
 
@@ -222,7 +222,7 @@ pub fn update_take_profit(
       stop_loss_usd_price: input_datum.stop_loss_usd_price,
       take_profit_usd_price,
       last_pay_lend_time: input_datum.last_pay_lend_time,
-      validate_pool_ref: input_datum.validate_pool_ref,
+      pool_license: input_datum.pool_license,
       side: input_datum.side,
     }
 
@@ -243,15 +243,15 @@ pub fn pay_lend(
 
   let ref_input: List<Input> = transaction.reference_inputs
 
-  expect Some(pool_ref_input) =
-    list.find(
-      ref_input,
-      fn(ref_input: Input) {
-        ref_input.output_reference == datum.validate_pool_ref
-      },
-    )
+  expect Some(Input {
+    output: Output { value: batcher_value, datum: pool_ref_datum, .. },
+    ..
+  }) = list.head(ref_input)
 
-  expect InlineDatum(pool_ref_datum) = pool_ref_input.output.datum
+  let pool_license_in_transaction: Bool =
+    policy_in_value(datum.pool_license, batcher_value)
+
+  expect InlineDatum(pool_ref_datum) = pool_ref_datum
   expect pool_ref_datum_typed: PoolDatum = pool_ref_datum
 
   let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
@@ -283,7 +283,7 @@ pub fn pay_lend(
       stop_loss_usd_price: datum.stop_loss_usd_price,
       take_profit_usd_price: datum.take_profit_usd_price,
       last_pay_lend_time: datum.last_pay_lend_time + 3_600_000,
-      validate_pool_ref: datum.validate_pool_ref,
+      pool_license: datum.pool_license,
       side: datum.side,
     }
 
@@ -332,7 +332,7 @@ pub fn pay_lend(
   let assets_locked_valid: Bool =
     match(output_to_positions_validator.value, expected_assets_locked, ==)
 
-  only_one_input_from_script && only_one_output_to_positions_validator && one_hour_has_passed && datum_valid && mint_valid && assets_locked_valid
+  only_one_input_from_script && only_one_output_to_positions_validator && one_hour_has_passed && datum_valid && mint_valid && assets_locked_valid && pool_license_in_transaction
 }
 
 pub fn mint_position(
@@ -340,6 +340,7 @@ pub fn mint_position(
   params: PositionsParams,
   current_price: Int,
   policy_id: PolicyId,
+  pool_license: PolicyId,
 ) {
   let outputs_to_orders_address: List<Output> =
     find_script_outputs(transaction.outputs, params.orders_script_hash)
@@ -355,15 +356,15 @@ pub fn mint_position(
 
   let ref_input: List<Input> = transaction.reference_inputs
 
-  expect Some(pool_ref_input) =
-    list.find(
-      ref_input,
-      fn(ref_input: Input) {
-        ref_input.output_reference == params.validate_pool_ref
-      },
-    )
+  expect Some(Input {
+    output: Output { value: batcher_value, datum: pool_ref_datum, .. },
+    ..
+  }) = list.head(ref_input)
 
-  expect InlineDatum(pool_ref_datum) = pool_ref_input.output.datum
+  let pool_license_in_transaction: Bool =
+    policy_in_value(pool_license, batcher_value)
+
+  expect InlineDatum(pool_ref_datum) = pool_ref_datum
   expect pool_ref_datum_typed: PoolDatum = pool_ref_datum
 
   let expected_mint: (PolicyId, ByteArray, Int) =
@@ -417,8 +418,7 @@ pub fn mint_position(
   let liquidate_usd_price_valid: Bool =
     orders_datum_typed.liquidate_usd_price >= liquidate_usd_price
 
-  let valid_pool_ref: Bool =
-    orders_datum_typed.validate_pool_ref == params.validate_pool_ref
+  let valid_pool_ref: Bool = orders_datum_typed.pool_license == pool_license
 
   let entered_at_usd_price_valid: Bool =
     current_price == orders_datum_typed.order_submission_usd_price
@@ -438,7 +438,7 @@ pub fn mint_position(
     orders_datum_typed.underlying_asset == pool_ref_datum_typed.underlying_asset
 
   expect
-    only_one_output_to_orders && minted_assets_amount_valid && assets_locked_valid && mint_valid && liquidate_usd_price_valid && valid_pool_ref && entered_at_usd_price_valid && submission_time_valid && minted_asset_valid && owner_address_hash_valid && underlying_asset_valid && is_valid_collateral
+    only_one_output_to_orders && minted_assets_amount_valid && assets_locked_valid && mint_valid && liquidate_usd_price_valid && valid_pool_ref && entered_at_usd_price_valid && submission_time_valid && minted_asset_valid && owner_address_hash_valid && underlying_asset_valid && is_valid_collateral && pool_license_in_transaction
 
   let contains_strike_collateral: Bool =
     quantity_of(
@@ -538,8 +538,8 @@ fn from_positions_to_orders_datum_valid(
   let collateral_asset_amount_valid: Bool =
     position_datum.collateral_asset_amount == orders_datum.collateral_asset_amount
 
-  let validate_pool_ref_valid: Bool =
-    position_datum.validate_pool_ref == orders_datum.validate_pool_ref
+  let pool_license_valid: Bool =
+    position_datum.pool_license == orders_datum.pool_license
 
   let last_pay_lend_time_valid: Bool =
     position_datum.last_pay_lend_time == orders_datum.order_submission_time
@@ -553,7 +553,7 @@ fn from_positions_to_orders_datum_valid(
   let entered_at_usd_price_valid: Bool =
     position_datum.entered_at_usd_price == orders_datum.entered_at_usd_price
 
-  owner_address_hash_valid && underlying_asset_valid && positions_mint_asset_amount_valid && leverage_factor_valid && positions_mint_asset_valid && side_valid && collateral_asset_valid && collateral_asset_amount_valid && validate_pool_ref_valid && last_pay_lend_time_valid && take_profit_usd_price_valid && order_submission_usd_price_valid && entered_at_usd_price_valid
+  owner_address_hash_valid && underlying_asset_valid && positions_mint_asset_amount_valid && leverage_factor_valid && positions_mint_asset_valid && side_valid && collateral_asset_valid && collateral_asset_amount_valid && pool_license_valid && last_pay_lend_time_valid && take_profit_usd_price_valid && order_submission_usd_price_valid && entered_at_usd_price_valid
 }
 
 fn price_reached_stop_loss(current_price: Int, datum: PositionDatum) -> Bool {

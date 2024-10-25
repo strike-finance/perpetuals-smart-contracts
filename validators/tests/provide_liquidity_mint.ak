@@ -14,7 +14,7 @@
 // }
 
 // test test_burn_short_positions_mint() {
-//   let validate_pool_ref =
+//   let pool_license =
 //     OutputReference {
 //       transaction_id: #"b4971034feee28d07f157faf99b850f856d8da3494c70b19b521cfe690258e26",
 //       output_index: 0,
@@ -43,7 +43,7 @@
 //       stop_loss_usd_price: 0,
 //       take_profit_usd_price: 0,
 //       order_submission_time: 1751111000,
-//       validate_pool_ref,
+//       pool_license,
 //       order_submission_usd_price: 100,
 //       action: ProvideLiquidityOrder,
 //       side: Long,

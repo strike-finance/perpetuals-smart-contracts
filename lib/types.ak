@@ -1,6 +1,5 @@
 use aiken/crypto.{Blake2b_224, Hash, Script, VerificationKey}
 use cardano/assets.{AssetName, PolicyId}
-use cardano/transaction.{OutputReference}
 
 pub type Asset {
   policy_id: PolicyId,
@@ -101,7 +100,7 @@ pub type OrdersDatum {
   // The time the order was submitted
   order_submission_time: POSIXTime,
   // Reference to the pool validator
-  validate_pool_ref: OutputReference,
+  pool_license: PolicyId,
   // Action to be taken for the order
   action: OrderAction,
   // Side of the position
@@ -129,7 +128,7 @@ pub type PositionsMintRedeemer {
 
 pub type PositionsParams {
   orders_script_hash: ScriptHash,
-  validate_pool_ref: OutputReference,
+  pool_license: PolicyId,
 }
 
 pub type PositionDatum {
@@ -162,7 +161,7 @@ pub type PositionDatum {
   // Last time the hourly lend was paid
   last_pay_lend_time: POSIXTime,
   // Reference to the pool validator
-  validate_pool_ref: OutputReference,
+  pool_license: PolicyId,
   // Side of the position
   side: PositionSide,
 }

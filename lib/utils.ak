@@ -21,7 +21,16 @@ pub fn get_lower_bound(range: ValidityRange) -> Int {
   lower_bound
 }
 
-pub fn find_license_deadline(license_symbol: PolicyId, val: Value) -> Int {
+pub fn policy_in_value(license_symbol: PolicyId, val: Value) -> Bool {
+  expect [Pair(_tn, am)] =
+    val
+      |> assets.tokens(license_symbol)
+      |> dict.to_pairs()
+
+  am == 1
+}
+
+pub fn find_policy_in_value(license_symbol: PolicyId, val: Value) -> Int {
   expect [Pair(tn, am)] =
     val
       |> assets.tokens(license_symbol)

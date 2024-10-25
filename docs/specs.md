@@ -36,7 +36,7 @@ This is a multivalidator with a spending and minting script. When the traders op
 #### Params
 
 - orders_script_hash: The script hash of the orders validator to make sure that UTxO is sent there
-- validate_pool_ref: OutputReference: A reference to the Pool UTxO, to make sure that the max leverage have not been exceeded
+- pool_license: OutputReference: A reference to the Pool UTxO, to make sure that the max leverage have not been exceeded
 
 #### Datum
 
@@ -52,7 +52,7 @@ This is a multivalidator with a spending and minting script. When the traders op
 - _stop_loss_usd_price_: Stop loss price where the position will be closed
 - _take_profit_usd_price_: Take profit price where the position will be closed
 - _last_pay_lend_time_: Last time the hourly lend was paid
-- _validate_pool_ref_: Reference to the pool validator
+- _pool_license_: Reference to the pool validator
 - _side_: Side of the position
 
 #### Redeemer
@@ -251,7 +251,7 @@ pub type OrdersWithdrawRedeemer {
 - _liquidate_usd_price_: Liquidate USD price for the position
 - _order_submission_usd_price_: Price of asset when the order was submitted
 - _order_submission_time_: The time the order was submitted
-- _validate_pool_ref_: Reference to the pool validator
+- _pool_license_: Reference to the pool validator
 - _action_: Action to be taken for the order OpenPositionOrder/ClosePositionOrder/ProvideLiquidityOrder/WithdrawLiquidityOrder/LiquidateOrder
 - _side_: Side of the position, Long/Short
 

@@ -11,8 +11,8 @@ use types.{
   ProvideLiquidityOrder, WithdrawLiquidityOrder,
 }
 use utils.{
-  find_license_deadline, find_posix_time_range, get_all_validators_inputs,
-  validate_token_mint,
+  find_policy_in_value, find_posix_time_range, get_all_validators_inputs,
+  policy_in_value, validate_token_mint,
 }
 
 pub fn valid_orders(
@@ -73,7 +73,7 @@ pub fn validate_batcher_license(
 ) -> Bool {
   expect Some(Input { output: Output { value: batcher_value, .. }, .. }) =
     list.at(transaction.inputs, batcher_index)
-  let license_deadline = find_license_deadline(batcher_license, batcher_value)
+  let license_deadline = find_policy_in_value(batcher_license, batcher_value)
 
   let (lower_bound, upper_bound) =
     find_posix_time_range(transaction.validity_range)
@@ -128,7 +128,7 @@ pub fn open_position(input: Output, output: Output) -> Bool {
       take_profit_usd_price: input_datum_typed.take_profit_usd_price,
       liquidate_usd_price: input_datum_typed.liquidate_usd_price,
       last_pay_lend_time: input_datum_typed.order_submission_time,
-      validate_pool_ref: input_datum_typed.validate_pool_ref,
+      pool_license: input_datum_typed.pool_license,
       side: input_datum_typed.side,
     }
 
@@ -202,57 +202,57 @@ pub fn withdraw_liquidity(
 ) -> Bool {
   expect InlineDatum(input_datum) = input.datum
 
-  expect input_datum_typed: OrdersDatum = input_datum
+  expect orders_datum_typed: OrdersDatum = input_datum
 
   let ref_input: List<Input> = transaction.reference_inputs
 
-  expect Some(pool_ref_input) =
-    list.find(
-      ref_input,
-      fn(ref_input: Input) {
-        ref_input.output_reference == input_datum_typed.validate_pool_ref
-      },
-    )
+  expect Some(Input {
+    output: Output { value: batcher_value, datum: pool_ref_datum, .. },
+    ..
+  }) = list.head(ref_input)
 
-  expect InlineDatum(pool_ref_datum) = pool_ref_input.output.datum
+  let policy_is_in_transaction =
+    policy_in_value(orders_datum_typed.pool_license, batcher_value)
+
+  expect InlineDatum(pool_ref_datum) = pool_ref_datum
   expect pool_ref_datum_typed: PoolDatum = pool_ref_datum
 
   let address: Address =
-    from_verification_key(input_datum_typed.owner_address_hash)
+    from_verification_key(orders_datum_typed.owner_address_hash)
 
   // not sure if a staking credential can alter this
   let output_is_to_owner = output.address == address
 
   let expected_mint =
     (
-      input_datum_typed.liquidity_asset.policy_id,
-      input_datum_typed.liquidity_asset.asset_name,
-      input_datum_typed.liquidity_asset_amount * -1,
+      orders_datum_typed.liquidity_asset.policy_id,
+      orders_datum_typed.liquidity_asset.asset_name,
+      orders_datum_typed.liquidity_asset_amount * -1,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
   let expected_earnings: Int =
-    input_datum_typed.liquidity_asset_amount * pool_ref_datum_typed.earnings_per_share
+    orders_datum_typed.liquidity_asset_amount * pool_ref_datum_typed.earnings_per_share
 
   let expected_collateral_earnings: Int =
-    input_datum_typed.liquidity_asset_amount * pool_ref_datum_typed.collateral_earnings_per_share
+    orders_datum_typed.liquidity_asset_amount * pool_ref_datum_typed.collateral_earnings_per_share
 
   let asset_sent_to_owner_valid =
     quantity_of(
       output.value,
-      input_datum_typed.liquidity_asset.policy_id,
-      input_datum_typed.liquidity_asset.asset_name,
-    ) == input_datum_typed.liquidity_asset_amount + expected_earnings
+      orders_datum_typed.liquidity_asset.policy_id,
+      orders_datum_typed.liquidity_asset.asset_name,
+    ) == orders_datum_typed.liquidity_asset_amount + expected_earnings
 
   let expected_collateral_earnings_valid =
     quantity_of(
       output.value,
-      input_datum_typed.collateral_asset.policy_id,
-      input_datum_typed.collateral_asset.asset_name,
+      orders_datum_typed.collateral_asset.policy_id,
+      orders_datum_typed.collateral_asset.asset_name,
     ) == expected_collateral_earnings
 
-  output_is_to_owner && mint_valid && asset_sent_to_owner_valid && expected_collateral_earnings_valid
+  output_is_to_owner && mint_valid && asset_sent_to_owner_valid && expected_collateral_earnings_valid && policy_is_in_transaction
 }
 
 // The logic in the main function checks if the asset is being added to the pooled utxo
@@ -310,7 +310,7 @@ pub fn cancel_close_position(
       stop_loss_usd_price: datum.stop_loss_usd_price,
       take_profit_usd_price: datum.take_profit_usd_price,
       last_pay_lend_time: datum.order_submission_time,
-      validate_pool_ref: datum.validate_pool_ref,
+      pool_license: datum.pool_license,
       side: datum.side,
     }
 
