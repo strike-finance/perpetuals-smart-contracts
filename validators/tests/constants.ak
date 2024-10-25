@@ -40,6 +40,9 @@ pub const stable_collateral_asset_name = #"46414b455f5553444d"
 pub const strike_collateral_policy_id =
   #"a5ff2c36e9eeb9655d06c0a2f02d9e200aa6f8db00d760acf62c0eba"
 
+pub const batcher_license =
+  #"d6ffbc9038719c18a1f993c2d2bd7cd4cf33209b3ad2f75342382365"
+
 pub const strike_collateral_asset_name = #"535452494b45"
 
 pub const underlying_asset = Asset { policy_id: "", asset_name: "" }

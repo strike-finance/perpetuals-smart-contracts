@@ -41,7 +41,7 @@ pub type OrderAction {
 
 pub type OrdersRedeemer {
   BatchOrders
-  CancelOrders
+  CancelOrders(Int)
 }
 
 pub type UTxOIndexer =

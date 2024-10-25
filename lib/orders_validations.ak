@@ -1,7 +1,7 @@
 use aiken/collection/list
 use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script, from_verification_key}
-use cardano/assets.{PolicyId, quantity_of}
+use cardano/assets.{PolicyId, Value, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
@@ -260,35 +260,38 @@ pub fn contribute_liquidity(_input: Output, _output: Output) -> Bool {
   True
 }
 
-// assets are burned 
 pub fn cancel_open_position(
   datum: OrdersDatum,
   transaction: Transaction,
 ) -> Bool {
+  let signed_by_owner =
+    list.has(transaction.extra_signatories, datum.owner_address_hash)
+
+  let only_one_input_from_script =
+    list.length(get_all_validators_inputs(transaction)) == 1
+
   let expected_mint =
     (
       datum.positions_mint_asset.policy_id,
       datum.positions_mint_asset.asset_name,
-      -1,
+      -datum.positions_mint_asset_amount,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
-  mint_valid
+  signed_by_owner && only_one_input_from_script && mint_valid
 }
 
-// positions send back to positions utxo, datum is not corrupted
 pub fn cancel_close_position(
   datum: OrdersDatum,
   transaction: Transaction,
+  output_index: Int,
 ) -> Bool {
-  let outputs_to_positions: List<Output> =
-    find_script_outputs(transaction.outputs, datum.positions_script_hash)
+  let inputs_from_scripts = get_all_validators_inputs(transaction)
 
-  expect Some(output_to_positions) = list.head(outputs_to_positions)
+  let only_one_input_from_script: Bool = list.length(inputs_from_scripts) == 1
 
-  let only_one_output_to_positions: Bool =
-    list.length(outputs_to_positions) == 1
+  expect Some(output_to_positions) = list.at(transaction.outputs, output_index)
 
   expect InlineDatum(output_datum) = output_to_positions.datum
 
@@ -314,17 +317,33 @@ pub fn cancel_close_position(
       side: datum.side,
     }
 
-  let quantity_of_positions_mint_asset: Int =
-    quantity_of(
-      output_to_positions.value,
+  let datum_match = output_datum_typed == expected_positions_datum
+
+  let expected_assets_sent_back: Value =
+    assets.from_asset(
       datum.positions_mint_asset.policy_id,
       datum.positions_mint_asset.asset_name,
+      datum.positions_mint_asset_amount,
     )
+      |> assets.add(
+          datum.collateral_asset.policy_id,
+          datum.collateral_asset.asset_name,
+          datum.collateral_asset_amount,
+        )
+      |> assets.add(
+          datum.strike_collateral_asset.policy_id,
+          datum.strike_collateral_asset.asset_name,
+          datum.strike_collateral_asset_amount,
+        )
+  let assets_locked_valid =
+    match(output_to_positions.value, expected_assets_sent_back, >=)
 
-  only_one_output_to_positions && output_datum_typed == expected_positions_datum && quantity_of_positions_mint_asset == datum.positions_mint_asset_amount
+  let signed_by_owner =
+    list.has(transaction.extra_signatories, datum.owner_address_hash)
+
+  datum_match && assets_locked_valid && only_one_input_from_script && signed_by_owner
 }
 
-// assets are burned 
 pub fn cancel_contribute_liquidity(
   datum: OrdersDatum,
   transaction: Transaction,
@@ -350,8 +369,6 @@ pub fn cancel_withdraw_liquidity(
 ) -> Bool {
   let inputs_from_scripts: List<Input> = get_all_validators_inputs(transaction)
 
-  expect Some(input_from_orders_validator) = list.head(inputs_from_scripts)
-
   let only_one_input_from_script: Bool = list.length(inputs_from_scripts) == 1
 
   let outputs_to_liquidity_position: List<Output> =
@@ -376,18 +393,17 @@ pub fn cancel_withdraw_liquidity(
       entered_collateral_earnings_per_share: datum.entered_collateral_earnings_per_share,
     }
 
-  let liquidity_assets_not_consumed =
-    quantity_of(
-      input_from_orders_validator.output.value,
+  let expected_assets_locked =
+    assets.from_asset(
       datum.liquidity_asset.policy_id,
       datum.liquidity_asset.asset_name,
-    ) == quantity_of(
-      output_to_liquidity_position.value,
-      datum.liquidity_asset.policy_id,
-      datum.liquidity_asset.asset_name,
+      datum.liquidity_asset_amount,
     )
 
-  only_one_input_from_script && signed_by_owner && liquidity_position_datum_typed == expected_liquidity_position_datum && liquidity_assets_not_consumed
+  let assets_locked_valid =
+    match(output_to_liquidity_position.value, expected_assets_locked, >=)
+
+  only_one_input_from_script && signed_by_owner && liquidity_position_datum_typed == expected_liquidity_position_datum && assets_locked_valid
 }
 
 pub fn stop_loss(

@@ -22,7 +22,7 @@ validator orders(params: OrdersParams) {
   ) {
     when redeemer is {
       BatchOrders -> is_withdrawal(transaction, own_ref)
-      CancelOrders -> {
+      CancelOrders(output_index) -> {
         expect Some(datum) = datum
 
         let signed_by_owner: Bool =
@@ -37,7 +37,8 @@ validator orders(params: OrdersParams) {
 
         when datum.action is {
           OpenPositionOrder -> cancel_open_position(datum, transaction)
-          ClosePositionOrder -> cancel_close_position(datum, transaction)
+          ClosePositionOrder ->
+            cancel_close_position(datum, transaction, output_index)
           ProvideLiquidityOrder ->
             cancel_contribute_liquidity(datum, transaction)
           WithdrawLiquidityOrder ->
