@@ -116,27 +116,25 @@ pub fn update_stop_loss(
   expect InlineDatum(output_datum) = output_to_positions_validator.datum
   expect output_datum_typed: PositionDatum = output_datum
 
-  let stable_collateral_asset_not_consumed: Bool =
-    quantity_of(
-      input_from_script.output.value,
+  let expected_assets_locked: Value =
+    assets.from_asset(
       input_datum.collateral_asset.policy_id,
       input_datum.collateral_asset.asset_name,
-    ) == quantity_of(
-      output_to_positions_validator.value,
-      input_datum.collateral_asset.policy_id,
-      input_datum.collateral_asset.asset_name,
+      input_datum.collateral_asset_amount,
     )
+      |> assets.add(
+          input_datum.strike_collateral_asset.policy_id,
+          input_datum.strike_collateral_asset.asset_name,
+          input_datum.strike_collateral_asset_amount,
+        )
+      |> assets.add(
+          input_datum.positions_mint_asset.policy_id,
+          input_datum.positions_mint_asset.asset_name,
+          input_datum.positions_mint_asset_amount,
+        )
 
-  let positions_mint_asset_returned: Bool =
-    quantity_of(
-      input_from_script.output.value,
-      input_datum.positions_mint_asset.policy_id,
-      input_datum.positions_mint_asset.asset_name,
-    ) == quantity_of(
-      output_to_positions_validator.value,
-      input_datum.positions_mint_asset.policy_id,
-      input_datum.positions_mint_asset.asset_name,
-    )
+  let assets_locked_valid: Bool =
+    match(output_to_positions_validator.value, expected_assets_locked, >=)
 
   let expected_output_datum =
     PositionDatum {
@@ -160,7 +158,7 @@ pub fn update_stop_loss(
 
   let output_datum_valid: Bool = output_datum_typed == expected_output_datum
 
-  only_one_input_from_script && stable_collateral_asset_not_consumed && positions_mint_asset_returned && output_datum_valid
+  only_one_input_from_script && output_datum_valid && assets_locked_valid
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
@@ -188,27 +186,25 @@ pub fn update_take_profit(
   expect InlineDatum(output_datum) = output_to_positions_validator.datum
   expect output_datum_typed: PositionDatum = output_datum
 
-  let stable_collateral_asset_returned: Bool =
-    quantity_of(
-      input_from_script.output.value,
+  let expected_assets_locked: Value =
+    assets.from_asset(
       input_datum.collateral_asset.policy_id,
       input_datum.collateral_asset.asset_name,
-    ) == quantity_of(
-      output_to_positions_validator.value,
-      output_datum_typed.collateral_asset.policy_id,
-      output_datum_typed.collateral_asset.asset_name,
+      input_datum.collateral_asset_amount,
     )
+      |> assets.add(
+          input_datum.strike_collateral_asset.policy_id,
+          input_datum.strike_collateral_asset.asset_name,
+          input_datum.strike_collateral_asset_amount,
+        )
+      |> assets.add(
+          input_datum.positions_mint_asset.policy_id,
+          input_datum.positions_mint_asset.asset_name,
+          input_datum.positions_mint_asset_amount,
+        )
 
-  let positions_mint_asset_returned: Bool =
-    quantity_of(
-      input_from_script.output.value,
-      input_datum.positions_mint_asset.policy_id,
-      input_datum.positions_mint_asset.asset_name,
-    ) == quantity_of(
-      output_to_positions_validator.value,
-      output_datum_typed.positions_mint_asset.policy_id,
-      output_datum_typed.positions_mint_asset.asset_name,
-    )
+  let assets_locked_valid: Bool =
+    match(output_to_positions_validator.value, expected_assets_locked, >=)
 
   let expected_output_datum =
     PositionDatum {
@@ -232,7 +228,7 @@ pub fn update_take_profit(
 
   let output_datum_valid: Bool = output_datum_typed == expected_output_datum
 
-  only_one_input_from_script && only_one_output_to_positions_validator && stable_collateral_asset_returned && positions_mint_asset_returned && output_datum_valid
+  only_one_input_from_script && only_one_output_to_positions_validator && output_datum_valid && assets_locked_valid
 }
 
 pub fn pay_lend(
