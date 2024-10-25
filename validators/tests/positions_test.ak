@@ -54,6 +54,7 @@ const pool_ref_datum =
     is_valid_pool_asset: pool_asset,
     earnings_per_share: 0,
     collateral_earnings_per_share: 0,
+    stable_collateral_asset_amount: 100_000_000,
   }
 
 const pool_ref_input =

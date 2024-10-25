@@ -180,6 +180,8 @@ pub type PoolDatum {
   liquidate_margin: Int,
   // The stable collateral asset used for the pool
   stable_collateral_asset: Asset,
+  // Total amount of stable collateral asset
+  stable_collateral_asset_amount: Int,
   // The max leverage factor for the pool
   max_leverage_factor: Int,
   // The max leverage factor for the strike holder
@@ -192,6 +194,18 @@ pub type PoolDatum {
   earnings_per_share: Int,
   // The earnings per share for the collateral for the pool, will increase each time the pool earns the collateral asset
   collateral_earnings_per_share: Int,
+}
+
+pub type UpdateParamsType {
+  UpdateInterestRate
+  UpdateLiquidateMargin
+  UpdateMaxLeverageFactor
+  UpdateMaxStrikeHolderLeverageFactor
+}
+
+pub type PoolsRedeemer {
+  UtilizePool
+  UpdateParams(UpdateParamsType, Int)
 }
 
 pub type LiquidityPositionDatum {
