@@ -1,26 +1,26 @@
 use aiken/collection/list
 use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script, from_verification_key}
-use cardano/assets.{PolicyId, Value, match, quantity_of}
+use cardano/assets.{Value, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  ClosePositionOrder, LiquidatePositionOrder, LiquidityPositionDatum,
-  OpenPositionOrder, OrdersDatum, PoolDatum, PositionDatum,
-  ProvideLiquidityOrder, WithdrawLiquidityOrder,
+  ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder,
+  LiquidityPositionDatum, OpenPositionOrder, OrdersDatum, PoolDatum,
+  PositionDatum, ProvideLiquidityOrder, WithdrawLiquidityOrder,
 }
-use utils.{
-  find_policy_in_value, find_posix_time_range, get_all_validators_inputs,
-  policy_in_value, validate_token_mint,
-}
+use utils.{get_all_validators_inputs, policy_in_value, validate_token_mint}
 
 pub fn valid_orders(
-  validation_logic: fn(Output, Output, Transaction) -> Bool,
+  validation_logic: fn(Output, Output, Transaction, Value, PoolDatum) ->
+    ExpectedPoolOutput,
   redeemer: List<(Int, Int)>,
   transaction: Transaction,
   own_validator: ScriptHash,
-) -> Bool {
+  pool_utxo: Output,
+  pool_datum: PoolDatum,
+) -> ExpectedPoolOutput {
   let Transaction { inputs, outputs, .. } = transaction
   let (script_inputs, script_input_count) =
     list.foldr(
@@ -42,65 +42,105 @@ pub fn valid_orders(
     )
 
   let indices: List<(Int, Int)> = redeemer
-  let (_, _, input_index_count) =
+  let (
+    _,
+    _,
+    input_index_count,
+    expected_pool_output_value,
+    expected_pool_output_datum,
+  ) =
     list.foldl(
       indices,
-      (-1, -1, 0),
+      (-1, -1, 0, pool_utxo.value, pool_datum),
       fn(curr, acc) {
-        let (in0, out0, count) = acc
+        let (
+          in0,
+          out0,
+          count,
+          expected_pool_output_value,
+          expected_pool_output_datum,
+        ) = acc
         let (in1, out1) = curr
         if in1 > in0 && out1 > out0 {
           expect Some(in_utxo) = script_inputs |> list.at(in1)
           expect Some(out_utxo) = outputs |> list.at(out1)
-          if validation_logic(in_utxo, out_utxo, transaction) {
-            (in1, out1, count + 1)
-          } else {
-            fail @"Validation failed"
-          }
+          let ExpectedPoolOutput { value: updated_value, datum: updated_datum } =
+            validation_logic(
+              in_utxo,
+              out_utxo,
+              transaction,
+              expected_pool_output_value,
+              expected_pool_output_datum,
+            )
+
+          (in1, out1, count + 1, updated_value, updated_datum)
         } else {
           fail @"Input and output indices must be in ascending orders"
         }
       },
     )
-  (script_input_count == input_index_count)?
-}
 
-pub fn validate_batcher_license(
-  transaction: Transaction,
-  batcher_license: PolicyId,
-  batcher_index: Int,
-  maximum_deadline_range: Int,
-) -> Bool {
-  expect Some(Input { output: Output { value: batcher_value, .. }, .. }) =
-    list.at(transaction.inputs, batcher_index)
-  let license_deadline = find_policy_in_value(batcher_license, batcher_value)
+  expect script_input_count == input_index_count
 
-  let (lower_bound, upper_bound) =
-    find_posix_time_range(transaction.validity_range)
+  let expected_pool_output =
+    ExpectedPoolOutput {
+      value: expected_pool_output_value,
+      datum: expected_pool_output_datum,
+    }
 
-  license_deadline >= lower_bound && license_deadline <= upper_bound + maximum_deadline_range
+  expected_pool_output
 }
 
 pub fn validate_individual_order(
   input: Output,
   output: Output,
   transaction: Transaction,
-) -> Bool {
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+) -> ExpectedPoolOutput {
   expect InlineDatum(input_datum) = input.datum
 
   expect input_datum_typed: OrdersDatum = input_datum
 
   when input_datum_typed.action is {
-    OpenPositionOrder -> open_position(input, output)
-    ClosePositionOrder -> close_position(input, output, transaction)
-    ProvideLiquidityOrder -> contribute_liquidity(input, output)
-    WithdrawLiquidityOrder -> withdraw_liquidity(input, output, transaction)
-    LiquidatePositionOrder -> False
+    OpenPositionOrder ->
+      open_position(input, output, pool_output_value, pool_output_datum)
+    ClosePositionOrder ->
+      close_position(
+        input,
+        output,
+        transaction,
+        pool_output_value,
+        pool_output_datum,
+      )
+    ProvideLiquidityOrder ->
+      contribute_liquidity(input, output, pool_output_value, pool_output_datum)
+    WithdrawLiquidityOrder ->
+      withdraw_liquidity(
+        input,
+        output,
+        transaction,
+        pool_output_value,
+        pool_output_datum,
+      )
+    LiquidatePositionOrder ->
+      liquidate_position(
+        input,
+        output,
+        transaction,
+        pool_output_value,
+        pool_output_datum,
+      )
   }
 }
 
 // asset is send to positions_contract, datum is not corruped, is sent to the correct validator
-pub fn open_position(input: Output, output: Output) -> Bool {
+pub fn open_position(
+  input: Output,
+  output: Output,
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+) -> ExpectedPoolOutput {
   expect InlineDatum(input_datum) = input.datum
 
   expect input_datum_typed: OrdersDatum = input_datum
@@ -141,7 +181,10 @@ pub fn open_position(input: Output, output: Output) -> Bool {
 
   let output_is_to_perpetual = output.address == perpetual_address
 
-  valid_asset_in_output && output_datum_typed == expected_output_datum && output_is_to_perpetual
+  expect
+    valid_asset_in_output && output_datum_typed == expected_output_datum && output_is_to_perpetual
+
+  ExpectedPoolOutput { value: pool_output_value, datum: pool_output_datum }
 }
 
 // correct asset is consumed, asset is sent to user, asset is burned
@@ -149,7 +192,9 @@ pub fn close_position(
   input: Output,
   output: Output,
   transaction: Transaction,
-) -> Bool {
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+) -> ExpectedPoolOutput {
   expect InlineDatum(input_datum) = input.datum
 
   expect input_datum_typed: OrdersDatum = input_datum
@@ -192,14 +237,19 @@ pub fn close_position(
       input_datum_typed.collateral_asset.asset_name,
     ) == input_datum_typed.collateral_asset_amount
 
-  mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
+  expect
+    mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
+
+  ExpectedPoolOutput { value: pool_output_value, datum: pool_output_datum }
 }
 
 pub fn withdraw_liquidity(
   input: Output,
   output: Output,
   transaction: Transaction,
-) -> Bool {
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+) -> ExpectedPoolOutput {
   expect InlineDatum(input_datum) = input.datum
 
   expect orders_datum_typed: OrdersDatum = input_datum
@@ -252,12 +302,30 @@ pub fn withdraw_liquidity(
       orders_datum_typed.collateral_asset.asset_name,
     ) == expected_collateral_earnings
 
-  output_is_to_owner && mint_valid && asset_sent_to_owner_valid && expected_collateral_earnings_valid && policy_is_in_transaction
+  expect
+    output_is_to_owner && mint_valid && asset_sent_to_owner_valid && expected_collateral_earnings_valid && policy_is_in_transaction
+
+  ExpectedPoolOutput { value: pool_output_value, datum: pool_output_datum }
 }
 
 // The logic in the main function checks if the asset is being added to the pooled utxo
-pub fn contribute_liquidity(_input: Output, _output: Output) -> Bool {
-  True
+pub fn contribute_liquidity(
+  _input: Output,
+  _output: Output,
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+) -> ExpectedPoolOutput {
+  ExpectedPoolOutput { value: pool_output_value, datum: pool_output_datum }
+}
+
+pub fn liquidate_position(
+  _input: Output,
+  _output: Output,
+  _transaction: Transaction,
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+) -> ExpectedPoolOutput {
+  ExpectedPoolOutput { value: pool_output_value, datum: pool_output_datum }
 }
 
 pub fn cancel_open_position(

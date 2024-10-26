@@ -39,6 +39,22 @@ pub fn find_policy_in_value(license_symbol: PolicyId, val: Value) -> Int {
   bytearray_to_int(tn)
 }
 
+pub fn validate_batcher_license(
+  transaction: Transaction,
+  batcher_license: PolicyId,
+  batcher_index: Int,
+  maximum_deadline_range: Int,
+) -> Bool {
+  expect Some(Input { output: Output { value: batcher_value, .. }, .. }) =
+    list.at(transaction.inputs, batcher_index)
+  let license_deadline = find_policy_in_value(batcher_license, batcher_value)
+
+  let (lower_bound, upper_bound) =
+    find_posix_time_range(transaction.validity_range)
+
+  license_deadline >= lower_bound && license_deadline <= upper_bound + maximum_deadline_range
+}
+
 pub fn bytearray_to_int(byte_arr: ByteArray) -> Int {
   let byte_len = bytearray.length(byte_arr)
   do_bytearray_to_int(byte_arr, 0, 0, byte_len)

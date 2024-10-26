@@ -1,6 +1,6 @@
 use aiken/crypto.{Blake2b_224, Hash, Script, VerificationKey}
 use cardano/address.{Credential}
-use cardano/assets.{AssetName, PolicyId}
+use cardano/assets.{AssetName, PolicyId, Value}
 
 pub type Asset {
   policy_id: PolicyId,
@@ -49,6 +49,7 @@ pub type UTxOIndexer =
 
 pub type OrdersWithdrawRedeemer {
   indexer: UTxOIndexer,
+  pool_utxo_index: (Int, Int),
   batcher_index: Int,
   current_price: Int,
 }
@@ -240,4 +241,9 @@ pub type LiquidityRedeemer {
 pub type LiquidityMintsRedeemer {
   MintLiquidity
   BurnLiquidity(Int)
+}
+
+pub type ExpectedPoolOutput {
+  value: Value,
+  datum: PoolDatum,
 }

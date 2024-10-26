@@ -1,17 +1,17 @@
 use aiken/collection/list
 use cardano/address.{Credential, Script}
-use cardano/transaction.{Input, OutputReference, Transaction}
+use cardano/transaction.{InlineDatum, Input, OutputReference, Transaction}
 use orders_validations.{
   cancel_close_position, cancel_contribute_liquidity, cancel_open_position,
-  cancel_withdraw_liquidity, valid_orders, validate_batcher_license,
-  validate_individual_order,
+  cancel_withdraw_liquidity, valid_orders, validate_individual_order,
 }
 use types.{
   BatchOrders, CancelOrders, ClosePositionOrder, LiquidatePositionOrder,
   OpenPositionOrder, OrdersDatum, OrdersParams, OrdersRedeemer,
-  OrdersWithdrawRedeemer, ProvideLiquidityOrder, WithdrawLiquidityOrder,
+  OrdersWithdrawRedeemer, PoolDatum, ProvideLiquidityOrder,
+  WithdrawLiquidityOrder,
 }
-use utils.{get_all_validators_inputs, is_withdrawal}
+use utils.{get_all_validators_inputs, is_withdrawal, validate_batcher_license}
 
 validator orders(params: OrdersParams) {
   spend(
@@ -56,13 +56,8 @@ validator orders(params: OrdersParams) {
   ) {
     expect Script(own_validator) = credential
 
-    let order_valid =
-      valid_orders(
-        validate_individual_order,
-        redeemer.indexer,
-        transaction,
-        own_validator,
-      )
+    let (input_pool_utxo_index, output_pool_utxo_index) =
+      redeemer.pool_utxo_index
 
     let batcher_license_valid =
       validate_batcher_license(
@@ -72,7 +67,38 @@ validator orders(params: OrdersParams) {
         params.maximum_deadline_range,
       )
 
-    order_valid && batcher_license_valid
+    expect Some(input_pool_utxo) =
+      list.at(transaction.inputs, input_pool_utxo_index)
+
+    expect InlineDatum(input_pool_datum) = input_pool_utxo.output.datum
+    expect input_pool_datum_typed: PoolDatum = input_pool_datum
+
+    let expected_pool_output =
+      valid_orders(
+        validate_individual_order,
+        redeemer.indexer,
+        transaction,
+        own_validator,
+        input_pool_utxo.output,
+        input_pool_datum_typed,
+      )
+
+    expect Some(output_pool_utxo) =
+      list.at(transaction.outputs, output_pool_utxo_index)
+
+    let output_value_valid =
+      expected_pool_output.value == output_pool_utxo.value
+
+    expect InlineDatum(output_pool_datum) = output_pool_utxo.datum
+    expect output_pool_datum_typed: PoolDatum = output_pool_datum
+
+    let output_datum_valid =
+      expected_pool_output.datum == output_pool_datum_typed
+
+    let address_valid =
+      input_pool_utxo.output.address == output_pool_utxo.address
+
+    output_value_valid && output_datum_valid && address_valid && batcher_license_valid
   }
 
   else(_) {
