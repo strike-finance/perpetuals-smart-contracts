@@ -145,13 +145,6 @@ pub fn open_position(
 
   expect input_datum_typed: OrdersDatum = input_datum
 
-  let valid_asset_in_output: Bool =
-    quantity_of(
-      output.value,
-      input_datum_typed.positions_mint_asset.policy_id,
-      input_datum_typed.positions_mint_asset.asset_name,
-    ) == 1
-
   let expected_output_datum =
     PositionDatum {
       owner_address_hash: input_datum_typed.owner_address_hash,
@@ -172,19 +165,59 @@ pub fn open_position(
       side: input_datum_typed.side,
     }
 
+  let expected_output_assets =
+    assets.from_asset(
+      input_datum_typed.positions_mint_asset.policy_id,
+      input_datum_typed.positions_mint_asset.asset_name,
+      input_datum_typed.positions_mint_asset_amount,
+    )
+      |> assets.add(
+          input_datum_typed.collateral_asset.policy_id,
+          input_datum_typed.collateral_asset.asset_name,
+          input_datum_typed.collateral_asset_amount,
+        )
+      |> assets.add(
+          input_datum_typed.strike_collateral_asset.policy_id,
+          input_datum_typed.strike_collateral_asset.asset_name,
+          input_datum_typed.strike_collateral_asset_amount,
+        )
+
+  let assets_locked_valid = match(output.value, expected_output_assets, >=)
+
   expect InlineDatum(output_datum) = output.datum
 
   expect output_datum_typed: PositionDatum = output_datum
 
-  let perpetual_address: Address =
-    from_verification_key(input_datum_typed.positions_script_hash)
+  expect Script(output_script_hash) = output.address.payment_credential
 
-  let output_is_to_perpetual = output.address == perpetual_address
+  let output_script_hash_valid =
+    output_script_hash == input_datum_typed.positions_script_hash
 
-  expect
-    valid_asset_in_output && output_datum_typed == expected_output_datum && output_is_to_perpetual
+  let lended_amount: Int =
+    input_datum_typed.positions_mint_asset_amount / input_datum_typed.leverage_factor
 
-  ExpectedPoolOutput { value: pool_output_value, datum: pool_output_datum }
+  let updated_pool_datum =
+    PoolDatum {
+      underlying_asset: pool_output_datum.underlying_asset,
+      underlying_asset_amount: pool_output_datum.underlying_asset_amount,
+      underlying_asset_lended_amount: pool_output_datum.underlying_asset_lended_amount + lended_amount,
+      underlying_interest_rate: pool_output_datum.underlying_interest_rate,
+      liquidate_margin: pool_output_datum.liquidate_margin,
+      stable_collateral_asset: pool_output_datum.stable_collateral_asset,
+      stable_collateral_asset_amount: pool_output_datum.stable_collateral_asset_amount,
+      max_leverage_factor: pool_output_datum.max_leverage_factor,
+      max_strike_holder_leverage_factor: pool_output_datum.max_strike_holder_leverage_factor,
+      maintain_margin_amount: pool_output_datum.maintain_margin_amount,
+      is_valid_pool_asset: pool_output_datum.is_valid_pool_asset,
+      earnings_per_share: pool_output_datum.earnings_per_share,
+      collateral_earnings_per_share: pool_output_datum.collateral_earnings_per_share,
+    }
+
+  let datum_valid = output_datum_typed == expected_output_datum
+
+  expect assets_locked_valid && datum_valid && output_script_hash_valid
+
+  ExpectedPoolOutput { value: pool_output_value, datum: updated_pool_datum }
 }
 
 // correct asset is consumed, asset is sent to user, asset is burned

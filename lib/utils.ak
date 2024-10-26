@@ -143,6 +143,11 @@ pub fn is_own_script_credential(
   }
 }
 
+pub fn return_script_hash(credential: Credential) -> ScriptHash {
+  expect Script(hash) = credential
+  hash
+}
+
 pub fn is_script_credential(credential: Credential) -> Bool {
   when credential is {
     Script(_) -> True
