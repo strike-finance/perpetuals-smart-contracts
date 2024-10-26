@@ -1,16 +1,19 @@
 use aiken/collection/list
 use aiken/crypto.{ScriptHash}
-use cardano/address.{Address, Script, from_verification_key}
+use cardano/address.{Address, Script, VerificationKey, from_verification_key}
 use cardano/assets.{Value, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use types.{
-  ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder,
-  LiquidityPositionDatum, OpenPositionOrder, OrdersDatum, PoolDatum,
-  PositionDatum, ProvideLiquidityOrder, WithdrawLiquidityOrder,
+  Asset, ClosePositionCalculate, ClosePositionOrder, ExpectedPoolOutput,
+  LiquidatePositionOrder, LiquidityPositionDatum, Long, OpenPositionOrder,
+  OrdersDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder,
+  WithdrawLiquidityOrder,
 }
-use utils.{get_all_validators_inputs, policy_in_value, validate_token_mint}
+use utils.{
+  divide, get_all_validators_inputs, policy_in_value, validate_token_mint,
+}
 
 pub fn valid_orders(
   validation_logic: fn(Output, Output, Transaction, Value, PoolDatum) ->
@@ -232,48 +235,57 @@ pub fn close_position(
 
   expect input_datum_typed: OrdersDatum = input_datum
 
-  let current_position_amount: Int =
-    input_datum_typed.order_submission_usd_price * input_datum_typed.leverage_factor
+  let formatted_underlying_asset =
+    to_ada_if_lovelace(
+      input_datum_typed.underlying_asset,
+      input_datum_typed.underlying_asset_amount,
+    )
 
-  let entry_position_amount: Int =
-    input_datum_typed.positions_mint_asset_amount * input_datum_typed.leverage_factor
+  let current_position_value: Int =
+    input_datum_typed.order_submission_usd_price * formatted_underlying_asset
+
+  let entry_position_value: Int =
+    input_datum_typed.order_submission_usd_price * formatted_underlying_asset
 
   let expected_asset_amount_send_to_user: Int =
-    current_position_amount - entry_position_amount
+    calculate_profit(
+      input_datum_typed,
+      current_position_value,
+      entry_position_value,
+    )
 
   let expected_mint =
     (
       input_datum_typed.positions_mint_asset.policy_id,
       input_datum_typed.positions_mint_asset.asset_name,
-      input_datum_typed.positions_mint_asset_amount * -1,
+      -input_datum_typed.positions_mint_asset_amount,
     )
 
   let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
 
-  let address: Address =
-    from_verification_key(input_datum_typed.owner_address_hash)
+  expect VerificationKey(owner_address_hash) = output.address.payment_credential
 
-  // not sure if a staking credential can alter this
-  let output_is_to_owner = output.address == address
+  let output_is_to_owner =
+    owner_address_hash == input_datum_typed.owner_address_hash
 
-  let asset_sent_to_owner_valid =
-    quantity_of(
-      output.value,
-      input_datum_typed.underlying_asset.policy_id,
-      input_datum_typed.underlying_asset.asset_name,
-    ) == expected_asset_amount_send_to_user
+  let estimated_return =
+    calculate_return(
+      input_datum_typed,
+      expected_asset_amount_send_to_user,
+      input_datum_typed.order_submission_usd_price,
+      pool_output_value,
+      pool_output_datum,
+    )
 
-  let collateral_sent_to_owner_valid =
-    quantity_of(
-      output.value,
-      input_datum_typed.collateral_asset.policy_id,
-      input_datum_typed.collateral_asset.asset_name,
-    ) == input_datum_typed.collateral_asset_amount
+  let assets_locked_valid =
+    match(output.value, estimated_return.expected_asset_send_to_owner, >=)
 
-  expect
-    mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
+  expect mint_valid && output_is_to_owner && assets_locked_valid
 
-  ExpectedPoolOutput { value: pool_output_value, datum: pool_output_datum }
+  ExpectedPoolOutput {
+    value: estimated_return.expected_pool_output.value,
+    datum: estimated_return.expected_pool_output.datum,
+  }
 }
 
 pub fn withdraw_liquidity(
@@ -303,7 +315,6 @@ pub fn withdraw_liquidity(
   let address: Address =
     from_verification_key(orders_datum_typed.owner_address_hash)
 
-  // not sure if a staking credential can alter this
   let output_is_to_owner = output.address == address
 
   let expected_mint =
@@ -609,4 +620,236 @@ pub fn take_profit(
     ) == input_datum_typed.collateral_asset_amount
 
   mint_valid && output_is_to_owner && asset_sent_to_owner_valid && collateral_sent_to_owner_valid
+}
+
+fn calculate_profit(
+  input_datum: OrdersDatum,
+  current_position_value: Int,
+  entry_position_value: Int,
+) -> Int {
+  if input_datum.side == Long {
+    current_position_value - entry_position_value
+  } else {
+    entry_position_value - current_position_value
+  }
+}
+
+fn calculate_return(
+  input_datum: OrdersDatum,
+  expected_asset_amount_send_to_user: Int,
+  current_usd_price: Int,
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+) -> ClosePositionCalculate {
+  if input_datum.side == Long {
+    calculate_long_return_asset_amount(
+      input_datum,
+      expected_asset_amount_send_to_user,
+      current_usd_price,
+      pool_output_value,
+      pool_output_datum,
+    )
+  } else {
+    calculate_short_return_asset_amount(
+      input_datum,
+      expected_asset_amount_send_to_user,
+      current_usd_price,
+      pool_output_value,
+      pool_output_datum,
+    )
+  }
+}
+
+fn calculate_long_return_asset_amount(
+  input_datum: OrdersDatum,
+  usd_value: Int,
+  current_price: Int,
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+) -> ClosePositionCalculate {
+  if usd_value > 0 {
+    let expected_asset_sent = divide(usd_value, current_price)
+
+    let formatted_asset_sent =
+      to_lovelace_if_ada(input_datum.underlying_asset, expected_asset_sent)
+
+    let expected_assets_locked =
+      assets.from_asset(
+        input_datum.collateral_asset.policy_id,
+        input_datum.collateral_asset.asset_name,
+        input_datum.collateral_asset_amount + formatted_asset_sent,
+      )
+        |> assets.add(
+            input_datum.strike_collateral_asset.policy_id,
+            input_datum.strike_collateral_asset.asset_name,
+            input_datum.strike_collateral_asset_amount,
+          )
+
+    let updated_value =
+      assets.add(
+        pool_output_value,
+        input_datum.underlying_asset.policy_id,
+        input_datum.underlying_asset.asset_name,
+        -formatted_asset_sent,
+      )
+
+    let updated_datum =
+      PoolDatum {
+        ..pool_output_datum,
+        underlying_asset_amount: pool_output_datum.underlying_asset_amount + formatted_asset_sent,
+      }
+
+    ClosePositionCalculate {
+      expected_asset_send_to_owner: expected_assets_locked,
+      expected_pool_output: ExpectedPoolOutput {
+        value: updated_value,
+        datum: updated_datum,
+      },
+    }
+  } else {
+    let expected_assets_payed = divide(-usd_value, current_price)
+
+    let formatted_assets_payed =
+      to_lovelace_if_ada(input_datum.underlying_asset, expected_assets_payed)
+
+    let expected_assets_locked =
+      assets.from_asset(
+        input_datum.collateral_asset.policy_id,
+        input_datum.collateral_asset.asset_name,
+        input_datum.collateral_asset_amount - formatted_assets_payed,
+      )
+        |> assets.add(
+            input_datum.strike_collateral_asset.policy_id,
+            input_datum.strike_collateral_asset.asset_name,
+            input_datum.strike_collateral_asset_amount,
+          )
+
+    let updated_value =
+      assets.add(
+        pool_output_value,
+        input_datum.underlying_asset.policy_id,
+        input_datum.underlying_asset.asset_name,
+        -formatted_assets_payed,
+      )
+
+    let updated_datum =
+      PoolDatum {
+        ..pool_output_datum,
+        underlying_asset_amount: pool_output_datum.underlying_asset_amount + formatted_assets_payed,
+      }
+
+    ClosePositionCalculate {
+      expected_asset_send_to_owner: expected_assets_locked,
+      expected_pool_output: ExpectedPoolOutput {
+        value: updated_value,
+        datum: updated_datum,
+      },
+    }
+  }
+}
+
+fn calculate_short_return_asset_amount(
+  input_datum: OrdersDatum,
+  usd_value: Int,
+  current_usd_price: Int,
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+) -> ClosePositionCalculate {
+  if usd_value > 0 {
+    let expected_assets_sent = divide(usd_value, current_usd_price)
+
+    let formatted_assets_sent =
+      to_lovelace_if_ada(input_datum.underlying_asset, expected_assets_sent)
+
+    let expected_assets_locked =
+      assets.from_asset(
+        input_datum.collateral_asset.policy_id,
+        input_datum.collateral_asset.asset_name,
+        input_datum.collateral_asset_amount,
+      )
+        |> assets.add(
+            input_datum.strike_collateral_asset.policy_id,
+            input_datum.strike_collateral_asset.asset_name,
+            input_datum.strike_collateral_asset_amount,
+          )
+        |> assets.add(
+            input_datum.underlying_asset.policy_id,
+            input_datum.underlying_asset.asset_name,
+            formatted_assets_sent,
+          )
+
+    let updated_value =
+      assets.add(
+        pool_output_value,
+        input_datum.underlying_asset.policy_id,
+        input_datum.underlying_asset.asset_name,
+        -formatted_assets_sent,
+      )
+
+    let updated_datum =
+      PoolDatum {
+        ..pool_output_datum,
+        underlying_asset_amount: pool_output_datum.underlying_asset_amount - formatted_assets_sent,
+      }
+
+    ClosePositionCalculate {
+      expected_asset_send_to_owner: expected_assets_locked,
+      expected_pool_output: ExpectedPoolOutput {
+        value: updated_value,
+        datum: updated_datum,
+      },
+    }
+  } else {
+    let formatted_usd_payed = usd_value * -1
+
+    let expected_assets_locked =
+      assets.from_asset(
+        input_datum.collateral_asset.policy_id,
+        input_datum.collateral_asset.asset_name,
+        input_datum.collateral_asset_amount - formatted_usd_payed,
+      )
+        |> assets.add(
+            input_datum.strike_collateral_asset.policy_id,
+            input_datum.strike_collateral_asset.asset_name,
+            input_datum.strike_collateral_asset_amount,
+          )
+
+    let updated_value =
+      assets.add(
+        pool_output_value,
+        input_datum.underlying_asset.policy_id,
+        input_datum.underlying_asset.asset_name,
+        formatted_usd_payed,
+      )
+
+    let updated_datum =
+      PoolDatum {
+        ..pool_output_datum,
+        underlying_asset_amount: pool_output_datum.underlying_asset_amount + formatted_usd_payed,
+      }
+
+    ClosePositionCalculate {
+      expected_asset_send_to_owner: expected_assets_locked,
+      expected_pool_output: ExpectedPoolOutput {
+        value: updated_value,
+        datum: updated_datum,
+      },
+    }
+  }
+}
+
+fn to_lovelace_if_ada(asset: Asset, amount: Int) -> Int {
+  if asset.policy_id == "" {
+    amount * 1_000_000
+  } else {
+    amount
+  }
+}
+
+fn to_ada_if_lovelace(asset: Asset, amount: Int) -> Int {
+  if asset.policy_id == "" {
+    amount * 1_000_000
+  } else {
+    amount
+  }
 }

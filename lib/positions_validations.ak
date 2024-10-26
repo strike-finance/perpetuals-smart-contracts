@@ -476,9 +476,9 @@ fn minted_assets_amount_valid(
   if position_side == Long {
     orders_datum.positions_mint_asset_amount / orders_datum.leverage_factor <= orders_datum.collateral_asset_amount
   } else {
-    let minted_assets_to_ada = minted_assets_to_ada(orders_datum)
+    let formatted_assets = minted_assets_to_ada(orders_datum)
 
-    minted_assets_to_ada <= orders_datum.collateral_asset_amount / current_price
+    formatted_assets <= orders_datum.collateral_asset_amount / current_price
   }
 }
 
@@ -486,7 +486,7 @@ fn minted_assets_to_ada(orders_datum: OrdersDatum) -> Int {
   if orders_datum.underlying_asset.policy_id == "" {
     orders_datum.positions_mint_asset_amount / orders_datum.leverage_factor / 1_000_000
   } else {
-    orders_datum.positions_mint_asset_amount
+    orders_datum.positions_mint_asset_amount / orders_datum.leverage_factor
   }
 }
 

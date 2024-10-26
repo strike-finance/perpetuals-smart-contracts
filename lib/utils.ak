@@ -4,6 +4,7 @@ use aiken/collection/list
 use aiken/collection/pairs
 use aiken/crypto.{ScriptHash}
 use aiken/interval.{Finite}
+use aiken/math/rational
 use aiken/option
 use aiken/primitive/bytearray
 use cardano/address.{Address, Credential, Script}
@@ -197,4 +198,10 @@ pub fn get_address_outputs(
   address: Address,
 ) -> List<Output> {
   list.filter(transaction.outputs, fn(output) { output.address == address })
+}
+
+pub fn divide(numerator: Int, denominator: Int) -> Int {
+  expect Some(divided) = rational.new(numerator, denominator)
+
+  rational.ceil(divided)
 }
