@@ -127,7 +127,12 @@ pub fn validate_individual_order(
         pool_output_datum,
       )
     LiquidatePositionOrder ->
-      liquidate_position(input, pool_output_value, pool_output_datum)
+      liquidate_position(
+        input,
+        transaction,
+        pool_output_value,
+        pool_output_datum,
+      )
   }
 }
 
@@ -382,6 +387,8 @@ pub fn liquidate_position(
     )
 
   let mint_valid = validate_token_mint(transaction.mint, expected_mint)
+
+  expect mint_valid
 
   if orders_datum_typed.side == Long {
     let updated_datum =
