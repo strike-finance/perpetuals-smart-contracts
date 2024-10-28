@@ -246,6 +246,7 @@ pub type LiquidityMintsRedeemer {
 pub type ExpectedPoolOutput {
   value: Value,
   datum: PoolDatum,
+  mint: Value,
 }
 
 pub type ClosePositionCalculate {

@@ -1,7 +1,7 @@
 use aiken/collection/list
 use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script, VerificationKey, from_verification_key}
-use cardano/assets.{Value, match, quantity_of}
+use cardano/assets.{Value, match, quantity_of, zero}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
@@ -16,7 +16,7 @@ use utils.{
 }
 
 pub fn valid_orders(
-  validation_logic: fn(Output, Output, Transaction, Value, PoolDatum) ->
+  validation_logic: fn(Output, Output, Transaction, Value, PoolDatum, Value) ->
     ExpectedPoolOutput,
   redeemer: List<(Int, Int)>,
   transaction: Transaction,
@@ -51,10 +51,11 @@ pub fn valid_orders(
     input_index_count,
     expected_pool_output_value,
     expected_pool_output_datum,
+    expected_mint,
   ) =
     list.foldl(
       indices,
-      (-1, -1, 0, pool_utxo.value, pool_datum),
+      (-1, -1, 0, pool_utxo.value, pool_datum, zero),
       fn(curr, acc) {
         let (
           in0,
@@ -62,21 +63,34 @@ pub fn valid_orders(
           count,
           expected_pool_output_value,
           expected_pool_output_datum,
+          expected_mint,
         ) = acc
         let (in1, out1) = curr
         if in1 > in0 && out1 > out0 {
           expect Some(in_utxo) = script_inputs |> list.at(in1)
           expect Some(out_utxo) = outputs |> list.at(out1)
-          let ExpectedPoolOutput { value: updated_value, datum: updated_datum } =
+          let ExpectedPoolOutput {
+            value: updated_value,
+            datum: updated_datum,
+            mint: updated_expected_mint,
+          } =
             validation_logic(
               in_utxo,
               out_utxo,
               transaction,
               expected_pool_output_value,
               expected_pool_output_datum,
+              expected_mint,
             )
 
-          (in1, out1, count + 1, updated_value, updated_datum)
+          (
+            in1,
+            out1,
+            count + 1,
+            updated_value,
+            updated_datum,
+            updated_expected_mint,
+          )
         } else {
           fail @"Input and output indices must be in ascending orders"
         }
@@ -89,6 +103,7 @@ pub fn valid_orders(
     ExpectedPoolOutput {
       value: expected_pool_output_value,
       datum: expected_pool_output_datum,
+      mint: expected_mint,
     }
 
   expected_pool_output
@@ -100,6 +115,7 @@ pub fn validate_individual_order(
   transaction: Transaction,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
+  expected_mint: Value,
 ) -> ExpectedPoolOutput {
   expect InlineDatum(input_datum) = input.datum
 
@@ -107,17 +123,29 @@ pub fn validate_individual_order(
 
   when input_datum_typed.action is {
     OpenPositionOrder ->
-      open_position(input, output, pool_output_value, pool_output_datum)
+      open_position(
+        input,
+        output,
+        pool_output_value,
+        pool_output_datum,
+        expected_mint,
+      )
     ClosePositionOrder ->
       close_position(
         input,
         output,
-        transaction,
         pool_output_value,
         pool_output_datum,
+        expected_mint,
       )
     ProvideLiquidityOrder ->
-      contribute_liquidity(input, output, pool_output_value, pool_output_datum)
+      contribute_liquidity(
+        input,
+        output,
+        pool_output_value,
+        pool_output_datum,
+        expected_mint,
+      )
     WithdrawLiquidityOrder ->
       withdraw_liquidity(
         input,
@@ -125,13 +153,14 @@ pub fn validate_individual_order(
         transaction,
         pool_output_value,
         pool_output_datum,
+        expected_mint,
       )
     LiquidatePositionOrder ->
       liquidate_position(
         input,
-        transaction,
         pool_output_value,
         pool_output_datum,
+        expected_mint,
       )
   }
 }
@@ -142,6 +171,7 @@ pub fn open_position(
   output: Output,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
+  expected_mint: Value,
 ) -> ExpectedPoolOutput {
   expect InlineDatum(input_datum) = input.datum
 
@@ -219,16 +249,20 @@ pub fn open_position(
 
   expect assets_locked_valid && datum_valid && output_script_hash_valid
 
-  ExpectedPoolOutput { value: pool_output_value, datum: updated_pool_datum }
+  ExpectedPoolOutput {
+    value: pool_output_value,
+    datum: updated_pool_datum,
+    mint: expected_mint,
+  }
 }
 
 // correct asset is consumed, asset is sent to user, asset is burned
 pub fn close_position(
   input: Output,
   output: Output,
-  transaction: Transaction,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
+  expected_mint: Value,
 ) -> ExpectedPoolOutput {
   expect InlineDatum(input_datum) = input.datum
 
@@ -253,15 +287,6 @@ pub fn close_position(
       entry_position_value,
     )
 
-  let expected_mint =
-    (
-      input_datum_typed.positions_mint_asset.policy_id,
-      input_datum_typed.positions_mint_asset.asset_name,
-      -input_datum_typed.positions_mint_asset_amount,
-    )
-
-  let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
-
   expect VerificationKey(owner_address_hash) = output.address.payment_credential
 
   let output_is_to_owner =
@@ -274,16 +299,18 @@ pub fn close_position(
       input_datum_typed.order_submission_usd_price,
       pool_output_value,
       pool_output_datum,
+      expected_mint,
     )
 
   let assets_locked_valid =
     match(output.value, estimated_return.expected_asset_send_to_owner, >=)
 
-  expect mint_valid && output_is_to_owner && assets_locked_valid
+  expect output_is_to_owner && assets_locked_valid
 
   ExpectedPoolOutput {
     value: estimated_return.expected_pool_output.value,
     datum: estimated_return.expected_pool_output.datum,
+    mint: expected_mint,
   }
 }
 
@@ -293,6 +320,7 @@ pub fn withdraw_liquidity(
   transaction: Transaction,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
+  expected_mint: Value,
 ) -> ExpectedPoolOutput {
   expect InlineDatum(input_datum) = input.datum
 
@@ -316,15 +344,6 @@ pub fn withdraw_liquidity(
 
   let output_is_to_owner = output.address == address
 
-  let expected_mint =
-    (
-      orders_datum_typed.liquidity_asset.policy_id,
-      orders_datum_typed.liquidity_asset.asset_name,
-      orders_datum_typed.liquidity_asset_amount * -1,
-    )
-
-  let mint_valid: Bool = validate_token_mint(transaction.mint, expected_mint)
-
   let expected_earnings: Int =
     orders_datum_typed.liquidity_asset_amount * pool_ref_datum_typed.earnings_per_share
 
@@ -346,9 +365,13 @@ pub fn withdraw_liquidity(
     ) == expected_collateral_earnings
 
   expect
-    output_is_to_owner && mint_valid && asset_sent_to_owner_valid && expected_collateral_earnings_valid && policy_is_in_transaction
+    output_is_to_owner && asset_sent_to_owner_valid && expected_collateral_earnings_valid && policy_is_in_transaction
 
-  ExpectedPoolOutput { value: pool_output_value, datum: pool_output_datum }
+  ExpectedPoolOutput {
+    value: pool_output_value,
+    datum: pool_output_datum,
+    mint: expected_mint,
+  }
 }
 
 // The logic in the main function checks if the asset is being added to the pooled utxo
@@ -357,15 +380,20 @@ pub fn contribute_liquidity(
   _output: Output,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
+  expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  ExpectedPoolOutput { value: pool_output_value, datum: pool_output_datum }
+  ExpectedPoolOutput {
+    value: pool_output_value,
+    datum: pool_output_datum,
+    mint: expected_mint,
+  }
 }
 
 pub fn liquidate_position(
   input: Output,
-  transaction: Transaction,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
+  expected_mint: Value,
 ) -> ExpectedPoolOutput {
   expect InlineDatum(orders_datum) = input.datum
 
@@ -379,17 +407,6 @@ pub fn liquidate_position(
       orders_datum_typed.collateral_asset_amount,
     )
 
-  let expected_mint =
-    (
-      orders_datum_typed.collateral_asset.policy_id,
-      orders_datum_typed.collateral_asset.asset_name,
-      orders_datum_typed.collateral_asset_amount,
-    )
-
-  let mint_valid = validate_token_mint(transaction.mint, expected_mint)
-
-  expect mint_valid
-
   if orders_datum_typed.side == Long {
     let updated_datum =
       PoolDatum {
@@ -397,15 +414,22 @@ pub fn liquidate_position(
         underlying_asset_amount: pool_output_datum.underlying_asset_amount + orders_datum_typed.collateral_asset_amount,
       }
 
-    ExpectedPoolOutput { value: updated_value, datum: updated_datum }
+    ExpectedPoolOutput {
+      value: updated_value,
+      datum: updated_datum,
+      mint: expected_mint,
+    }
   } else {
     let updated_datum =
       PoolDatum {
         ..pool_output_datum,
         stable_collateral_asset_amount: pool_output_datum.stable_collateral_asset_amount + orders_datum_typed.collateral_asset_amount,
       }
-
-    ExpectedPoolOutput { value: updated_value, datum: updated_datum }
+    ExpectedPoolOutput {
+      value: updated_value,
+      datum: updated_datum,
+      mint: expected_mint,
+    }
   }
 }
 
@@ -573,6 +597,7 @@ fn calculate_return(
   current_usd_price: Int,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
+  expected_mint: Value,
 ) -> ClosePositionCalculate {
   if input_datum.side == Long {
     calculate_long_return_asset_amount(
@@ -581,6 +606,7 @@ fn calculate_return(
       current_usd_price,
       pool_output_value,
       pool_output_datum,
+      expected_mint,
     )
   } else {
     calculate_short_return_asset_amount(
@@ -589,6 +615,7 @@ fn calculate_return(
       current_usd_price,
       pool_output_value,
       pool_output_datum,
+      expected_mint,
     )
   }
 }
@@ -599,6 +626,7 @@ fn calculate_long_return_asset_amount(
   current_price: Int,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
+  expected_mint: Value,
 ) -> ClosePositionCalculate {
   if usd_value > 0 {
     let expected_asset_sent = divide(usd_value, current_price)
@@ -637,6 +665,7 @@ fn calculate_long_return_asset_amount(
       expected_pool_output: ExpectedPoolOutput {
         value: updated_value,
         datum: updated_datum,
+        mint: expected_mint,
       },
     }
   } else {
@@ -676,6 +705,7 @@ fn calculate_long_return_asset_amount(
       expected_pool_output: ExpectedPoolOutput {
         value: updated_value,
         datum: updated_datum,
+        mint: expected_mint,
       },
     }
   }
@@ -687,6 +717,7 @@ fn calculate_short_return_asset_amount(
   current_usd_price: Int,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
+  expected_mint: Value,
 ) -> ClosePositionCalculate {
   if usd_value > 0 {
     let expected_assets_sent = divide(usd_value, current_usd_price)
@@ -730,6 +761,7 @@ fn calculate_short_return_asset_amount(
       expected_pool_output: ExpectedPoolOutput {
         value: updated_value,
         datum: updated_datum,
+        mint: expected_mint,
       },
     }
   } else {
@@ -766,6 +798,7 @@ fn calculate_short_return_asset_amount(
       expected_pool_output: ExpectedPoolOutput {
         value: updated_value,
         datum: updated_datum,
+        mint: expected_mint,
       },
     }
   }
