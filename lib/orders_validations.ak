@@ -165,7 +165,6 @@ pub fn validate_individual_order(
   }
 }
 
-// asset is send to positions_contract, datum is not corruped, is sent to the correct validator
 pub fn open_position(
   input: Output,
   output: Output,
@@ -256,7 +255,6 @@ pub fn open_position(
   }
 }
 
-// correct asset is consumed, asset is sent to user, asset is burned
 pub fn close_position(
   input: Output,
   output: Output,
@@ -292,6 +290,14 @@ pub fn close_position(
   let output_is_to_owner =
     owner_address_hash == input_datum_typed.owner_address_hash
 
+  let mint =
+    assets.add(
+      expected_mint,
+      input_datum_typed.positions_mint_asset.policy_id,
+      input_datum_typed.positions_mint_asset.asset_name,
+      -input_datum_typed.positions_mint_asset_amount,
+    )
+
   let estimated_return =
     calculate_return(
       input_datum_typed,
@@ -299,7 +305,6 @@ pub fn close_position(
       input_datum_typed.order_submission_usd_price,
       pool_output_value,
       pool_output_datum,
-      expected_mint,
     )
 
   let assets_locked_valid =
@@ -308,9 +313,9 @@ pub fn close_position(
   expect output_is_to_owner && assets_locked_valid
 
   ExpectedPoolOutput {
-    value: estimated_return.expected_pool_output.value,
-    datum: estimated_return.expected_pool_output.datum,
-    mint: expected_mint,
+    value: estimated_return.value,
+    datum: estimated_return.datum,
+    mint,
   }
 }
 
@@ -407,6 +412,14 @@ pub fn liquidate_position(
       orders_datum_typed.collateral_asset_amount,
     )
 
+  let updated_mint =
+    assets.add(
+      expected_mint,
+      orders_datum_typed.positions_mint_asset.policy_id,
+      orders_datum_typed.positions_mint_asset.asset_name,
+      -orders_datum_typed.positions_mint_asset_amount,
+    )
+
   if orders_datum_typed.side == Long {
     let updated_datum =
       PoolDatum {
@@ -417,7 +430,7 @@ pub fn liquidate_position(
     ExpectedPoolOutput {
       value: updated_value,
       datum: updated_datum,
-      mint: expected_mint,
+      mint: updated_mint,
     }
   } else {
     let updated_datum =
@@ -428,7 +441,7 @@ pub fn liquidate_position(
     ExpectedPoolOutput {
       value: updated_value,
       datum: updated_datum,
-      mint: expected_mint,
+      mint: updated_mint,
     }
   }
 }
@@ -597,7 +610,6 @@ fn calculate_return(
   current_usd_price: Int,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
-  expected_mint: Value,
 ) -> ClosePositionCalculate {
   if input_datum.side == Long {
     calculate_long_return_asset_amount(
@@ -606,7 +618,6 @@ fn calculate_return(
       current_usd_price,
       pool_output_value,
       pool_output_datum,
-      expected_mint,
     )
   } else {
     calculate_short_return_asset_amount(
@@ -615,7 +626,6 @@ fn calculate_return(
       current_usd_price,
       pool_output_value,
       pool_output_datum,
-      expected_mint,
     )
   }
 }
@@ -626,7 +636,6 @@ fn calculate_long_return_asset_amount(
   current_price: Int,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
-  expected_mint: Value,
 ) -> ClosePositionCalculate {
   if usd_value > 0 {
     let expected_asset_sent = divide(usd_value, current_price)
@@ -662,11 +671,8 @@ fn calculate_long_return_asset_amount(
 
     ClosePositionCalculate {
       expected_asset_send_to_owner: expected_assets_locked,
-      expected_pool_output: ExpectedPoolOutput {
-        value: updated_value,
-        datum: updated_datum,
-        mint: expected_mint,
-      },
+      value: updated_value,
+      datum: updated_datum,
     }
   } else {
     let expected_assets_payed = divide(-usd_value, current_price)
@@ -702,11 +708,8 @@ fn calculate_long_return_asset_amount(
 
     ClosePositionCalculate {
       expected_asset_send_to_owner: expected_assets_locked,
-      expected_pool_output: ExpectedPoolOutput {
-        value: updated_value,
-        datum: updated_datum,
-        mint: expected_mint,
-      },
+      value: updated_value,
+      datum: updated_datum,
     }
   }
 }
@@ -717,7 +720,6 @@ fn calculate_short_return_asset_amount(
   current_usd_price: Int,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
-  expected_mint: Value,
 ) -> ClosePositionCalculate {
   if usd_value > 0 {
     let expected_assets_sent = divide(usd_value, current_usd_price)
@@ -758,11 +760,8 @@ fn calculate_short_return_asset_amount(
 
     ClosePositionCalculate {
       expected_asset_send_to_owner: expected_assets_locked,
-      expected_pool_output: ExpectedPoolOutput {
-        value: updated_value,
-        datum: updated_datum,
-        mint: expected_mint,
-      },
+      value: updated_value,
+      datum: updated_datum,
     }
   } else {
     let formatted_usd_payed = usd_value * -1
@@ -795,11 +794,8 @@ fn calculate_short_return_asset_amount(
 
     ClosePositionCalculate {
       expected_asset_send_to_owner: expected_assets_locked,
-      expected_pool_output: ExpectedPoolOutput {
-        value: updated_value,
-        datum: updated_datum,
-        mint: expected_mint,
-      },
+      value: updated_value,
+      datum: updated_datum,
     }
   }
 }

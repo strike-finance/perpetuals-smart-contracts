@@ -251,5 +251,6 @@ pub type ExpectedPoolOutput {
 
 pub type ClosePositionCalculate {
   expected_asset_send_to_owner: Value,
-  expected_pool_output: ExpectedPoolOutput,
+  value: Value,
+  datum: PoolDatum,
 }
