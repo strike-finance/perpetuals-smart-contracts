@@ -266,17 +266,11 @@ pub fn close_position(
 
   expect input_datum_typed: OrdersDatum = input_datum
 
-  let formatted_underlying_asset =
-    to_ada_if_lovelace(
-      input_datum_typed.underlying_asset,
-      input_datum_typed.underlying_asset_amount,
-    )
-
   let current_position_value: Int =
-    input_datum_typed.order_submission_usd_price * formatted_underlying_asset
+    input_datum_typed.order_submission_usd_price * input_datum_typed.positions_mint_asset_amount
 
   let entry_position_value: Int =
-    input_datum_typed.order_submission_usd_price * formatted_underlying_asset
+    input_datum_typed.entered_at_usd_price * input_datum_typed.positions_mint_asset_amount
 
   let expected_asset_amount_send_to_user: Int =
     calculate_profit(
@@ -640,14 +634,11 @@ fn calculate_long_return_asset_amount(
   if usd_value > 0 {
     let expected_asset_sent = divide(usd_value, current_price)
 
-    let formatted_asset_sent =
-      to_lovelace_if_ada(input_datum.underlying_asset, expected_asset_sent)
-
     let expected_assets_locked =
       assets.from_asset(
         input_datum.collateral_asset.policy_id,
         input_datum.collateral_asset.asset_name,
-        input_datum.collateral_asset_amount + formatted_asset_sent,
+        input_datum.collateral_asset_amount + expected_asset_sent,
       )
         |> assets.add(
             input_datum.strike_collateral_asset.policy_id,
@@ -660,13 +651,13 @@ fn calculate_long_return_asset_amount(
         pool_output_value,
         input_datum.underlying_asset.policy_id,
         input_datum.underlying_asset.asset_name,
-        -formatted_asset_sent,
+        -expected_asset_sent,
       )
 
     let updated_datum =
       PoolDatum {
         ..pool_output_datum,
-        underlying_asset_amount: pool_output_datum.underlying_asset_amount + formatted_asset_sent,
+        underlying_asset_amount: pool_output_datum.underlying_asset_amount - expected_asset_sent,
       }
 
     ClosePositionCalculate {
@@ -677,14 +668,11 @@ fn calculate_long_return_asset_amount(
   } else {
     let expected_assets_payed = divide(-usd_value, current_price)
 
-    let formatted_assets_payed =
-      to_lovelace_if_ada(input_datum.underlying_asset, expected_assets_payed)
-
     let expected_assets_locked =
       assets.from_asset(
         input_datum.collateral_asset.policy_id,
         input_datum.collateral_asset.asset_name,
-        input_datum.collateral_asset_amount - formatted_assets_payed,
+        input_datum.collateral_asset_amount - expected_assets_payed,
       )
         |> assets.add(
             input_datum.strike_collateral_asset.policy_id,
@@ -697,13 +685,13 @@ fn calculate_long_return_asset_amount(
         pool_output_value,
         input_datum.underlying_asset.policy_id,
         input_datum.underlying_asset.asset_name,
-        -formatted_assets_payed,
+        -expected_assets_payed,
       )
 
     let updated_datum =
       PoolDatum {
         ..pool_output_datum,
-        underlying_asset_amount: pool_output_datum.underlying_asset_amount + formatted_assets_payed,
+        underlying_asset_amount: pool_output_datum.underlying_asset_amount + expected_assets_payed,
       }
 
     ClosePositionCalculate {
@@ -801,14 +789,6 @@ fn calculate_short_return_asset_amount(
 }
 
 fn to_lovelace_if_ada(asset: Asset, amount: Int) -> Int {
-  if asset.policy_id == "" {
-    amount * 1_000_000
-  } else {
-    amount
-  }
-}
-
-fn to_ada_if_lovelace(asset: Asset, amount: Int) -> Int {
   if asset.policy_id == "" {
     amount * 1_000_000
   } else {

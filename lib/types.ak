@@ -51,7 +51,6 @@ pub type OrdersWithdrawRedeemer {
   indexer: UTxOIndexer,
   pool_utxo_index: (Int, Int),
   batcher_index: Int,
-  current_price: Int,
 }
 
 pub type OrdersDatum {
