@@ -302,9 +302,6 @@ pub fn close_position(
       pool_output_datum,
     )
 
-  trace @"output.value": output.value
-  trace @"estimated_return.expected_asset_send_to_owner": estimated_return.expected_asset_send_to_owner
-
   let assets_locked_valid =
     match(output.value, estimated_return.expected_asset_send_to_owner, >=)
 
