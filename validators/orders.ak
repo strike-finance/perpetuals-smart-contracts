@@ -1,5 +1,6 @@
 use aiken/collection/list
 use cardano/address.{Credential, Script}
+use cardano/assets.{match}
 use cardano/transaction.{InlineDatum, Input, OutputReference, Transaction}
 use orders_validations.{
   cancel_close_position, cancel_contribute_liquidity, cancel_open_position,
@@ -86,8 +87,8 @@ validator orders(params: OrdersParams) {
     expect Some(output_pool_utxo) =
       list.at(transaction.outputs, output_pool_utxo_index)
 
-    let output_value_valid =
-      expected_pool_output.value == output_pool_utxo.value
+    let value_valid =
+      match(output_pool_utxo.value, expected_pool_output.value, >=)
 
     expect InlineDatum(output_pool_datum) = output_pool_utxo.datum
     expect output_pool_datum_typed: PoolDatum = output_pool_datum
@@ -100,7 +101,7 @@ validator orders(params: OrdersParams) {
 
     let expected_mint_valid = expected_pool_output.mint == transaction.mint
 
-    output_value_valid && output_datum_valid && batcher_license_valid && address_valid && expected_mint_valid
+    value_valid && output_datum_valid && address_valid && expected_mint_valid
   }
 
   else(_) {

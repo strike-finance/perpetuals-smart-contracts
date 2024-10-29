@@ -712,8 +712,7 @@ fn calculate_short_return_asset_amount(
   if usd_value > 0 {
     let expected_assets_sent = divide(usd_value, current_usd_price)
 
-    let formatted_assets_sent =
-      to_lovelace_if_ada(input_datum.underlying_asset, expected_assets_sent)
+    trace @"expected_assets_sent": expected_assets_sent
 
     let expected_assets_locked =
       assets.from_asset(
@@ -729,7 +728,7 @@ fn calculate_short_return_asset_amount(
         |> assets.add(
             input_datum.underlying_asset.policy_id,
             input_datum.underlying_asset.asset_name,
-            formatted_assets_sent,
+            expected_assets_sent,
           )
 
     let updated_value =
@@ -737,13 +736,13 @@ fn calculate_short_return_asset_amount(
         pool_output_value,
         input_datum.underlying_asset.policy_id,
         input_datum.underlying_asset.asset_name,
-        -formatted_assets_sent,
+        -expected_assets_sent,
       )
 
     let updated_datum =
       PoolDatum {
         ..pool_output_datum,
-        underlying_asset_amount: pool_output_datum.underlying_asset_amount - formatted_assets_sent,
+        underlying_asset_amount: pool_output_datum.underlying_asset_amount - expected_assets_sent,
       }
 
     ClosePositionCalculate {
@@ -785,13 +784,5 @@ fn calculate_short_return_asset_amount(
       value: updated_value,
       datum: updated_datum,
     }
-  }
-}
-
-fn to_lovelace_if_ada(asset: Asset, amount: Int) -> Int {
-  if asset.policy_id == "" {
-    amount * 1_000_000
-  } else {
-    amount
   }
 }
