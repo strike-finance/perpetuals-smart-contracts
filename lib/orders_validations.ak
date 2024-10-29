@@ -12,7 +12,8 @@ use types.{
   WithdrawLiquidityOrder,
 }
 use utils.{
-  divide, get_all_validators_inputs, policy_in_value, validate_token_mint,
+  divide, format_stable_if_lovelace, get_all_validators_inputs, policy_in_value,
+  validate_token_mint,
 }
 
 pub fn valid_orders(
@@ -300,6 +301,9 @@ pub fn close_position(
       pool_output_value,
       pool_output_datum,
     )
+
+  trace @"output.value": output.value
+  trace @"estimated_return.expected_asset_send_to_owner": estimated_return.expected_asset_send_to_owner
 
   let assets_locked_valid =
     match(output.value, estimated_return.expected_asset_send_to_owner, >=)
@@ -712,8 +716,6 @@ fn calculate_short_return_asset_amount(
   if usd_value > 0 {
     let expected_assets_sent = divide(usd_value, current_usd_price)
 
-    trace @"expected_assets_sent": expected_assets_sent
-
     let expected_assets_locked =
       assets.from_asset(
         input_datum.collateral_asset.policy_id,
@@ -751,7 +753,9 @@ fn calculate_short_return_asset_amount(
       datum: updated_datum,
     }
   } else {
-    let formatted_usd_payed = usd_value * -1
+    let usd_payed = usd_value * -1
+
+    let formatted_usd_payed = format_stable_if_lovelace(input_datum, usd_payed)
 
     let expected_assets_locked =
       assets.from_asset(
@@ -776,7 +780,7 @@ fn calculate_short_return_asset_amount(
     let updated_datum =
       PoolDatum {
         ..pool_output_datum,
-        underlying_asset_amount: pool_output_datum.underlying_asset_amount + formatted_usd_payed,
+        stable_collateral_asset_amount: pool_output_datum.stable_collateral_asset_amount + formatted_usd_payed,
       }
 
     ClosePositionCalculate {

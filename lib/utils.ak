@@ -12,6 +12,7 @@ use cardano/assets.{PolicyId, Value, flatten, tokens}
 use cardano/transaction.{
   Input, Output, OutputReference, Transaction, ValidityRange, find_input,
 }
+use types.{OrdersDatum}
 
 const minus_ascii_code = 45
 
@@ -204,4 +205,12 @@ pub fn divide(numerator: Int, denominator: Int) -> Int {
   expect Some(divided) = rational.new(numerator, denominator)
 
   rational.ceil(divided)
+}
+
+pub fn format_stable_if_lovelace(datum: OrdersDatum, amount: Int) -> Int {
+  if datum.underlying_asset.policy_id == "" {
+    amount / 1_000_000
+  } else {
+    amount
+  }
 }

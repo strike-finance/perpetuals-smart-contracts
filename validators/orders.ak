@@ -101,7 +101,7 @@ validator orders(params: OrdersParams) {
 
     let expected_mint_valid = expected_pool_output.mint == transaction.mint
 
-    value_valid && output_datum_valid && address_valid && expected_mint_valid && batcher_license_valid
+    value_valid && output_datum_valid && batcher_license_valid && expected_mint_valid && address_valid
   }
 
   else(_) {
