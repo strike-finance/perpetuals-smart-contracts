@@ -685,7 +685,7 @@ fn calculate_long_return_asset_amount(
         pool_output_value,
         input_datum.underlying_asset.policy_id,
         input_datum.underlying_asset.asset_name,
-        -expected_assets_payed,
+        expected_assets_payed,
       )
 
     let updated_datum =
