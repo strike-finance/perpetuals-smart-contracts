@@ -6,11 +6,10 @@ use cardano/assets.{from_lovelace}
 use cardano/transaction.{InlineDatum, Input, NoDatum, Output, Transaction}
 use orders
 use tests/constants.{
-  batcher_license, burn_address, liquidity_positions_script_hash, lovelace_asset,
-  maximum_deadline_range, orders_script_hash, out_ref, pool_asset,
-  pool_asset_name, pool_license, pool_script_hash, positions_mint_asset,
-  positions_script_hash, stable_collateral_asset, strike_collateral_asset,
-  trader_pkh, underlying_asset,
+  batcher_license, burn_address, lovelace_asset, maximum_deadline_range,
+  orders_script_hash, out_ref, pool_asset, pool_asset_name, pool_license,
+  pool_script_hash, positions_mint_asset, positions_script_hash,
+  stable_collateral_asset, strike_collateral_asset, trader_pkh, underlying_asset,
 }
 use types.{
   Asset, CancelOrders, ClosePositionOrder, LiquidatePositionOrder, Long,
@@ -1330,7 +1329,7 @@ test liquidate_long_position() {
     positions_mint_asset_amount,
     strike_collateral_asset,
     strike_collateral_asset_amount,
-    side,
+    ..
   } = orders_datum.action
 
   let orders_input =
@@ -1495,7 +1494,7 @@ test liquidate_short_position() {
     positions_mint_asset_amount,
     strike_collateral_asset,
     strike_collateral_asset_amount,
-    side,
+    ..
   } = orders_datum.action
 
   let orders_input =
