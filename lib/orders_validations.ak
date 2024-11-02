@@ -447,8 +447,6 @@ pub fn cancel_close_position(
 
   expect InlineDatum(output_datum) = output_to_positions.datum
 
-  expect output_datum_typed: PositionDatum = output_datum
-
   expect Script(output_script_hash) =
     output_to_positions.address.payment_credential
 
@@ -474,7 +472,9 @@ pub fn cancel_close_position(
       side,
     }
 
-  let datum_match = output_datum_typed == expected_positions_datum
+  let expected_positions_datum_data: Data = expected_positions_datum
+
+  let datum_match = expected_positions_datum_data == output_datum
 
   let expected_assets_sent_back: Value =
     assets.from_asset(
@@ -498,7 +498,7 @@ pub fn cancel_close_position(
   let signed_by_owner =
     list.has(transaction.extra_signatories, owner_address_hash)
 
-  datum_match && assets_locked_valid && only_one_input_from_script && signed_by_owner && output_script_hash_valid
+  output_script_hash_valid && datum_match && assets_locked_valid && signed_by_owner
 }
 
 fn calculate_profit(

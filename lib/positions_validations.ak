@@ -1,4 +1,3 @@
-use aiken/builtin
 use aiken/collection/list
 use aiken/math/rational
 use cardano/assets.{PolicyId, Value, match, quantity_of}
@@ -86,8 +85,7 @@ pub fn close_position(
         },
       }
 
-    let expected_order_datum_data: Data =
-      builtin.serialise_data(expected_order_datum)
+    let expected_order_datum_data: Data = expected_order_datum
 
     let orders_datum_valid: Bool = expected_order_datum_data == orders_datum
 
@@ -116,8 +114,7 @@ pub fn close_position(
         },
       }
 
-    let expected_order_datum_data: Data =
-      builtin.serialise_data(expected_order_datum)
+    let expected_order_datum_data: Data = expected_order_datum
 
     let orders_datum_valid: Bool = expected_order_datum_data == orders_datum
 
@@ -148,8 +145,7 @@ pub fn close_position(
         },
       }
 
-    let expected_order_datum_data: Data =
-      builtin.serialise_data(expected_order_datum)
+    let expected_order_datum_data: Data = expected_order_datum
 
     let orders_datum_valid: Bool = expected_order_datum_data == orders_datum
 
@@ -171,8 +167,7 @@ pub fn close_position(
         },
       }
 
-    let expected_order_datum_data: Data =
-      builtin.serialise_data(expected_order_datum)
+    let expected_order_datum_data: Data = expected_order_datum
 
     let orders_datum_valid: Bool = expected_order_datum_data == orders_datum
 
@@ -246,8 +241,7 @@ pub fn update_stop_loss(
       side: input_datum.side,
     }
 
-  let expected_output_datum_data: Data =
-    builtin.serialise_data(expected_output_datum)
+  let expected_output_datum_data: Data = expected_output_datum
 
   let output_datum_valid: Bool = expected_output_datum_data == output_datum
 
@@ -318,8 +312,7 @@ pub fn update_take_profit(
       side: input_datum.side,
     }
 
-  let expected_output_datum_data: Data =
-    builtin.serialise_data(expected_output_datum)
+  let expected_output_datum_data: Data = expected_output_datum
 
   let output_datum_valid: Bool = expected_output_datum_data == output_datum
 
@@ -382,8 +375,7 @@ pub fn pay_lend(
       side: datum.side,
     }
 
-  let expected_output_datum_data: Data =
-    builtin.serialise_data(expected_output_datum)
+  let expected_output_datum_data: Data = expected_output_datum
 
   let datum_valid: Bool = expected_output_datum_data == output_datum
 

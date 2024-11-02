@@ -54,10 +54,8 @@ pub type OrderAction {
     owner_address_hash: AddressHash,
     // The script hash for the positions script that holds all the positions of the trader
     positions_script_hash: ScriptHash,
-    // The underlying asset that the perpetual contract is trading on
+    // The leverage factor for the position
     leverage_factor: Int,
-    // Liquidate USD price for the position
-    side: PositionSide,
     // The time the order was submitted
     order_submission_time: POSIXTime,
     // The price at which the order was submitted
@@ -76,6 +74,8 @@ pub type OrderAction {
     strike_collateral_asset: Asset,
     // Total amount of strike collateral asset used for the position
     strike_collateral_asset_amount: Int,
+    // Long or short position
+    side: PositionSide,
   }
   ClosePositionOrder {
     // The underlying asset that the perpetual contract is trading on
@@ -110,7 +110,7 @@ pub type OrderAction {
     strike_collateral_asset: Asset,
     // Total amount of strike collateral asset used for the position
     strike_collateral_asset_amount: Int,
-    // The script hash for the positions script that holds all the positions of the trader
+    // Long or short position
     side: PositionSide,
   }
   LiquidatePositionOrder {
@@ -126,7 +126,7 @@ pub type OrderAction {
     strike_collateral_asset: Asset,
     // Total amount of strike collateral asset used for the position
     strike_collateral_asset_amount: Int,
-    // Side of the position
+    // Long or short position
     side: PositionSide,
   }
 }
