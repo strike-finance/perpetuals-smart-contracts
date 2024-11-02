@@ -290,7 +290,7 @@ pub fn close_position(
       expected_mint,
       positions_mint_asset.policy_id,
       positions_mint_asset.asset_name,
-      positions_mint_asset_amount,
+      -positions_mint_asset_amount,
     )
 
   let estimated_return =
