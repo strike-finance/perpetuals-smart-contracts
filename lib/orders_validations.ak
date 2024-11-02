@@ -498,7 +498,7 @@ pub fn cancel_close_position(
   let signed_by_owner =
     list.has(transaction.extra_signatories, owner_address_hash)
 
-  output_script_hash_valid && datum_match && assets_locked_valid && signed_by_owner
+  output_script_hash_valid && datum_match && assets_locked_valid && signed_by_owner && only_one_input_from_script
 }
 
 fn calculate_profit(
