@@ -24,19 +24,12 @@ pub type OrdersParams {
   maximum_deadline_range: Int,
   underlying_asset_policy_id: PolicyId,
   underlying_asset_name: AssetName,
+  burn_address: ScriptHash,
 }
 
 pub type PositionSide {
   Long
   Short
-}
-
-pub type OrderAction {
-  OpenPositionOrder
-  ClosePositionOrder
-  ProvideLiquidityOrder
-  WithdrawLiquidityOrder
-  LiquidatePositionOrder
 }
 
 pub type OrdersRedeemer {
@@ -53,59 +46,97 @@ pub type OrdersWithdrawRedeemer {
   batcher_index: Int,
 }
 
-pub type OrdersDatum {
-  // Owner of the order
-  owner_address_hash: AddressHash,
-  // The underlying asset that the perpetual contract is trading on
-  underlying_asset: Asset,
-  // Inital size of the position
-  underlying_asset_amount: Int,
-  // Leverage used for the postion. Total positon size is underlying_asset_amount * leverage factor
-  leverage_factor: Int,
-  // The script hash for the orders script that es all the orders
-  orders_script_hash: ScriptHash,
-  // The script hash for the positions script that holds all the positions of the trader
-  positions_script_hash: ScriptHash,
-  // Minted asset to represent the trader total position size
-  positions_mint_asset: Asset,
-  // Total position size of the trader
-  positions_mint_asset_amount: Int,
-  // Minted asset to represent amount of liquidity that has been provided 
-  liquidity_asset: Asset,
-  // Total amount of liquidity that has been provided 
-  liquidity_asset_amount: Int,
-  // Script hash of the liquidty script that holds the providers liquidit positions
-  liquidity_positions_script_hash: ScriptHash,
-  // The collateral asset used for the position
-  collateral_asset: Asset,
-  // Total amount of collateral asset used for the position
-  collateral_asset_amount: Int,
-  // The collateral asset used for the strike position
-  strike_collateral_asset: Asset,
-  // Total amount of strike collateral asset used for the position
-  strike_collateral_asset_amount: Int,
-  // Earnings per share for the position
-  entered_earnings_per_share: Int,
-  // Earnings per share for the strike position
-  entered_collateral_earnings_per_share: Int,
-  // Stop loss USD price for the position
-  stop_loss_usd_price: Int,
-  // Take profit USD price for the position
-  take_profit_usd_price: Int,
-  // Liquidate USD price for the position
-  liquidate_usd_price: Int,
-  // Price of asset when the order was submitted
-  order_submission_usd_price: Int,
-  // Entered at price for positions
-  entered_at_usd_price: Int,
-  // The time the order was submitted
-  order_submission_time: POSIXTime,
-  // Reference to the pool validator
-  pool_license: PolicyId,
+pub type OrderAction {
+  OpenPositionOrder {
+    // The underlying asset that the perpetual contract is trading on
+    underlying_asset: Asset,
+    // Owner of the order
+    owner_address_hash: AddressHash,
+    // The script hash for the positions script that holds all the positions of the trader
+    positions_script_hash: ScriptHash,
+    // The underlying asset that the perpetual contract is trading on
+    leverage_factor: Int,
+    // Liquidate USD price for the position
+    side: PositionSide,
+    // The time the order was submitted
+    order_submission_time: POSIXTime,
+    // The price at which the order was submitted
+    order_submission_usd_price: Int,
+    // Liquidate USD price for the position
+    liquidate_usd_price: Int,
+    // Minted asset to represent the trader total position size
+    positions_mint_asset: Asset,
+    // Total position size of the trader
+    positions_mint_asset_amount: Int,
+    // The collateral asset used for the position
+    collateral_asset: Asset,
+    // Total amount of collateral asset used for the position
+    collateral_asset_amount: Int,
+    // The collateral asset used for the strike position
+    strike_collateral_asset: Asset,
+    // Total amount of strike collateral asset used for the position
+    strike_collateral_asset_amount: Int,
+  }
+  ClosePositionOrder {
+    // The underlying asset that the perpetual contract is trading on
+    underlying_asset: Asset,
+    // Owner of the order
+    owner_address_hash: AddressHash,
+    // The script hash for the positions script that holds all the positions of the trader
+    positions_script_hash: ScriptHash,
+    // The underlying asset that the perpetual contract is trading on
+    leverage_factor: Int,
+    // The price at which the order was submitted
+    order_submission_usd_price: Int,
+    // Liquidate USD price for the position
+    liquidate_usd_price: Int,
+    // Entered at USD price
+    entered_at_usd_price: Int,
+    // Stop loss price where the position will be closed
+    stop_loss_usd_price: Int,
+    // Take profit price where the position will be closed
+    take_profit_usd_price: Int,
+    // Last time the hourly lend was paid
+    last_pay_lend_time: POSIXTime,
+    // Minted asset to represent the trader total position size
+    positions_mint_asset: Asset,
+    // Total position size of the trader
+    positions_mint_asset_amount: Int,
+    // The collateral asset used for the position
+    collateral_asset: Asset,
+    // Total amount of collateral asset used for the position
+    collateral_asset_amount: Int,
+    // The collateral asset used for the strike position
+    strike_collateral_asset: Asset,
+    // Total amount of strike collateral asset used for the position
+    strike_collateral_asset_amount: Int,
+    // The script hash for the positions script that holds all the positions of the trader
+    side: PositionSide,
+  }
+  LiquidatePositionOrder {
+    // The collateral asset used for the position
+    collateral_asset: Asset,
+    // Total amount of collateral asset used for the position
+    collateral_asset_amount: Int,
+    // Minted asset to represent the trader total position size
+    positions_mint_asset: Asset,
+    // Total position size of the trader
+    positions_mint_asset_amount: Int,
+    // The collateral asset used for the strike position
+    strike_collateral_asset: Asset,
+    // Total amount of strike collateral asset used for the position
+    strike_collateral_asset_amount: Int,
+    // Side of the position
+    side: PositionSide,
+  }
+}
+
+// ProvideLiquidityOrder
+// WithdrawLiquidityOrder
+
+pub type OrderDatum {
   // Action to be taken for the order
   action: OrderAction,
-  // Side of the position
-  side: PositionSide,
 }
 
 pub type CloseType {
@@ -135,6 +166,8 @@ pub type PositionsParams {
 pub type PositionDatum {
   // Owner of the position
   owner_address_hash: AddressHash,
+  // The script hash for the positions script that holds all the positions of the trader
+  positions_script_hash: ScriptHash,
   // Price at which the position was entered
   entered_at_usd_price: Int,
   // The underlying asset that the perpetual contract is trading on
@@ -161,8 +194,6 @@ pub type PositionDatum {
   take_profit_usd_price: Int,
   // Last time the hourly lend was paid
   last_pay_lend_time: POSIXTime,
-  // Reference to the pool validator
-  pool_license: PolicyId,
   // Side of the position
   side: PositionSide,
 }

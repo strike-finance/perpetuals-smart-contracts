@@ -10,7 +10,7 @@
 //   strike_collateral_asset, trader_pkh, underlying_asset,
 // }
 // use types.{
-//   Long, OrdersDatum, ProvideLiquidityOrder, ProvideLiquidityMintParams,
+//   Long, OrderDatum, ProvideLiquidityOrder, ProvideLiquidityMintParams,
 // }
 
 // test test_burn_short_positions_mint() {
@@ -21,7 +21,7 @@
 //     }
 
 //   let orders_datum =
-//     OrdersDatum {
+//     OrderDatum {
 //       owner_address_hash: trader_pkh,
 //       underlying_asset,
 //       underlying_asset_amount: 5000000,

@@ -30,7 +30,8 @@ validator positions(params: PositionsParams) {
         update_stop_loss(transaction, datum, stop_loss_price)
       UpdateTakeProfit(take_profit_price) ->
         update_take_profit(transaction, datum, take_profit_price)
-      PayLend(current_price) -> pay_lend(transaction, datum, current_price)
+      PayLend(current_price) ->
+        pay_lend(transaction, datum, current_price, params.pool_license)
     }
   }
 

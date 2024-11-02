@@ -3,20 +3,19 @@ use cardano/address.{Credential, Script}
 use cardano/assets.{match}
 use cardano/transaction.{InlineDatum, Input, OutputReference, Transaction}
 use orders_validations.{
-  cancel_close_position, cancel_contribute_liquidity, cancel_open_position,
-  cancel_withdraw_liquidity, valid_orders, validate_individual_order,
+  cancel_close_position, cancel_open_position, valid_orders,
+  validate_individual_order,
 }
 use types.{
   BatchOrders, CancelOrders, ClosePositionOrder, LiquidatePositionOrder,
-  OpenPositionOrder, OrdersDatum, OrdersParams, OrdersRedeemer,
-  OrdersWithdrawRedeemer, PoolDatum, ProvideLiquidityOrder,
-  WithdrawLiquidityOrder,
+  OpenPositionOrder, OrderDatum, OrdersParams, OrdersRedeemer,
+  OrdersWithdrawRedeemer, PoolDatum,
 }
 use utils.{get_all_validators_inputs, is_withdrawal, validate_batcher_license}
 
 validator orders(params: OrdersParams) {
   spend(
-    datum: Option<OrdersDatum>,
+    datum: Option<OrderDatum>,
     redeemer: OrdersRedeemer,
     own_ref: OutputReference,
     transaction: Transaction,
@@ -26,25 +25,18 @@ validator orders(params: OrdersParams) {
       CancelOrders(output_index) -> {
         expect Some(datum) = datum
 
-        let signed_by_owner: Bool =
-          list.has(transaction.extra_signatories, datum.owner_address_hash)
-
         let all_validators_inputs: List<Input> =
           get_all_validators_inputs(transaction)
 
         let only_one_input_from_script: Bool =
           list.length(all_validators_inputs) == 1
-        expect signed_by_owner && only_one_input_from_script
+        expect only_one_input_from_script
 
         when datum.action is {
-          OpenPositionOrder -> cancel_open_position(datum, transaction)
-          ClosePositionOrder ->
+          OpenPositionOrder(..) -> cancel_open_position(datum, transaction)
+          ClosePositionOrder(..) ->
             cancel_close_position(datum, transaction, output_index)
-          ProvideLiquidityOrder ->
-            cancel_contribute_liquidity(datum, transaction)
-          WithdrawLiquidityOrder ->
-            cancel_withdraw_liquidity(datum, transaction)
-          LiquidatePositionOrder -> False
+          LiquidatePositionOrder(..) -> False
         }
       }
     }
@@ -82,6 +74,7 @@ validator orders(params: OrdersParams) {
         own_validator,
         input_pool_utxo.output,
         input_pool_datum_typed,
+        params.burn_address,
       )
 
     expect Some(output_pool_utxo) =
