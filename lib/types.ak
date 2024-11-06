@@ -52,28 +52,26 @@ pub type OrderAction {
     underlying_asset: Asset,
     // Owner of the order
     owner_address_hash: AddressHash,
-    // The script hash for the positions script that holds all the positions of the trader
-    positions_script_hash: ScriptHash,
     // The leverage factor for the position
     leverage_factor: Int,
     // The time the order was submitted
     order_submission_time: POSIXTime,
     // The price at which the order was submitted
     order_submission_usd_price: Int,
-    // Liquidate USD price for the position
-    liquidate_usd_price: Int,
-    // Minted asset to represent the trader total position size
-    positions_mint_asset: Asset,
+    // The script hash for the positions script that holds all the positions of the trader
+    position_hash: ScriptHash,
     // Total position size of the trader
-    positions_mint_asset_amount: Int,
+    position_asset_amount: Int,
     // The collateral asset used for the position
     collateral_asset: Asset,
     // Total amount of collateral asset used for the position
     collateral_asset_amount: Int,
-    // The collateral asset used for the strike position
-    strike_collateral_asset: Asset,
     // Total amount of strike collateral asset used for the position
-    strike_collateral_asset_amount: Int,
+    strike_asset_amount: Int,
+    // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
+    margin_requirement: Int,
+    // Total amount of USD value to pay for borrow each hour
+    hourly_usd_borrow_fee: Int,
     // Long or short position
     side: PositionSide,
   }
@@ -82,14 +80,10 @@ pub type OrderAction {
     underlying_asset: Asset,
     // Owner of the order
     owner_address_hash: AddressHash,
-    // The script hash for the positions script that holds all the positions of the trader
-    positions_script_hash: ScriptHash,
     // The underlying asset that the perpetual contract is trading on
     leverage_factor: Int,
     // The price at which the order was submitted
     order_submission_usd_price: Int,
-    // Liquidate USD price for the position
-    liquidate_usd_price: Int,
     // Entered at USD price
     entered_at_usd_price: Int,
     // Stop loss price where the position will be closed
@@ -98,18 +92,20 @@ pub type OrderAction {
     take_profit_usd_price: Int,
     // Last time the hourly lend was paid
     last_pay_lend_time: POSIXTime,
-    // Minted asset to represent the trader total position size
-    positions_mint_asset: Asset,
+    // The script hash for the positions script that holds all the positions of the trader
+    position_hash: ScriptHash,
     // Total position size of the trader
-    positions_mint_asset_amount: Int,
+    position_asset_amount: Int,
     // The collateral asset used for the position
     collateral_asset: Asset,
     // Total amount of collateral asset used for the position
     collateral_asset_amount: Int,
-    // The collateral asset used for the strike position
-    strike_collateral_asset: Asset,
     // Total amount of strike collateral asset used for the position
-    strike_collateral_asset_amount: Int,
+    strike_asset_amount: Int,
+    // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
+    margin_requirement: Int,
+    // Total amount of USD value to pay for borrow each hour
+    hourly_usd_borrow_fee: Int,
     // Long or short position
     side: PositionSide,
   }
@@ -118,14 +114,12 @@ pub type OrderAction {
     collateral_asset: Asset,
     // Total amount of collateral asset used for the position
     collateral_asset_amount: Int,
-    // Minted asset to represent the trader total position size
-    positions_mint_asset: Asset,
+    // The script hash for the positions script that holds all the positions of the trader
+    position_hash: ScriptHash,
     // Total position size of the trader
-    positions_mint_asset_amount: Int,
-    // The collateral asset used for the strike position
-    strike_collateral_asset: Asset,
+    position_asset_amount: Int,
     // Total amount of strike collateral asset used for the position
-    strike_collateral_asset_amount: Int,
+    strike_asset_amount: Int,
     // Long or short position
     side: PositionSide,
   }
@@ -150,7 +144,6 @@ pub type PositionsRedeemer {
   Close(Int, CloseType)
   UpdateStopLoss(Int)
   UpdateTakeProfit(Int)
-  PayLend(Int)
 }
 
 pub type PositionsMintRedeemer {
@@ -167,7 +160,7 @@ pub type PositionDatum {
   // Owner of the position
   owner_address_hash: AddressHash,
   // The script hash for the positions script that holds all the positions of the trader
-  positions_script_hash: ScriptHash,
+  position_hash: ScriptHash,
   // Price at which the position was entered
   entered_at_usd_price: Int,
   // The underlying asset that the perpetual contract is trading on
@@ -175,25 +168,25 @@ pub type PositionDatum {
   // Leverage used for the postion.
   leverage_factor: Int,
   // Minted asset to represent the trader total position size
-  positions_mint_asset: Asset,
+  position_mint_policy_id: PolicyId,
   // Total position size of the trader, ie, the inital size of position + leverage
-  positions_mint_asset_amount: Int,
+  position_asset_amount: Int,
   // Stable collateral asset
   collateral_asset: Asset,
   // Total stable collateral amount
   collateral_asset_amount: Int,
-  // Strike Collateral Asset
-  strike_collateral_asset: Asset,
-  // Total strike collateral amount
-  strike_collateral_asset_amount: Int,
-  // Price at which the position will be liquidated
-  liquidate_usd_price: Int,
+  // Total amount of strike collateral asset used for the position
+  strike_asset_amount: Int,
   // Stop loss price where the position will be closed
   stop_loss_usd_price: Int,
   // Take profit price where the position will be closed
   take_profit_usd_price: Int,
   // Last time the hourly lend was paid
   last_pay_lend_time: POSIXTime,
+  // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
+  margin_requirement: Int,
+  // Total amount of USD value to pay for borrow each hour
+  hourly_usd_borrow_fee: Int,
   // Side of the position
   side: PositionSide,
 }
@@ -207,8 +200,8 @@ pub type PoolDatum {
   underlying_asset_lended_amount: Int,
   // The interest rate for the underlying asset
   underlying_interest_rate: Int,
-  // The margin required to liquidate the pool
-  liquidate_margin: Int,
+  // The margin required to liquidate the pool, Example: 5 = 5%
+  margin_requirement: Int,
   // The stable collateral asset used for the pool
   stable_collateral_asset: Asset,
   // Total amount of stable collateral asset

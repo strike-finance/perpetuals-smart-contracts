@@ -317,7 +317,7 @@
               "$ref": "#/definitions/types~1Asset"
             },
             {
-              "title": "strike_collateral_asset_amount",
+              "title": "strike_asset_amount",
               "$ref": "#/definitions/Int"
             },
             {
@@ -392,7 +392,7 @@
               "$ref": "#/definitions/types~1Asset"
             },
             {
-              "title": "strike_collateral_asset_amount",
+              "title": "strike_asset_amount",
               "$ref": "#/definitions/Int"
             },
             {
@@ -427,7 +427,7 @@
               "$ref": "#/definitions/types~1Asset"
             },
             {
-              "title": "strike_collateral_asset_amount",
+              "title": "strike_asset_amount",
               "$ref": "#/definitions/Int"
             },
             {
@@ -580,7 +580,7 @@
               "$ref": "#/definitions/types~1Asset"
             },
             {
-              "title": "strike_collateral_asset_amount",
+              "title": "strike_asset_amount",
               "$ref": "#/definitions/Int"
             },
             {

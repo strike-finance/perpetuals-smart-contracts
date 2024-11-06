@@ -23,7 +23,7 @@
 //     underlying_interest_rate: 2,
 //     stable_collateral_asset,
 //     max_leverage_factor: 10,
-//     liquidate_margin: 5,
+//     margin_requirement: 5,
 //     max_strike_holder_leverage_factor: 20,
 //     maintain_margin_amount: 0,
 //     is_valid_pool_asset: pool_asset,
@@ -111,7 +111,7 @@
 //       underlying_interest_rate: 20,
 //       stable_collateral_asset: pool_datum.stable_collateral_asset,
 //       max_leverage_factor: pool_datum.max_leverage_factor,
-//       liquidate_margin: pool_datum.liquidate_margin,
+//       margin_requirement: pool_datum.margin_requirement,
 //       max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
 //       maintain_margin_amount: pool_datum.maintain_margin_amount,
 //       is_valid_pool_asset: pool_datum.is_valid_pool_asset,
@@ -182,7 +182,7 @@
 //   pools.pools.spend(params, Some(pool_datum), redeemer, out_ref, tx)
 // }
 
-// test update_liquidate_margin() {
+// test update_margin_requirement() {
 //   let updated_pool_datum =
 //     PoolDatum {
 //       underlying_asset: pool_datum.underlying_asset,
@@ -191,7 +191,7 @@
 //       underlying_interest_rate: pool_datum.underlying_interest_rate,
 //       stable_collateral_asset: pool_datum.stable_collateral_asset,
 //       max_leverage_factor: pool_datum.max_leverage_factor,
-//       liquidate_margin: 30,
+//       margin_requirement: 30,
 //       max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
 //       maintain_margin_amount: pool_datum.maintain_margin_amount,
 //       is_valid_pool_asset: pool_datum.is_valid_pool_asset,
@@ -271,7 +271,7 @@
 //       underlying_interest_rate: pool_datum.underlying_interest_rate,
 //       stable_collateral_asset: pool_datum.stable_collateral_asset,
 //       max_leverage_factor: 30,
-//       liquidate_margin: pool_datum.liquidate_margin,
+//       margin_requirement: pool_datum.margin_requirement,
 //       max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
 //       maintain_margin_amount: pool_datum.maintain_margin_amount,
 //       is_valid_pool_asset: pool_datum.is_valid_pool_asset,
@@ -351,7 +351,7 @@
 //       underlying_interest_rate: pool_datum.underlying_interest_rate,
 //       stable_collateral_asset: pool_datum.stable_collateral_asset,
 //       max_leverage_factor: pool_datum.max_leverage_factor,
-//       liquidate_margin: pool_datum.liquidate_margin,
+//       margin_requirement: pool_datum.margin_requirement,
 //       max_strike_holder_leverage_factor: 30,
 //       maintain_margin_amount: pool_datum.maintain_margin_amount,
 //       is_valid_pool_asset: pool_datum.is_valid_pool_asset,

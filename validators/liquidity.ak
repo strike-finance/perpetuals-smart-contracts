@@ -1,5 +1,5 @@
-validator liquidity {
-  else(_) {
-    False
-  }
-}
+// validator liquidity {
+//   else(_) {
+//     False
+//   }
+// }

@@ -175,7 +175,7 @@ _underlying_asset_: The underlying asset that the pool is trading on
 _underlying_asset_amount_: Total amount of underlying asset in the pool
 _underlying_asset_lended_amount_: Total amount of underlying asset that has been lended out
 _underlying_interest_rate_: The interest rate for the underlying asset
-_liquidate_margin_: The margin required to liquidate the pool
+_margin_requirement_: The margin required to liquidate the pool
 _stable_collateral_asset_: The stable collateral asset used for the pool
 _max_leverage_factor_: The max leverage factor for the pool
 _max_strike_holder_leverage_factor_: The max leverage factor for the strike holder

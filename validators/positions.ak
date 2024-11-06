@@ -1,14 +1,12 @@
-use cardano/assets.{PolicyId}
+use cardano/assets.{PolicyId, flatten}
 use cardano/transaction.{OutputReference, Transaction}
 use positions_validations.{
-  close_position, mint_position, pay_lend, update_stop_loss, update_take_profit,
+  close_position, mint_position, update_stop_loss, update_take_profit,
 }
 use types.{
-  BurnPosition, Close, MintPosition, PayLend, PositionDatum,
-  PositionsMintRedeemer, PositionsParams, PositionsRedeemer, UpdateStopLoss,
-  UpdateTakeProfit,
+  BurnPosition, Close, MintPosition, PositionDatum, PositionsMintRedeemer,
+  PositionsParams, PositionsRedeemer, UpdateStopLoss, UpdateTakeProfit,
 }
-use utils.{validate_token_mint}
 
 validator positions(params: PositionsParams) {
   spend(
@@ -30,8 +28,6 @@ validator positions(params: PositionsParams) {
         update_stop_loss(transaction, datum, stop_loss_price)
       UpdateTakeProfit(take_profit_price) ->
         update_take_profit(transaction, datum, take_profit_price)
-      PayLend(current_price) ->
-        pay_lend(transaction, datum, current_price, params.pool_license)
     }
   }
 
@@ -50,8 +46,8 @@ validator positions(params: PositionsParams) {
           params.pool_license,
         )
       BurnPosition(burn_amount, asset_name) -> {
-        let mint = (policy_id, asset_name, -burn_amount)
-        validate_token_mint(transaction.mint, mint)
+        let expected_burnt = [(policy_id, asset_name, -burn_amount)]
+        expected_burnt == flatten(transaction.mint)
       }
     }
   }
