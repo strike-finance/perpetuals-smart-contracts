@@ -57,11 +57,7 @@ pub fn close_position(
 
   let expected_assets_locked: Value =
     assets.from_lovelace(batcher_fee)
-      |> assets.add(
-          position_mint_policy_id,
-          owner_address_hash,
-          position_asset_amount,
-        )
+      |> assets.add(position_mint_policy_id, owner_address_hash, 1)
       |> assets.add(
           datum.collateral_asset.policy_id,
           datum.collateral_asset.asset_name,
@@ -252,7 +248,7 @@ pub fn update_stop_loss(
       collateral_asset_amount,
     )
       |> assets.add(strike_policy_id, strike_asset_name, strike_asset_amount)
-      |> assets.add(position_hash, owner_address_hash, position_asset_amount)
+      |> assets.add(position_hash, owner_address_hash, 1)
 
   let assets_locked_valid: Bool =
     match(output_to_positions_validator.value, expected_assets_locked, >=)
@@ -334,11 +330,7 @@ pub fn update_take_profit(
       collateral_asset_amount,
     )
       |> assets.add(strike_policy_id, strike_asset_name, strike_asset_amount)
-      |> assets.add(
-          position_mint_policy_id,
-          owner_address_hash,
-          position_asset_amount,
-        )
+      |> assets.add(position_mint_policy_id, owner_address_hash, 1)
 
   let assets_locked_valid: Bool =
     match(output_to_positions_validator.value, expected_assets_locked, >=)
@@ -620,6 +612,7 @@ fn calculate_accumulative_interest_fee(
   hours_passed * hourly_borrow_rate
 }
 
+// divide by 100 in the end because interest rate is an int
 fn calculate_pay_borrow(
   position_asset_amount: Int,
   pool_datum: PoolDatum,
