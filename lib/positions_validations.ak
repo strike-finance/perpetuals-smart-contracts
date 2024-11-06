@@ -25,7 +25,6 @@ pub fn close_position(
   expect Some(datum) = datum
 
   let PositionDatum {
-    position_mint_policy_id,
     owner_address_hash,
     position_asset_amount,
     strike_asset_amount,
@@ -57,7 +56,7 @@ pub fn close_position(
 
   let expected_assets_locked: Value =
     assets.from_lovelace(batcher_fee)
-      |> assets.add(position_mint_policy_id, owner_address_hash, 1)
+      |> assets.add(position_hash, owner_address_hash, 1)
       |> assets.add(
           datum.collateral_asset.policy_id,
           datum.collateral_asset.asset_name,
@@ -169,9 +168,9 @@ pub fn close_position(
           collateral_asset,
           collateral_asset_amount,
           position_hash,
-          position_asset_amount,
           strike_asset_amount,
           side,
+          owner_address_hash,
         },
       }
 
@@ -209,11 +208,10 @@ pub fn update_stop_loss(
   expect Some(datum) = maybe_datum
 
   let PositionDatum {
-    position_mint_policy_id,
+    position_hash,
     collateral_asset,
     collateral_asset_amount,
     strike_asset_amount,
-    position_hash,
     position_asset_amount,
     owner_address_hash,
     entered_at_usd_price,
@@ -260,7 +258,6 @@ pub fn update_stop_loss(
       entered_at_usd_price,
       underlying_asset,
       leverage_factor,
-      position_mint_policy_id,
       position_asset_amount,
       collateral_asset,
       collateral_asset_amount,
@@ -289,7 +286,6 @@ pub fn update_take_profit(
   expect Some(datum) = maybe_datum
 
   let PositionDatum {
-    position_mint_policy_id,
     collateral_asset,
     collateral_asset_amount,
     strike_asset_amount,
@@ -330,7 +326,7 @@ pub fn update_take_profit(
       collateral_asset_amount,
     )
       |> assets.add(strike_policy_id, strike_asset_name, strike_asset_amount)
-      |> assets.add(position_mint_policy_id, owner_address_hash, 1)
+      |> assets.add(position_hash, owner_address_hash, 1)
 
   let assets_locked_valid: Bool =
     match(output_to_positions_validator.value, expected_assets_locked, >=)
@@ -342,7 +338,6 @@ pub fn update_take_profit(
       entered_at_usd_price,
       underlying_asset,
       leverage_factor,
-      position_mint_policy_id,
       position_asset_amount,
       collateral_asset,
       collateral_asset_amount,
@@ -412,13 +407,13 @@ pub fn mint_position(
     ..
   } = orders_datum_typed.action
 
-  let expected_mint = [(policy_id, owner_address_hash, position_asset_amount)]
+  let expected_mint = [(policy_id, owner_address_hash, 1)]
 
   let valid_mint: Bool = expected_mint == flatten(mint)
 
   let expected_assets_locked: Value =
     assets.from_lovelace(batcher_fee)
-      |> assets.add(policy_id, owner_address_hash, position_asset_amount)
+      |> assets.add(policy_id, owner_address_hash, 1)
       |> assets.add(
           collateral_asset.policy_id,
           collateral_asset.asset_name,
@@ -430,7 +425,7 @@ pub fn mint_position(
     match(output_to_orders_validator.value, expected_assets_locked, >=)
 
   let minted_assets_amount_valid: Bool =
-    is_minted_assets_amount_valid(
+    is_position_assets_amount_valid(
       side,
       position_asset_amount,
       leverage_factor,
@@ -495,7 +490,7 @@ fn is_valid_collateral(
   }
 }
 
-fn is_minted_assets_amount_valid(
+fn is_position_assets_amount_valid(
   position_side: PositionSide,
   positions_mint_asset_amount: Int,
   leverage_factor: Int,

@@ -110,14 +110,14 @@ pub type OrderAction {
     side: PositionSide,
   }
   LiquidatePositionOrder {
+    // Owner of the position
+    owner_address_hash: AddressHash,
     // The collateral asset used for the position
     collateral_asset: Asset,
     // Total amount of collateral asset used for the position
     collateral_asset_amount: Int,
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
-    // Total position size of the trader
-    position_asset_amount: Int,
     // Total amount of strike collateral asset used for the position
     strike_asset_amount: Int,
     // Long or short position
@@ -167,8 +167,6 @@ pub type PositionDatum {
   underlying_asset: Asset,
   // Leverage used for the postion.
   leverage_factor: Int,
-  // Minted asset to represent the trader total position size
-  position_mint_policy_id: PolicyId,
   // Total position size of the trader, ie, the inital size of position + leverage
   position_asset_amount: Int,
   // Stable collateral asset
