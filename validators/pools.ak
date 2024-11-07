@@ -1,7 +1,6 @@
 use aiken/collection/list
 use aiken/collection/pairs
-use cardano/address.{Script}
-use cardano/assets.{PolicyId, Value, match}
+use cardano/assets.{PolicyId, match}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
@@ -36,11 +35,6 @@ validator pools(params: PoolsParams) {
 
         expect Some(input_from_script) = list.head(inputs_from_scripts)
 
-        expect Script(script_hash) =
-          input_from_script.output.address.payment_credential
-
-        let policy_id: PolicyId = script_hash
-
         let outputs_back_to_pools_validator: List<Output> =
           get_address_outputs(transaction, input_from_script.output.address)
 
@@ -50,21 +44,12 @@ validator pools(params: PoolsParams) {
         expect InlineDatum(output_datum) = output_to_pools_validator.datum
         expect output_datum_typed: PoolDatum = output_datum
 
-        let expected_assets_locked: Value =
-          assets.from_asset(
-            pool_datum.underlying_asset.policy_id,
-            pool_datum.underlying_asset.asset_name,
-            pool_datum.underlying_asset_amount,
-          )
-            |> assets.add(
-                pool_datum.stable_collateral_asset.policy_id,
-                pool_datum.stable_collateral_asset.asset_name,
-                pool_datum.stable_collateral_asset_amount,
-              )
-            |> assets.add(policy_id, params.asset_name, 1)
-
         let assets_locked_valid: Bool =
-          match(output_to_pools_validator.value, expected_assets_locked, >=)
+          match(
+            output_to_pools_validator.value,
+            input_from_script.output.value,
+            >=,
+          )
 
         let signed_by_admin: Bool =
           list.has(transaction.extra_signatories, params.admin_pkh)
