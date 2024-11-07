@@ -58,7 +58,7 @@ This is a multivalidator with a spending and minting script. When the traders op
 #### Redeemer
 
 ```
-pub type PositionsRedeemer {
+pub type PositionRedeemer {
   Close
   StopLoss
   UpdateStopLoss
@@ -68,7 +68,7 @@ pub type PositionsRedeemer {
   PayLend
 }
 
-pub type PositionsMintRedeemer {
+pub type PositionMintRedeemer {
   MintPosition
   BurnPosition
 }
@@ -139,7 +139,7 @@ This is a multivalidator with a spending and minting script. When someone wants 
 #### Redeemer
 
 ```
-pub type PositionsMintRedeemer {
+pub type PositionMintRedeemer {
   MintLiquididty
   BurnLiquidity
 }
@@ -223,7 +223,7 @@ pub type UTxOIndexer =
 pub type OrdersWithdrawRedeemer {
   indexer: UTxOIndexer,
   batcher_index: Int,
-  current_price: Int,
+  current_usd_price: Int,
 }
 ```
 

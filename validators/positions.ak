@@ -4,23 +4,23 @@ use positions_validations.{
   close_position, mint_position, update_stop_loss, update_take_profit,
 }
 use types.{
-  BurnPosition, Close, MintPosition, PositionDatum, PositionsMintRedeemer,
-  PositionsParams, PositionsRedeemer, UpdateStopLoss, UpdateTakeProfit,
+  BurnPosition, Close, MintPosition, PositionDatum, PositionMintRedeemer,
+  PositionRedeemer, PositionsParams, UpdateStopLoss, UpdateTakeProfit,
 }
 
 validator positions(params: PositionsParams) {
   spend(
     datum: Option<PositionDatum>,
-    redeemer: PositionsRedeemer,
+    redeemer: PositionRedeemer,
     _own_ref: OutputReference,
     transaction: Transaction,
   ) {
     when redeemer is {
-      Close(current_price, close_type) ->
+      Close(current_usd_price, close_type) ->
         close_position(
           transaction,
           datum,
-          current_price,
+          current_usd_price,
           params.orders_script_hash,
           close_type,
         )
@@ -32,16 +32,16 @@ validator positions(params: PositionsParams) {
   }
 
   mint(
-    redeemer: PositionsMintRedeemer,
+    redeemer: PositionMintRedeemer,
     policy_id: PolicyId,
     transaction: Transaction,
   ) {
     when redeemer is {
-      MintPosition(current_price) ->
+      MintPosition(current_usd_price) ->
         mint_position(
           transaction,
           params,
-          current_price,
+          current_usd_price,
           policy_id,
           params.pool_license,
         )

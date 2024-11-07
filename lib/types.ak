@@ -46,10 +46,13 @@ pub type OrdersWithdrawRedeemer {
   batcher_index: Int,
 }
 
+pub type CloseSendAmount {
+  LongCloseOrder { asset_amount: Int }
+  ShortCloseOrder { collateral_amount: Int, asset_amount: Int }
+}
+
 pub type OrderAction {
   OpenPositionOrder {
-    // The underlying asset that the perpetual contract is trading on
-    underlying_asset: Asset,
     // Owner of the order
     owner_address_hash: AddressHash,
     // The leverage factor for the position
@@ -64,10 +67,6 @@ pub type OrderAction {
     position_asset_amount: Int,
     // The collateral asset used for the position
     collateral_asset: Asset,
-    // Total amount of collateral asset used for the position
-    collateral_asset_amount: Int,
-    // Total amount of strike collateral asset used for the position
-    strike_asset_amount: Int,
     // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
     margin_requirement: Int,
     // Total amount of USD value to pay for borrow each hour
@@ -76,8 +75,6 @@ pub type OrderAction {
     side: PositionSide,
   }
   ClosePositionOrder {
-    // The underlying asset that the perpetual contract is trading on
-    underlying_asset: Asset,
     // Owner of the order
     owner_address_hash: AddressHash,
     // The underlying asset that the perpetual contract is trading on
@@ -98,14 +95,12 @@ pub type OrderAction {
     position_asset_amount: Int,
     // The collateral asset used for the position
     collateral_asset: Asset,
-    // Total amount of collateral asset used for the position
-    collateral_asset_amount: Int,
-    // Total amount of strike collateral asset used for the position
-    strike_asset_amount: Int,
     // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
     margin_requirement: Int,
     // Total amount of USD value to pay for borrow each hour
     hourly_usd_borrow_fee: Int,
+    // Amount to return to the owner
+    return_amount: CloseSendAmount,
     // Long or short position
     side: PositionSide,
   }
@@ -118,7 +113,7 @@ pub type OrderAction {
     collateral_asset_amount: Int,
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
-    // Total amount of strike collateral asset used for the position
+    // Total amount of strike asset used for the position
     strike_asset_amount: Int,
     // Long or short position
     side: PositionSide,
@@ -140,13 +135,13 @@ pub type CloseType {
   LiquidateClose
 }
 
-pub type PositionsRedeemer {
+pub type PositionRedeemer {
   Close(Int, CloseType)
   UpdateStopLoss(Int)
   UpdateTakeProfit(Int)
 }
 
-pub type PositionsMintRedeemer {
+pub type PositionMintRedeemer {
   MintPosition(Int)
   BurnPosition(Int, ByteArray)
 }
@@ -163,24 +158,18 @@ pub type PositionDatum {
   position_hash: ScriptHash,
   // Price at which the position was entered
   entered_at_usd_price: Int,
-  // The underlying asset that the perpetual contract is trading on
-  underlying_asset: Asset,
   // Leverage used for the postion.
   leverage_factor: Int,
   // Total position size of the trader, ie, the inital size of position + leverage
   position_asset_amount: Int,
-  // Stable collateral asset
-  collateral_asset: Asset,
-  // Total stable collateral amount
-  collateral_asset_amount: Int,
-  // Total amount of strike collateral asset used for the position
-  strike_asset_amount: Int,
   // Stop loss price where the position will be closed
   stop_loss_usd_price: Int,
   // Take profit price where the position will be closed
   take_profit_usd_price: Int,
   // Last time the hourly lend was paid
   last_pay_lend_time: POSIXTime,
+  // The collateral asset used for the position
+  collateral_asset: Asset,
   // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
   margin_requirement: Int,
   // Total amount of USD value to pay for borrow each hour
@@ -268,10 +257,4 @@ pub type ExpectedPoolOutput {
   value: Value,
   datum: PoolDatum,
   mint: Value,
-}
-
-pub type ClosePositionCalculate {
-  expected_asset_send_to_owner: Value,
-  value: Value,
-  datum: PoolDatum,
 }

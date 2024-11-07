@@ -4,7 +4,6 @@ use cardano/assets.{match}
 use cardano/transaction.{InlineDatum, Input, OutputReference, Transaction}
 use orders_validations.{
   cancel_close_position, cancel_open_position, valid_orders,
-  validate_individual_order,
 }
 use types.{
   BatchOrders, CancelOrders, ClosePositionOrder, LiquidatePositionOrder,
@@ -68,7 +67,6 @@ validator orders(params: OrdersParams) {
 
     let expected_pool_output =
       valid_orders(
-        validate_individual_order,
         redeemer.indexer,
         transaction,
         own_validator,
