@@ -374,8 +374,7 @@ pub fn mint_position(
   let outputs_to_orders_address: List<Output> =
     find_script_outputs(transaction.outputs, params.orders_script_hash)
 
-  let only_one_output_to_orders: Bool =
-    list.length(outputs_to_orders_address) == 1
+  expect list.length(outputs_to_orders_address) == 1
 
   expect Some(output_to_orders_validator) = list.head(outputs_to_orders_address)
 
@@ -389,9 +388,6 @@ pub fn mint_position(
     output: Output { value: batcher_value, datum: pool_ref_datum, .. },
     ..
   }) = list.head(ref_input)
-
-  let pool_license_in_transaction: Bool =
-    policy_in_value(pool_license, batcher_value)
 
   expect InlineDatum(pool_ref_datum) = pool_ref_datum
   expect pool_ref_datum_typed: PoolDatum = pool_ref_datum
@@ -409,9 +405,11 @@ pub fn mint_position(
     ..
   } = orders_datum_typed.action
 
+  expect current_usd_price == order_submission_usd_price
+
   let expected_mint = [(policy_id, owner_address_hash, 1)]
 
-  let valid_mint: Bool = expected_mint == flatten(mint)
+  expect expected_mint == flatten(mint)
 
   let collateral_asset_amount =
     quantity_of(
@@ -427,18 +425,53 @@ pub fn mint_position(
       strike_asset_name,
     )
 
-  let expected_assets_locked: Value =
-    assets.from_lovelace(batcher_fee)
-      |> assets.add(policy_id, owner_address_hash, 1)
-      |> assets.add(
-          collateral_asset.policy_id,
-          collateral_asset.asset_name,
-          collateral_asset_amount,
-        )
-      |> assets.add(strike_policy_id, strike_asset_name, strike_asset_amount)
+  if collateral_asset.policy_id == "" {
+    let expected_assets_locked: Value =
+      assets.from_lovelace(batcher_fee)
+        |> assets.add(policy_id, owner_address_hash, 1)
+        |> assets.add(
+            collateral_asset.policy_id,
+            collateral_asset.asset_name,
+            collateral_asset_amount - batcher_fee,
+          )
+        |> assets.add(strike_policy_id, strike_asset_name, strike_asset_amount)
 
-  let assets_locked_valid: Bool =
-    match(output_to_orders_validator.value, expected_assets_locked, >=)
+    expect match(output_to_orders_validator.value, expected_assets_locked, >=)
+  } else {
+    let expected_assets_locked: Value =
+      assets.from_lovelace(batcher_fee)
+        |> assets.add(policy_id, owner_address_hash, 1)
+        |> assets.add(
+            collateral_asset.policy_id,
+            collateral_asset.asset_name,
+            collateral_asset_amount,
+          )
+        |> assets.add(strike_policy_id, strike_asset_name, strike_asset_amount)
+
+    expect match(output_to_orders_validator.value, expected_assets_locked, >=)
+  }
+
+  let estimated_hourly_usd_borrow_fee: Int =
+    calculate_pay_borrow(
+      position_asset_amount,
+      pool_ref_datum_typed,
+      current_usd_price,
+      pool_ref_datum_typed.underlying_asset,
+    )
+
+  expect estimated_hourly_usd_borrow_fee == hourly_usd_borrow_fee
+
+  expect get_lower_bound(transaction.validity_range) >= order_submission_time
+
+  expect policy_id == position_hash && owner_address_hash == owner_address_hash
+
+  expect list.has(transaction.extra_signatories, owner_address_hash)
+
+  let pool_license_in_transaction: Bool =
+    policy_in_value(pool_license, batcher_value)
+
+  let is_valid_collateral: Bool =
+    is_valid_collateral(pool_ref_datum_typed, collateral_asset, side)
 
   let minted_assets_amount_valid: Bool =
     is_position_assets_amount_valid(
@@ -449,33 +482,8 @@ pub fn mint_position(
       current_usd_price,
     )
 
-  let estimated_hourly_usd_borrow_fee: Int =
-    calculate_pay_borrow(
-      position_asset_amount,
-      pool_ref_datum_typed,
-      current_usd_price,
-    )
-
-  let is_valid_collateral =
-    is_valid_collateral(pool_ref_datum_typed, collateral_asset, side)
-
-  let entered_at_usd_price_valid: Bool =
-    current_usd_price == order_submission_usd_price
-
-  let submission_time_valid: Bool =
-    get_lower_bound(transaction.validity_range) >= order_submission_time
-
-  let minted_asset_valid: Bool =
-    policy_id == position_hash && owner_address_hash == owner_address_hash
-
-  let owner_address_hash_valid: Bool =
-    list.has(transaction.extra_signatories, owner_address_hash)
-
-  let hourly_usd_borrow_fee_valid: Bool =
-    estimated_hourly_usd_borrow_fee == hourly_usd_borrow_fee
-
   expect
-    only_one_output_to_orders && minted_assets_amount_valid && assets_locked_valid && valid_mint && entered_at_usd_price_valid && submission_time_valid && minted_asset_valid && owner_address_hash_valid && is_valid_collateral && pool_license_in_transaction && hourly_usd_borrow_fee_valid
+    minted_assets_amount_valid && is_valid_collateral && pool_license_in_transaction
 
   let contains_strike_collateral: Bool =
     quantity_of(
@@ -629,6 +637,7 @@ fn calculate_pay_borrow(
   position_asset_amount: Int,
   pool_datum: PoolDatum,
   current_usd_price: Int,
+  underlying_asset: Asset,
 ) -> Int {
   expect Some(utilization) =
     rational.new(
@@ -636,11 +645,22 @@ fn calculate_pay_borrow(
       pool_datum.underlying_asset_amount,
     )
 
+  trace @"utilization": utilization
+
   let utilization_percentage = rational.ceil(utilization)
 
-  let current_position_usd_value = position_asset_amount * current_usd_price
+  trace @"utilization_percentage": utilization_percentage
 
-  utilization_percentage * pool_datum.underlying_interest_rate * current_position_usd_value / 100
+  if underlying_asset.policy_id == "" {
+    let current_position_usd_value =
+      position_asset_amount * current_usd_price / 1_000_000
+
+    utilization_percentage * pool_datum.underlying_interest_rate * current_position_usd_value / 100
+  } else {
+    let current_position_usd_value = position_asset_amount * current_usd_price
+
+    utilization_percentage * pool_datum.underlying_interest_rate * current_position_usd_value / 100
+  }
 }
 
 fn calculate_return(

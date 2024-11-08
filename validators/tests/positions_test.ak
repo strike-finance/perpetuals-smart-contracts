@@ -1,148 +1,139 @@
-// use aiken/collection/dict
-// use aiken/interval.{Finite, Interval, IntervalBound}
-// use cardano/address.{from_script}
-// use cardano/assets.{from_lovelace}
-// use cardano/transaction.{
-//   InlineDatum, Input, Output, OutputReference, Transaction,
-// }
-// use positions
-// use tests/constants.{
-//   admin_pkh, batcher_fee, enter_position_policy_id, lovelace_asset,
-//   orders_script_hash, out_ref, pool_asset, pool_license, positions_mint_asset,
-//   positions_script_hash, stable_collateral_asset, strike_collateral_asset,
-//   trader_pkh, underlying_asset,
-// }
-// use types.{
-//   Asset, BurnPosition, Close, ClosePositionOrder, LiquidateClose,
-//   LiquidatePositionOrder, Long, MintPosition, OpenPositionOrder, OrderDatum,
-//   PayLend, PoolDatum, PositionDatum, PositionsParams, Short, StopLossClose,
-//   TakeProfitClose, TraderClose, UpdateStopLoss, UpdateTakeProfit,
-// }
+use aiken/collection/dict
+use aiken/interval.{Finite, Interval, IntervalBound}
+use cardano/address.{from_script}
+use cardano/assets.{from_lovelace}
+use cardano/transaction.{
+  InlineDatum, Input, Output, OutputReference, Transaction,
+}
+use positions
+use tests/constants.{
+  admin_pkh, batcher_fee, lovelace_asset, orders_script_hash, out_ref,
+  pool_asset, pool_license, position_hash, positions_mint_asset,
+  positions_script_hash, stable_collateral_asset, strike_collateral_asset,
+  trader_pkh, underlying_asset,
+}
+use types.{
+  Asset, BurnPosition, Close, ClosePositionOrder, LiquidateClose,
+  LiquidatePositionOrder, Long, MintPosition, OpenPositionOrder, OrderDatum,
+  PoolDatum, PositionDatum, PositionsParams, Short, StopLossClose,
+  TakeProfitClose, TraderClose, UpdateStopLoss, UpdateTakeProfit,
+}
 
-// const position_datum =
-//   PositionDatum {
-//     owner_address_hash: trader_pkh,
-//     entered_at_usd_price: 100,
-//     underlying_asset,
-//     positions_script_hash,
-//     leverage_factor: 10,
-//     positions_mint_asset,
-//     positions_mint_asset_amount: 10_000_000,
-//     collateral_asset: lovelace_asset,
-//     collateral_asset_amount: 1_000_000,
-//     strike_collateral_asset,
-//     strike_asset_amount: 10,
-//     liquidate_usd_price: 100,
-//     stop_loss_usd_price: 90,
-//     take_profit_usd_price: 0,
-//     last_pay_lend_time: 1727453227635,
-//     side: Long,
-//   }
+const position_datum =
+  PositionDatum {
+    owner_address_hash: trader_pkh,
+    entered_at_usd_price: 100,
+    position_hash,
+    leverage_factor: 10,
+    position_asset_amount: 10_000_000,
+    stop_loss_usd_price: 90,
+    take_profit_usd_price: 0,
+    collateral_asset: lovelace_asset,
+    last_pay_lend_time: 1727453227635,
+    margin_requirement: 5,
+    hourly_usd_borrow_fee: 10,
+    side: Long,
+  }
 
-// const pool_ref_datum =
-//   PoolDatum {
-//     underlying_asset: lovelace_asset,
-//     underlying_asset_amount: 100_000_000,
-//     underlying_asset_lended_amount: 1_000_000,
-//     underlying_interest_rate: 2,
-//     stable_collateral_asset,
-//     max_leverage_factor: 10,
-//     margin_requirement: 5,
-//     max_strike_holder_leverage_factor: 20,
-//     maintain_margin_amount: 0,
-//     is_valid_pool_asset: pool_asset,
-//     earnings_per_share: 0,
-//     collateral_earnings_per_share: 0,
-//     stable_collateral_asset_amount: 100_000_000,
-//   }
+const pool_ref_datum =
+  PoolDatum {
+    underlying_asset: lovelace_asset,
+    underlying_asset_amount: 100_000_000,
+    underlying_asset_lended_amount: 1_000_000,
+    underlying_interest_rate: 2,
+    stable_collateral_asset,
+    max_leverage_factor: 10,
+    margin_requirement: 5,
+    max_strike_holder_leverage_factor: 20,
+    maintain_margin_amount: 0,
+    is_valid_pool_asset: pool_asset,
+    earnings_per_share: 0,
+    collateral_earnings_per_share: 0,
+    stable_collateral_asset_amount: 100_000_000,
+  }
 
-// const pool_ref_input =
-//   Input {
-//     output_reference: out_ref,
-//     output: Output {
-//       address: from_script(#""),
-//       value: from_lovelace(2_000_000)
-//         |> assets.add(pool_license, "", 1),
-//       datum: InlineDatum(pool_ref_datum),
-//       reference_script: None,
-//     },
-//   }
+const pool_ref_input =
+  Input {
+    output_reference: out_ref,
+    output: Output {
+      address: from_script(#""),
+      value: from_lovelace(2_000_000)
+        |> assets.add(pool_license, "", 1),
+      datum: InlineDatum(pool_ref_datum),
+      reference_script: None,
+    },
+  }
 
-// test enter_long_positions_mint() {
-//   let mint = assets.from_asset(enter_position_policy_id, trader_pkh, 10_000_000)
+test enter_long_positions_mint() {
+  let mint = assets.from_asset(position_hash, trader_pkh, 1)
 
-//   let orders_datum =
-//     OrderDatum {
-//       action: OpenPositionOrder {
-//         underlying_asset,
-//         owner_address_hash: trader_pkh,
-//         positions_script_hash,
-//         leverage_factor: 10,
-//         positions_mint_asset,
-//         positions_mint_asset_amount: 10_000_000,
-//         collateral_asset: lovelace_asset,
-//         collateral_asset_amount: 1_000_000,
-//         strike_collateral_asset,
-//         strike_asset_amount: 10,
-//         liquidate_usd_price: 100,
-//         order_submission_time: 1727453227635,
-//         order_submission_usd_price: 100,
-//         side: Long,
-//       },
-//     }
+  let orders_datum =
+    OrderDatum {
+      action: OpenPositionOrder {
+        owner_address_hash: trader_pkh,
+        leverage_factor: 10,
+        position_hash,
+        position_asset_amount: 10_000_000,
+        collateral_asset: lovelace_asset,
+        margin_requirement: 5,
+        hourly_usd_borrow_fee: 20,
+        order_submission_time: 1727453227635,
+        order_submission_usd_price: 100,
+        side: Long,
+      },
+    }
 
-//   let pos_out =
-//     Output {
-//       address: from_script(orders_script_hash),
-//       value: mint
-//         |> assets.merge(assets.from_lovelace(batcher_fee))
-//         |> assets.add(
-//             lovelace_asset.policy_id,
-//             lovelace_asset.asset_name,
-//             1_000_000,
-//           )
-//         |> assets.add(
-//             strike_collateral_asset.policy_id,
-//             strike_collateral_asset.asset_name,
-//             10,
-//           ),
-//       datum: InlineDatum(orders_datum),
-//       reference_script: None,
-//     }
+  let pos_out =
+    Output {
+      address: from_script(orders_script_hash),
+      value: mint
+        |> assets.merge(assets.from_lovelace(batcher_fee))
+        |> assets.add(
+            lovelace_asset.policy_id,
+            lovelace_asset.asset_name,
+            1_000_000,
+          )
+        |> assets.add(
+            strike_collateral_asset.policy_id,
+            strike_collateral_asset.asset_name,
+            10,
+          ),
+      datum: InlineDatum(orders_datum),
+      reference_script: None,
+    }
 
-//   let tx =
-//     Transaction {
-//       inputs: [],
-//       reference_inputs: [pool_ref_input],
-//       outputs: [pos_out],
-//       fee: 0,
-//       mint,
-//       certificates: [],
-//       withdrawals: [],
-//       validity_range: Interval {
-//         lower_bound: IntervalBound {
-//           bound_type: Finite(1727453227635),
-//           is_inclusive: False,
-//         },
-//         upper_bound: IntervalBound {
-//           bound_type: Finite(1727456400000),
-//           is_inclusive: False,
-//         },
-//       },
-//       extra_signatories: [admin_pkh],
-//       redeemers: [],
-//       datums: dict.empty,
-//       id: #"0000000000000000000000000000000000000000000000000000000000000000",
-//       votes: [],
-//       proposal_procedures: [],
-//       current_treasury_amount: None,
-//       treasury_donation: None,
-//     }
-//   let params = PositionsParams { orders_script_hash, pool_license }
-//   let redeemer = MintPosition(100)
-//   positions.positions.mint(params, redeemer, enter_position_policy_id, tx)
-// }
-
+  let tx =
+    Transaction {
+      inputs: [],
+      reference_inputs: [pool_ref_input],
+      outputs: [pos_out],
+      fee: 0,
+      mint,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [admin_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+  let params = PositionsParams { orders_script_hash, pool_license }
+  let redeemer = MintPosition(100)
+  positions.positions.mint(params, redeemer, position_hash, tx)
+}
 // test enter_short_positions_mint() {
 //   let orders_datum =
 //     OrderDatum {

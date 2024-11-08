@@ -1,8 +1,6 @@
+use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{OutputReference}
 use types.{Asset}
-
-pub const enter_position_policy_id =
-  #"5e4341df568a79b2106e0f5370ea737c62ef78728b74228bd20e0a48"
 
 pub const provide_liquidity_policy_id =
   #"7b41055e0f57c0c938af3373a7e1785b6569393c85cce9ddc5f246e8"
@@ -15,7 +13,7 @@ pub const pool_policy_id =
 pub const pool_license =
   #"d6ffbc9038719c18a1f993c2d2bd7cd4cf33209b3ad2f75342382365"
 
-pub const pool_script_hash =
+pub const position_hash =
   #"d6ffbc9038719c18a1f993c2d2bd7cd4cf33209b3ad2f75342382365"
 
 pub const pool_asset_name = #"6c6f6e67"
@@ -49,7 +47,11 @@ pub const strike_collateral_policy_id =
 pub const batcher_license =
   #"d6ffbc9038719c18a1f993c2d2bd7cd4cf33209b3ad2f75342382365"
 
-pub const strike_collateral_asset_name = #"535452494b45"
+pub const strike_policy_id: PolicyId =
+  #"00000000000000000000000000000000000000000000000000000000"
+
+pub const strike_asset_name: AssetName =
+  #"00000000000000000000000000000000000000000000000000000000"
 
 pub const underlying_asset = Asset { policy_id: "", asset_name: "" }
 
@@ -66,16 +68,13 @@ pub const stable_collateral_asset =
   }
 
 pub const positions_mint_asset =
-  Asset { policy_id: enter_position_policy_id, asset_name: trader_pkh }
+  Asset { policy_id: position_hash, asset_name: trader_pkh }
 
 pub const pool_asset =
   Asset { policy_id: pool_policy_id, asset_name: pool_asset_name }
 
 pub const strike_collateral_asset =
-  Asset {
-    policy_id: strike_collateral_policy_id,
-    asset_name: strike_collateral_asset_name,
-  }
+  Asset { policy_id: strike_policy_id, asset_name: strike_asset_name }
 
 pub const out_ref =
   OutputReference {
