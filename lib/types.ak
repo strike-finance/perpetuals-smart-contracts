@@ -107,14 +107,8 @@ pub type OrderAction {
   LiquidatePositionOrder {
     // Owner of the position
     owner_address_hash: AddressHash,
-    // The collateral asset used for the position
-    collateral_asset: Asset,
-    // Total amount of collateral asset used for the position
-    collateral_asset_amount: Int,
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
-    // Total amount of strike asset used for the position
-    strike_asset_amount: Int,
     // Long or short position
     side: PositionSide,
   }

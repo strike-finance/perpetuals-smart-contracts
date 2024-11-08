@@ -1,7 +1,7 @@
 use aiken/collection/list
 use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script, VerificationKey}
-use cardano/assets.{Value, flatten, match, zero}
+use cardano/assets.{Value, flatten, match, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{strike_asset_name, strike_policy_id}
 use types.{
@@ -136,6 +136,7 @@ pub fn validate_individual_order(
       )
     LiquidatePositionOrder(..) ->
       liquidate_position(
+        input,
         input_datum_typed,
         output,
         pool_output_value,
@@ -315,6 +316,7 @@ pub fn close_position(
 }
 
 pub fn liquidate_position(
+  input: Output,
   input_datum_typed: OrderDatum,
   output: Output,
   pool_output_value: Value,
@@ -322,32 +324,32 @@ pub fn liquidate_position(
   expected_mint: Value,
   burn_address: ScriptHash,
 ) -> ExpectedPoolOutput {
-  expect LiquidatePositionOrder {
-    collateral_asset,
-    collateral_asset_amount,
-    position_hash,
-    side,
-    owner_address_hash,
-    strike_asset_amount,
-  } = input_datum_typed.action
+  expect LiquidatePositionOrder { position_hash, side, owner_address_hash } =
+    input_datum_typed.action
 
-  let updated_value =
-    assets.add(
-      pool_output_value,
-      collateral_asset.policy_id,
-      collateral_asset.asset_name,
-      collateral_asset_amount,
-    )
+  let strike_is_burnt = is_strike_collateral_asset_burnt(burn_address, output)
+
+  expect strike_is_burnt
 
   let updated_mint =
     assets.add(expected_mint, position_hash, owner_address_hash, -1)
 
-  let strike_is_burnt =
-    is_strike_collateral_asset_burnt(strike_asset_amount, burn_address, output)
-
-  expect strike_is_burnt
-
   if side == Long {
+    let collateral_asset_amount: Int =
+      quantity_of(
+        input.value,
+        pool_output_datum.underlying_asset.policy_id,
+        pool_output_datum.underlying_asset.asset_name,
+      )
+
+    let updated_value =
+      assets.add(
+        pool_output_value,
+        pool_output_datum.underlying_asset.policy_id,
+        pool_output_datum.underlying_asset.asset_name,
+        collateral_asset_amount,
+      )
+
     let updated_datum =
       PoolDatum {
         ..pool_output_datum,
@@ -360,6 +362,21 @@ pub fn liquidate_position(
       mint: updated_mint,
     }
   } else {
+    let collateral_asset_amount: Int =
+      quantity_of(
+        input.value,
+        pool_output_datum.stable_collateral_asset.policy_id,
+        pool_output_datum.stable_collateral_asset.asset_name,
+      )
+
+    let updated_value =
+      assets.add(
+        pool_output_value,
+        pool_output_datum.stable_collateral_asset.policy_id,
+        pool_output_datum.stable_collateral_asset.asset_name,
+        collateral_asset_amount,
+      )
+
     let updated_datum =
       PoolDatum {
         ..pool_output_datum,
@@ -454,10 +471,12 @@ pub fn cancel_close_position(
 }
 
 fn is_strike_collateral_asset_burnt(
-  strike_asset_amount: Int,
   expected_burn_address: ScriptHash,
   output: Output,
 ) -> Bool {
+  let strike_asset_amount: Int =
+    quantity_of(output.value, strike_policy_id, strike_asset_name)
+
   if strike_asset_amount > 0 {
     expect Script(burn_address) = output.address.payment_credential
 

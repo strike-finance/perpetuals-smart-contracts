@@ -192,21 +192,11 @@ pub fn close_position(
 
     take_profit_reached && orders_datum_valid
   } else if close_type == LiquidateClose {
-    let strike_asset_amount: Int =
-      quantity_of(
-        input_from_script.output.value,
-        strike_policy_id,
-        strike_asset_name,
-      )
-
     let expected_order_datum =
       OrderDatum {
         action: LiquidatePositionOrder {
-          collateral_asset,
-          collateral_asset_amount,
           position_hash,
           side,
-          strike_asset_amount,
           owner_address_hash,
         },
       }
