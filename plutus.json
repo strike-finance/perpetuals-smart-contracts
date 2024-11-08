@@ -107,14 +107,14 @@
       "redeemer": {
         "title": "redeemer",
         "schema": {
-          "$ref": "#/definitions/types~1PoolsRedeemer"
+          "$ref": "#/definitions/types~1PoolRedeemer"
         }
       },
       "parameters": [
         {
           "title": "params",
           "schema": {
-            "$ref": "#/definitions/types~1PoolsParams"
+            "$ref": "#/definitions/types~1PoolParams"
           }
         }
       ],
@@ -133,7 +133,7 @@
         {
           "title": "params",
           "schema": {
-            "$ref": "#/definitions/types~1PoolsParams"
+            "$ref": "#/definitions/types~1PoolParams"
           }
         }
       ],
@@ -149,7 +149,7 @@
         {
           "title": "params",
           "schema": {
-            "$ref": "#/definitions/types~1PoolsParams"
+            "$ref": "#/definitions/types~1PoolParams"
           }
         }
       ],
@@ -664,11 +664,11 @@
         }
       ]
     },
-    "types/PoolsParams": {
-      "title": "PoolsParams",
+    "types/PoolParams": {
+      "title": "PoolParams",
       "anyOf": [
         {
-          "title": "PoolsParams",
+          "title": "PoolParams",
           "dataType": "constructor",
           "index": 0,
           "fields": [
@@ -688,28 +688,28 @@
         }
       ]
     },
-    "types/PoolsRedeemer": {
-      "title": "PoolsRedeemer",
+    "types/PoolRedeemer": {
+      "title": "PoolRedeemer",
       "anyOf": [
         {
-          "title": "PoolsRedeemer",
+          "title": "PoolRedeemer",
           "dataType": "constructor",
           "index": 0,
           "fields": [
             {
               "title": "action",
-              "$ref": "#/definitions/types~1PoolsRedeemerAction"
+              "$ref": "#/definitions/types~1PoolRedeemerAction"
             },
             {
               "title": "update_param_type",
-              "$ref": "#/definitions/types~1UpdateParamsType"
+              "$ref": "#/definitions/types~1UpdateParamType"
             }
           ]
         }
       ]
     },
-    "types/PoolsRedeemerAction": {
-      "title": "PoolsRedeemerAction",
+    "types/PoolRedeemerAction": {
+      "title": "PoolRedeemerAction",
       "anyOf": [
         {
           "title": "UtilizePool",
@@ -718,7 +718,7 @@
           "fields": []
         },
         {
-          "title": "UpdateParams",
+          "title": "UpdateParam",
           "dataType": "constructor",
           "index": 1,
           "fields": []
@@ -888,8 +888,8 @@
         }
       ]
     },
-    "types/UpdateParamsType": {
-      "title": "UpdateParamsType",
+    "types/UpdateParamType": {
+      "title": "UpdateParamType",
       "anyOf": [
         {
           "title": "UpdateInterestRate",

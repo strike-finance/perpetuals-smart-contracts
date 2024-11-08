@@ -201,27 +201,27 @@ pub type PoolDatum {
   collateral_earnings_per_share: Int,
 }
 
-pub type PoolsParams {
+pub type PoolParams {
   orders_stake_cred: Credential,
   admin_pkh: AddressHash,
   asset_name: AssetName,
 }
 
-pub type UpdateParamsType {
+pub type UpdateParamType {
   UpdateInterestRate(Int)
   UpdateLiquidateMargin(Int)
   UpdateMaxLeverageFactor(Int)
   UpdateMaxStrikeHolderLeverageFactor(Int)
 }
 
-pub type PoolsRedeemerAction {
+pub type PoolRedeemerAction {
   UtilizePool
-  UpdateParams
+  UpdateParam
 }
 
-pub type PoolsRedeemer {
-  action: PoolsRedeemerAction,
-  update_param_type: UpdateParamsType,
+pub type PoolRedeemer {
+  action: PoolRedeemerAction,
+  update_param_type: UpdateParamType,
 }
 
 pub type LiquidityPositionDatum {

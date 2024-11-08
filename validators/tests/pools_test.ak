@@ -10,9 +10,9 @@
 //   trader_pkh,
 // }
 // use types.{
-//   PoolDatum, PoolsParams, PoolsRedeemer, UpdateInterestRate,
+//   PoolDatum, PoolParams, PoolRedeemer, UpdateInterestRate,
 //   UpdateLiquidateMargin, UpdateMaxLeverageFactor,
-//   UpdateMaxStrikeHolderLeverageFactor, UpdateParams, UtilizePool,
+//   UpdateMaxStrikeHolderLeverageFactor, UpdateParam, UtilizePool,
 // }
 
 // const pool_datum =
@@ -89,13 +89,13 @@
 //     }
 
 //   let params =
-//     PoolsParams {
+//     PoolParams {
 //       orders_stake_cred: stake_cred,
 //       admin_pkh,
 //       asset_name: pool_asset_name,
 //     }
 //   let redeemer =
-//     PoolsRedeemer {
+//     PoolRedeemer {
 //       action: UtilizePool,
 //       update_param_type: UpdateInterestRate(0),
 //     }
@@ -169,14 +169,14 @@
 //     }
 
 //   let params =
-//     PoolsParams {
+//     PoolParams {
 //       orders_stake_cred: stake_cred,
 //       admin_pkh,
 //       asset_name: pool_asset_name,
 //     }
 //   let redeemer =
-//     PoolsRedeemer {
-//       action: UpdateParams,
+//     PoolRedeemer {
+//       action: UpdateParam,
 //       update_param_type: UpdateInterestRate(20),
 //     }
 //   pools.pools.spend(params, Some(pool_datum), redeemer, out_ref, tx)
@@ -249,14 +249,14 @@
 //     }
 
 //   let params =
-//     PoolsParams {
+//     PoolParams {
 //       orders_stake_cred: stake_cred,
 //       admin_pkh,
 //       asset_name: pool_asset_name,
 //     }
 //   let redeemer =
-//     PoolsRedeemer {
-//       action: UpdateParams,
+//     PoolRedeemer {
+//       action: UpdateParam,
 //       update_param_type: UpdateLiquidateMargin(30),
 //     }
 //   pools.pools.spend(params, Some(pool_datum), redeemer, out_ref, tx)
@@ -329,14 +329,14 @@
 //     }
 
 //   let params =
-//     PoolsParams {
+//     PoolParams {
 //       orders_stake_cred: stake_cred,
 //       admin_pkh,
 //       asset_name: pool_asset_name,
 //     }
 //   let redeemer =
-//     PoolsRedeemer {
-//       action: UpdateParams,
+//     PoolRedeemer {
+//       action: UpdateParam,
 //       update_param_type: UpdateMaxLeverageFactor(30),
 //     }
 //   pools.pools.spend(params, Some(pool_datum), redeemer, out_ref, tx)
@@ -409,14 +409,14 @@
 //     }
 
 //   let params =
-//     PoolsParams {
+//     PoolParams {
 //       orders_stake_cred: stake_cred,
 //       admin_pkh,
 //       asset_name: pool_asset_name,
 //     }
 //   let redeemer =
-//     PoolsRedeemer {
-//       action: UpdateParams,
+//     PoolRedeemer {
+//       action: UpdateParam,
 //       update_param_type: UpdateMaxStrikeHolderLeverageFactor(30),
 //     }
 //   pools.pools.spend(params, Some(pool_datum), redeemer, out_ref, tx)

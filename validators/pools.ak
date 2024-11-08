@@ -1,20 +1,21 @@
 use aiken/collection/list
 use aiken/collection/pairs
-use cardano/assets.{PolicyId, match}
+use cardano/address.{Script}
+use cardano/assets.{PolicyId, flatten, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
 use types.{
-  PoolDatum, PoolsParams, PoolsRedeemer, UpdateInterestRate,
-  UpdateLiquidateMargin, UpdateMaxLeverageFactor,
-  UpdateMaxStrikeHolderLeverageFactor, UpdateParams, UtilizePool,
+  PoolDatum, PoolParams, PoolRedeemer, UpdateInterestRate, UpdateLiquidateMargin,
+  UpdateMaxLeverageFactor, UpdateMaxStrikeHolderLeverageFactor, UpdateParam,
+  UtilizePool,
 }
 use utils.{get_address_outputs, get_all_validators_inputs}
 
-validator pools(params: PoolsParams) {
+validator pools(params: PoolParams) {
   spend(
     datum: Option<PoolDatum>,
-    redeemer: PoolsRedeemer,
+    redeemer: PoolRedeemer,
     _own_ref: OutputReference,
     transaction: Transaction,
   ) {
@@ -24,7 +25,7 @@ validator pools(params: PoolsParams) {
 
         pairs.has_key(withdrawals, params.orders_stake_cred)
       }
-      UpdateParams -> {
+      UpdateParam -> {
         expect Some(pool_datum) = datum
 
         let inputs_from_scripts: List<Input> =
@@ -143,8 +144,31 @@ validator pools(params: PoolsParams) {
     }
   }
 
-  mint(_redeemer: Int, _policy_id: PolicyId, transaction: Transaction) {
-    list.has(transaction.extra_signatories, params.admin_pkh)
+  mint(_redeemer: Int, policy_id: PolicyId, transaction: Transaction) {
+    let Transaction { outputs, extra_signatories, mint, .. } = transaction
+    let PoolParams { asset_name, admin_pkh, .. } = params
+
+    expect Some(output_back_to_pool_script) =
+      list.find(
+        outputs,
+        fn(output: Output) {
+          expect Script(output_to_liquidate_hash) =
+            output.address.payment_credential
+
+          output_to_liquidate_hash == policy_id
+        },
+      )
+
+    let output_contains_pool_asset: Bool =
+      quantity_of(output_back_to_pool_script.value, policy_id, asset_name) == 1
+
+    let expected_mint = [(policy_id, params.asset_name, 1)]
+
+    let mint_valid = expected_mint == flatten(mint)
+
+    let signed_by_admin = list.has(extra_signatories, admin_pkh)
+
+    mint_valid && signed_by_admin && output_contains_pool_asset
   }
 
   else(_) {
