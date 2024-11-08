@@ -4,7 +4,8 @@ use cardano/assets.{PolicyId, Value, flatten, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
-use constants.{batcher_fee, strike_asset_name, strike_policy_id}
+use constants.{batcher_fee,
+  lovelace_amount, strike_asset_name, strike_policy_id}
 use types.{
   Asset, ClosePositionOrder, CloseSendAmount, CloseType, LiquidateClose,
   LiquidatePositionOrder, Long, LongCloseOrder, OpenPositionOrder, OrderDatum,
@@ -13,7 +14,7 @@ use types.{
 }
 use utils.{
   divide, get_address_outputs, get_all_validators_inputs, get_lower_bound,
-  policy_in_value,
+  policy_in_value, to_ada_if_lovelace,
 }
 
 pub fn close_position(
@@ -459,7 +460,7 @@ pub fn mint_position(
       pool_ref_datum_typed.underlying_asset,
     )
 
-  expect estimated_hourly_usd_borrow_fee == hourly_usd_borrow_fee
+  expect hourly_usd_borrow_fee >= estimated_hourly_usd_borrow_fee
 
   expect get_lower_bound(transaction.validity_range) >= order_submission_time
 
@@ -479,6 +480,7 @@ pub fn mint_position(
       position_asset_amount,
       leverage_factor,
       collateral_asset_amount,
+      pool_ref_datum_typed.underlying_asset,
       current_usd_price,
     )
 
@@ -511,18 +513,23 @@ fn is_valid_collateral(
   }
 }
 
+// USD is in per asset, 1 ada is 1_000_000
 fn is_position_assets_amount_valid(
   position_side: PositionSide,
   positions_mint_asset_amount: Int,
   leverage_factor: Int,
   collateral_asset_amount: Int,
+  underlying_asset: Asset,
   current_usd_price: Int,
 ) -> Bool {
   if position_side == Long {
     positions_mint_asset_amount / leverage_factor <= collateral_asset_amount
   } else {
+    let formatted_position_asset_amount =
+      to_ada_if_lovelace(underlying_asset, positions_mint_asset_amount)
+
     let collateral_in_asset_term: Int =
-      positions_mint_asset_amount / leverage_factor
+      formatted_position_asset_amount / leverage_factor / lovelace_amount
 
     let stable_amount_expected: Int =
       collateral_in_asset_term * current_usd_price
@@ -574,7 +581,7 @@ fn reach_liquidation_price(
     let total_value_loss: Int =
       inital_position_usd_value - current_position_value
 
-    let calculate_accumulative_interest_fee: Int =
+    let accumulative_interest_fee: Int =
       calculate_accumulative_interest_fee(
         current_time,
         last_pay_lend_time,
@@ -585,7 +592,7 @@ fn reach_liquidation_price(
       collateral_asset_amount * entered_at_usd_price
 
     let collateral_value_after_interest: Int =
-      inital_collateral_value - calculate_accumulative_interest_fee
+      inital_collateral_value - accumulative_interest_fee
 
     let collateral_value_after_loss: Int =
       collateral_value_after_interest - total_value_loss
@@ -602,7 +609,7 @@ fn reach_liquidation_price(
     let total_value_loss: Int =
       inital_position_usd_value - current_position_value
 
-    let calculate_accumulative_interest_fee: Int =
+    let accumulative_interest_fee: Int =
       calculate_accumulative_interest_fee(
         current_time,
         last_pay_lend_time,
@@ -610,7 +617,7 @@ fn reach_liquidation_price(
       )
 
     let collateral_value_after_interest: Int =
-      collateral_asset_amount - calculate_accumulative_interest_fee
+      collateral_asset_amount - accumulative_interest_fee
 
     let collateral_value_after_loss: Int =
       collateral_value_after_interest - total_value_loss
@@ -633,6 +640,7 @@ fn calculate_accumulative_interest_fee(
 }
 
 // divide by 100 in the end because interest rate is an int
+// min fee is 1 usd per hour
 fn calculate_pay_borrow(
   position_asset_amount: Int,
   pool_datum: PoolDatum,
@@ -645,21 +653,31 @@ fn calculate_pay_borrow(
       pool_datum.underlying_asset_amount,
     )
 
-  trace @"utilization": utilization
-
   let utilization_percentage = rational.ceil(utilization)
-
-  trace @"utilization_percentage": utilization_percentage
 
   if underlying_asset.policy_id == "" {
     let current_position_usd_value =
-      position_asset_amount * current_usd_price / 1_000_000
+      position_asset_amount * current_usd_price / lovelace_amount
 
-    utilization_percentage * pool_datum.underlying_interest_rate * current_position_usd_value / 100
+    let fee =
+      utilization_percentage * pool_datum.underlying_interest_rate * current_position_usd_value / 100
+
+    if fee < 1 {
+      1
+    } else {
+      fee
+    }
   } else {
     let current_position_usd_value = position_asset_amount * current_usd_price
 
-    utilization_percentage * pool_datum.underlying_interest_rate * current_position_usd_value / 100
+    let fee =
+      utilization_percentage * pool_datum.underlying_interest_rate * current_position_usd_value / 100
+
+    if fee < 1 {
+      1
+    } else {
+      fee
+    }
   }
 }
 
@@ -682,19 +700,20 @@ fn calculate_return(
     let total_value: Int =
       current_position_usd_value - inital_position_usd_value
 
-    let calculate_accumulative_interest_fee: Int =
+    let accumulative_interest_fee: Int =
       calculate_accumulative_interest_fee(
         current_time,
         last_pay_lend_time,
         hourly_borrow_fee,
       )
 
-    let inital_collateral_value: Int = collateral_amount * entered_at_usd_price
+    let collateral_value: Int = collateral_amount * current_usd_price
 
     let collateral_value_after_interest: Int =
-      inital_collateral_value - calculate_accumulative_interest_fee
+      collateral_value - accumulative_interest_fee
 
-    let asset_amount: Int = collateral_value_after_interest + total_value
+    let asset_amount =
+      ( collateral_value_after_interest + total_value ) / current_usd_price
 
     LongCloseOrder { asset_amount }
   } else {
@@ -714,15 +733,16 @@ fn calculate_return(
         hourly_borrow_fee,
       )
 
-    let inital_collateral_value: Int = collateral_amount * entered_at_usd_price
+    let collateral_value: Int = collateral_amount * current_usd_price
 
     if total_value > 0 {
-      let asset_after_fee = total_value - accumulative_interest_fee
+      let asset_amount: Int =
+        ( total_value - accumulative_interest_fee ) / current_usd_price
 
-      ShortCloseOrder { asset_amount: asset_after_fee, collateral_amount }
+      ShortCloseOrder { asset_amount, collateral_amount }
     } else {
       let collateral_amount_after_interest: Int =
-        inital_collateral_value - accumulative_interest_fee
+        collateral_value - accumulative_interest_fee
 
       let collateral_amount_after_loss: Int =
         collateral_amount_after_interest - total_value

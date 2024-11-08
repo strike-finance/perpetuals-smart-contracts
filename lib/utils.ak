@@ -11,6 +11,7 @@ use cardano/assets.{PolicyId, Value}
 use cardano/transaction.{
   Input, Output, OutputReference, Transaction, ValidityRange, find_input,
 }
+use constants.{lovelace_amount}
 use types.{Asset}
 
 const minus_ascii_code = 45
@@ -144,9 +145,9 @@ pub fn divide(numerator: Int, denominator: Int) -> Int {
   rational.ceil(divided)
 }
 
-pub fn format_stable_if_lovelace(asset: Asset, amount: Int) -> Int {
+pub fn to_ada_if_lovelace(asset: Asset, amount: Int) -> Int {
   if asset.policy_id == "" {
-    amount / 1_000_000
+    amount / lovelace_amount
   } else {
     amount
   }
