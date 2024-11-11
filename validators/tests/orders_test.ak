@@ -1,22 +1,21 @@
 use aiken/collection/dict
 use aiken/interval.{Finite, Interval, IntervalBound}
 use aiken/primitive/string
-use cardano/address.{Script, from_script, from_verification_key}
+use cardano/address.{Script, from_script}
 use cardano/assets.{from_lovelace}
 use cardano/transaction.{InlineDatum, Input, NoDatum, Output, Transaction}
 use orders
 use tests/constants.{
   batcher_license, burn_address, maximum_deadline_range, orders_script_hash,
   out_ref, pool_asset, pool_asset_name, pool_license, pool_script_hash,
-  position_hash, positions_mint_asset, positions_script_hash, stable_asset,
-  strike_collateral_asset, trader_pkh, underlying_asset,
+  position_hash, stable_asset, strike_collateral_asset, trader_pkh,
+  underlying_asset,
 }
 use types.{
-  Asset, CancelOrders, ClosePositionOrder, LiquidatePositionOrder, Long,
-  LongCloseOrder, OpenPositionOrder, OrderDatum, OrdersParams,
-  OrdersWithdrawRedeemer, PoolDatum, PositionDatum, Short,
+  Asset, CancelOrders, ClosePositionOrder, Long, LongCloseOrder,
+  OpenPositionOrder, OrderDatum, OrdersParams, OrdersWithdrawRedeemer, PoolDatum,
+  PositionDatum,
 }
-use utils.{divide}
 
 const pool_datum =
   PoolDatum {
