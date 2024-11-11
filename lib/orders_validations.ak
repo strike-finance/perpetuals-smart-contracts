@@ -1,7 +1,9 @@
 use aiken/collection/list
 use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script, VerificationKey}
-use cardano/assets.{Value, flatten, match, quantity_of, zero}
+use cardano/assets.{
+  AssetName, PolicyId, Value, flatten, match, quantity_of, zero,
+}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{strike_asset_name, strike_policy_id}
 use types.{
@@ -9,7 +11,7 @@ use types.{
   LongCloseOrder, OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum,
   ShortCloseOrder,
 }
-use utils.{get_all_validators_inputs}
+use utils.{get_all_validators_inputs, get_collateral_asset}
 
 pub fn valid_orders(
   redeemer: List<(Int, Int)>,
@@ -165,8 +167,18 @@ pub fn open_position(
     margin_requirement,
     hourly_usd_borrow_fee,
     position_asset_amount,
-    collateral_asset,
   } = input_datum_typed.action
+
+  let PoolDatum { underlying_asset, stable_asset, .. } = pool_output_datum
+
+  let collateral_asset =
+    get_collateral_asset(
+      underlying_asset.policy_id,
+      underlying_asset.asset_name,
+      stable_asset.policy_id,
+      stable_asset.asset_name,
+      side,
+    )
 
   let expected_output_datum =
     PositionDatum {
@@ -177,9 +189,9 @@ pub fn open_position(
       position_asset_amount,
       stop_loss_usd_price: 0,
       take_profit_usd_price: 0,
-      last_pay_lend_time: order_submission_time,
-      collateral_asset,
+      entered_position_time: order_submission_time,
       margin_requirement,
+      collateral_asset,
       hourly_usd_borrow_fee,
       side,
     }
@@ -203,8 +215,8 @@ pub fn open_position(
       underlying_asset_lended_amount: pool_output_datum.underlying_asset_lended_amount + lended_amount,
       underlying_interest_rate: pool_output_datum.underlying_interest_rate,
       margin_requirement: pool_output_datum.margin_requirement,
-      stable_collateral_asset: pool_output_datum.stable_collateral_asset,
-      stable_collateral_asset_amount: pool_output_datum.stable_collateral_asset_amount,
+      stable_asset: pool_output_datum.stable_asset,
+      stable_asset_amount: pool_output_datum.stable_asset_amount,
       max_leverage_factor: pool_output_datum.max_leverage_factor,
       max_strike_holder_leverage_factor: pool_output_datum.max_strike_holder_leverage_factor,
       maintain_margin_amount: pool_output_datum.maintain_margin_amount,
@@ -239,8 +251,7 @@ pub fn close_position(
     ..
   } = datum.action
 
-  let PoolDatum { underlying_asset, stable_collateral_asset, .. } =
-    pool_output_datum
+  let PoolDatum { underlying_asset, stable_asset, .. } = pool_output_datum
 
   expect VerificationKey(output_owner_address_hash) =
     output.address.payment_credential
@@ -261,7 +272,7 @@ pub fn close_position(
         asset_amount,
       )
 
-    expect match(output.value, estimated_return, >=)
+    expect match(output.value, estimated_return, <=)
 
     ExpectedPoolOutput {
       value: pool_output_value
@@ -286,18 +297,18 @@ pub fn close_position(
         asset_amount,
       )
         |> assets.add(
-            stable_collateral_asset.policy_id,
-            stable_collateral_asset.asset_name,
+            stable_asset.policy_id,
+            stable_asset.asset_name,
             collateral_amount,
           )
 
-    expect match(output.value, estimated_return, >=)
+    expect match(output.value, estimated_return, <=)
 
     ExpectedPoolOutput {
       value: pool_output_value
         |> assets.add(
-            stable_collateral_asset.policy_id,
-            stable_collateral_asset.asset_name,
+            stable_asset.policy_id,
+            stable_asset.asset_name,
             collateral_amount,
           )
         |> assets.add(
@@ -308,7 +319,7 @@ pub fn close_position(
       datum: PoolDatum {
         ..pool_output_datum,
         underlying_asset_amount: pool_output_datum.underlying_asset_amount + asset_amount,
-        stable_collateral_asset_amount: pool_output_datum.stable_collateral_asset_amount + collateral_amount,
+        stable_asset_amount: pool_output_datum.stable_asset_amount + collateral_amount,
       },
       mint,
     }
@@ -365,22 +376,22 @@ pub fn liquidate_position(
     let collateral_asset_amount: Int =
       quantity_of(
         input.value,
-        pool_output_datum.stable_collateral_asset.policy_id,
-        pool_output_datum.stable_collateral_asset.asset_name,
+        pool_output_datum.stable_asset.policy_id,
+        pool_output_datum.stable_asset.asset_name,
       )
 
     let updated_value =
       assets.add(
         pool_output_value,
-        pool_output_datum.stable_collateral_asset.policy_id,
-        pool_output_datum.stable_collateral_asset.asset_name,
+        pool_output_datum.stable_asset.policy_id,
+        pool_output_datum.stable_asset.asset_name,
         collateral_asset_amount,
       )
 
     let updated_datum =
       PoolDatum {
         ..pool_output_datum,
-        stable_collateral_asset_amount: pool_output_datum.stable_collateral_asset_amount + collateral_asset_amount,
+        stable_asset_amount: pool_output_datum.stable_asset_amount + collateral_asset_amount,
       }
     ExpectedPoolOutput {
       value: updated_value,
@@ -390,7 +401,10 @@ pub fn liquidate_position(
   }
 }
 
-pub fn cancel_open_position(datum: OrderDatum, transaction: Transaction) -> Bool {
+pub fn cancel_open_position_valid(
+  datum: OrderDatum,
+  transaction: Transaction,
+) -> Bool {
   expect OpenPositionOrder { owner_address_hash, position_hash, .. } =
     datum.action
 
@@ -407,10 +421,14 @@ pub fn cancel_open_position(datum: OrderDatum, transaction: Transaction) -> Bool
   signed_by_owner && only_one_input_from_script && mint_valid
 }
 
-pub fn cancel_close_position(
+pub fn cancel_close_position_valid(
   datum: OrderDatum,
   transaction: Transaction,
   output_index: Int,
+  underlying_asset_policy_id: PolicyId,
+  underlying_asset_name: AssetName,
+  stable_asset_policy_id: PolicyId,
+  stable_asset_name: AssetName,
 ) -> Bool {
   expect ClosePositionOrder {
     owner_address_hash,
@@ -419,12 +437,11 @@ pub fn cancel_close_position(
     entered_at_usd_price,
     stop_loss_usd_price,
     take_profit_usd_price,
-    last_pay_lend_time,
+    entered_position_time,
     position_asset_amount,
     margin_requirement,
     hourly_usd_borrow_fee,
     side,
-    collateral_asset,
     ..
   } = datum.action
 
@@ -441,6 +458,15 @@ pub fn cancel_close_position(
 
   let output_script_hash_valid = output_script_hash == position_hash
 
+  let collateral_asset =
+    get_collateral_asset(
+      underlying_asset_policy_id,
+      underlying_asset_name,
+      stable_asset_policy_id,
+      stable_asset_name,
+      side,
+    )
+
   let expected_positions_datum =
     PositionDatum {
       owner_address_hash,
@@ -450,7 +476,7 @@ pub fn cancel_close_position(
       position_asset_amount,
       stop_loss_usd_price,
       take_profit_usd_price,
-      last_pay_lend_time,
+      entered_position_time,
       hourly_usd_borrow_fee,
       collateral_asset,
       margin_requirement,

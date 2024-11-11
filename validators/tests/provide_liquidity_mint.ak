@@ -5,7 +5,7 @@
 // use cardano/transaction.{InlineDatum, Output, OutputReference, Transaction}
 // use provide_liquidity_mint
 // use tests/constants.{
-//   stable_collateral_asset, liquidity_positions_script_hash, long_position_asset,
+//   stable_asset, liquidity_positions_script_hash, long_position_asset,
 //   orders_script_hash, provide_liquidity_policy_id, provide_liquidty_asset_name,
 //   strike_collateral_asset, trader_pkh, underlying_asset,
 // }
@@ -33,8 +33,8 @@
 //       liquidity_asset: underlying_asset,
 //       liquidity_asset_amount: 10,
 //       liquidity_positions_script_hash,
-//       stable_collateral_asset,
-//       stable_collateral_asset_amount: 10,
+//       stable_asset,
+//       stable_asset_amount: 10,
 //       strike_collateral_asset,
 //       strike_collateral_amount: 10,
 //       entered_earnings_per_share: 0,

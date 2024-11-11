@@ -10,6 +10,9 @@ pub const provide_liquidty_asset_name = #"6c6f6e67"
 pub const pool_policy_id =
   #"d6ffbc9038719c18a1f993c2d2bd7cd4cf33209b3ad2f75342382365"
 
+pub const pool_script_hash =
+  #"c644ec8129f2af4bd297300d0a8c70a094bb4678db05f39720a051e7"
+
 pub const pool_license =
   #"d6ffbc9038719c18a1f993c2d2bd7cd4cf33209b3ad2f75342382365"
 
@@ -55,13 +58,11 @@ pub const strike_asset_name: AssetName =
 
 pub const underlying_asset = Asset { policy_id: "", asset_name: "" }
 
-pub const lovelace_asset = Asset { policy_id: "", asset_name: "" }
-
 pub const batcher_fee = 2_000_000
 
 pub const maximum_deadline_range = 1_000_000_000
 
-pub const stable_collateral_asset =
+pub const stable_asset =
   Asset {
     policy_id: stable_collateral_policy_id,
     asset_name: stable_collateral_asset_name,

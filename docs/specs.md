@@ -115,9 +115,9 @@ pub type PositionMintRedeemer {
 
 - **Pay Lend**
 
-  - An off-chain bot will and see for all positions that has a datum value of `last_pay_lend_time` that was over 1 hour ago
+  - An off-chain bot will and see for all positions that has a datum value of `entered_position_time` that was over 1 hour ago
   - The bot will burn the amount of minted tokens that represents the amount that the trader will pay
-  - The UTxO must be returned back to the positions validator with the minted assets, collateral, and only the `last_pay_lend_time` and `liquidate_usd_price` datum is changed
+  - The UTxO must be returned back to the positions validator with the minted assets, collateral, and only the `entered_position_time` and `liquidate_usd_price` datum is changed
 
 ## Liquidity Validator
 

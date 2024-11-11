@@ -3,7 +3,7 @@ use cardano/address.{Credential, Script}
 use cardano/assets.{match}
 use cardano/transaction.{InlineDatum, Input, OutputReference, Transaction}
 use orders_validations.{
-  cancel_close_position, cancel_open_position, valid_orders,
+  cancel_close_position_valid, cancel_open_position_valid, valid_orders,
 }
 use types.{
   BatchOrders, CancelOrders, ClosePositionOrder, LiquidatePositionOrder,
@@ -32,9 +32,18 @@ validator orders(params: OrdersParams) {
         expect only_one_input_from_script
 
         when datum.action is {
-          OpenPositionOrder(..) -> cancel_open_position(datum, transaction)
+          OpenPositionOrder(..) ->
+            cancel_open_position_valid(datum, transaction)
           ClosePositionOrder(..) ->
-            cancel_close_position(datum, transaction, output_index)
+            cancel_close_position_valid(
+              datum,
+              transaction,
+              output_index,
+              params.underlying_asset_policy_id,
+              params.underlying_asset_name,
+              params.stable_asset_policy_id,
+              params.stable_asset_name,
+            )
           LiquidatePositionOrder(..) -> False
         }
       }

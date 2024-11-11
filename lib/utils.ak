@@ -7,12 +7,12 @@ use aiken/interval.{Finite}
 use aiken/math/rational
 use aiken/primitive/bytearray
 use cardano/address.{Address, Credential, Script}
-use cardano/assets.{PolicyId, Value}
+use cardano/assets.{AssetName, PolicyId, Value}
 use cardano/transaction.{
   Input, Output, OutputReference, Transaction, ValidityRange, find_input,
 }
 use constants.{lovelace_amount}
-use types.{Asset}
+use types.{Asset, Long, PositionSide}
 
 const minus_ascii_code = 45
 
@@ -150,5 +150,22 @@ pub fn to_ada_if_lovelace(asset: Asset, amount: Int) -> Int {
     amount / lovelace_amount
   } else {
     amount
+  }
+}
+
+pub fn get_collateral_asset(
+  underlying_asset_policy_id: PolicyId,
+  underlying_asset_name: AssetName,
+  stable_asset_policy_id: PolicyId,
+  stable_asset_name: AssetName,
+  side: PositionSide,
+) -> Asset {
+  if side == Long {
+    Asset {
+      policy_id: underlying_asset_policy_id,
+      asset_name: underlying_asset_name,
+    }
+  } else {
+    Asset { policy_id: stable_asset_policy_id, asset_name: stable_asset_name }
   }
 }

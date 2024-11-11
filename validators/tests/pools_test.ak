@@ -5,8 +5,8 @@
 // use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 // use pools
 // use tests/constants.{
-//   admin_pkh, lovelace_asset, orders_script_hash, out_ref, pool_asset,
-//   pool_asset_name, pool_license, pool_script_hash, stable_collateral_asset,
+//   admin_pkh, underlying_asset, orders_script_hash, out_ref, pool_asset,
+//   pool_asset_name, pool_license, pool_script_hash, stable_asset,
 //   trader_pkh,
 // }
 // use types.{
@@ -17,11 +17,11 @@
 
 // const pool_datum =
 //   PoolDatum {
-//     underlying_asset: lovelace_asset,
+//     underlying_asset: underlying_asset,
 //     underlying_asset_amount: 100_000_000,
 //     underlying_asset_lended_amount: 1_000_000,
 //     underlying_interest_rate: 2,
-//     stable_collateral_asset,
+//     stable_asset,
 //     max_leverage_factor: 10,
 //     margin_requirement: 5,
 //     max_strike_holder_leverage_factor: 20,
@@ -29,7 +29,7 @@
 //     is_valid_pool_asset: pool_asset,
 //     earnings_per_share: 0,
 //     collateral_earnings_per_share: 0,
-//     stable_collateral_asset_amount: 100_000_000,
+//     stable_asset_amount: 100_000_000,
 //   }
 
 // const pool_input =
@@ -45,9 +45,9 @@
 //             pool_datum.underlying_asset_amount,
 //           )
 //         |> assets.add(
-//             pool_datum.stable_collateral_asset.policy_id,
-//             pool_datum.stable_collateral_asset.asset_name,
-//             pool_datum.stable_collateral_asset_amount,
+//             pool_datum.stable_asset.policy_id,
+//             pool_datum.stable_asset.asset_name,
+//             pool_datum.stable_asset_amount,
 //           ),
 //       datum: InlineDatum(pool_datum),
 //       reference_script: None,
@@ -109,7 +109,7 @@
 //       underlying_asset_amount: pool_datum.underlying_asset_amount,
 //       underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
 //       underlying_interest_rate: 20,
-//       stable_collateral_asset: pool_datum.stable_collateral_asset,
+//       stable_asset: pool_datum.stable_asset,
 //       max_leverage_factor: pool_datum.max_leverage_factor,
 //       margin_requirement: pool_datum.margin_requirement,
 //       max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
@@ -117,7 +117,7 @@
 //       is_valid_pool_asset: pool_datum.is_valid_pool_asset,
 //       earnings_per_share: pool_datum.earnings_per_share,
 //       collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
-//       stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+//       stable_asset_amount: pool_datum.stable_asset_amount,
 //     }
 
 //   let output =
@@ -131,9 +131,9 @@
 //             pool_datum.underlying_asset_amount,
 //           )
 //         |> assets.add(
-//             pool_datum.stable_collateral_asset.policy_id,
-//             pool_datum.stable_collateral_asset.asset_name,
-//             pool_datum.stable_collateral_asset_amount,
+//             pool_datum.stable_asset.policy_id,
+//             pool_datum.stable_asset.asset_name,
+//             pool_datum.stable_asset_amount,
 //           ),
 //       datum: InlineDatum(updated_pool_datum),
 //       reference_script: None,
@@ -189,7 +189,7 @@
 //       underlying_asset_amount: pool_datum.underlying_asset_amount,
 //       underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
 //       underlying_interest_rate: pool_datum.underlying_interest_rate,
-//       stable_collateral_asset: pool_datum.stable_collateral_asset,
+//       stable_asset: pool_datum.stable_asset,
 //       max_leverage_factor: pool_datum.max_leverage_factor,
 //       margin_requirement: 30,
 //       max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
@@ -197,7 +197,7 @@
 //       is_valid_pool_asset: pool_datum.is_valid_pool_asset,
 //       earnings_per_share: pool_datum.earnings_per_share,
 //       collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
-//       stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+//       stable_asset_amount: pool_datum.stable_asset_amount,
 //     }
 
 //   let output =
@@ -211,9 +211,9 @@
 //             pool_datum.underlying_asset_amount,
 //           )
 //         |> assets.add(
-//             pool_datum.stable_collateral_asset.policy_id,
-//             pool_datum.stable_collateral_asset.asset_name,
-//             pool_datum.stable_collateral_asset_amount,
+//             pool_datum.stable_asset.policy_id,
+//             pool_datum.stable_asset.asset_name,
+//             pool_datum.stable_asset_amount,
 //           ),
 //       datum: InlineDatum(updated_pool_datum),
 //       reference_script: None,
@@ -269,7 +269,7 @@
 //       underlying_asset_amount: pool_datum.underlying_asset_amount,
 //       underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
 //       underlying_interest_rate: pool_datum.underlying_interest_rate,
-//       stable_collateral_asset: pool_datum.stable_collateral_asset,
+//       stable_asset: pool_datum.stable_asset,
 //       max_leverage_factor: 30,
 //       margin_requirement: pool_datum.margin_requirement,
 //       max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
@@ -277,7 +277,7 @@
 //       is_valid_pool_asset: pool_datum.is_valid_pool_asset,
 //       earnings_per_share: pool_datum.earnings_per_share,
 //       collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
-//       stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+//       stable_asset_amount: pool_datum.stable_asset_amount,
 //     }
 
 //   let output =
@@ -291,9 +291,9 @@
 //             pool_datum.underlying_asset_amount,
 //           )
 //         |> assets.add(
-//             pool_datum.stable_collateral_asset.policy_id,
-//             pool_datum.stable_collateral_asset.asset_name,
-//             pool_datum.stable_collateral_asset_amount,
+//             pool_datum.stable_asset.policy_id,
+//             pool_datum.stable_asset.asset_name,
+//             pool_datum.stable_asset_amount,
 //           ),
 //       datum: InlineDatum(updated_pool_datum),
 //       reference_script: None,
@@ -349,7 +349,7 @@
 //       underlying_asset_amount: pool_datum.underlying_asset_amount,
 //       underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
 //       underlying_interest_rate: pool_datum.underlying_interest_rate,
-//       stable_collateral_asset: pool_datum.stable_collateral_asset,
+//       stable_asset: pool_datum.stable_asset,
 //       max_leverage_factor: pool_datum.max_leverage_factor,
 //       margin_requirement: pool_datum.margin_requirement,
 //       max_strike_holder_leverage_factor: 30,
@@ -357,7 +357,7 @@
 //       is_valid_pool_asset: pool_datum.is_valid_pool_asset,
 //       earnings_per_share: pool_datum.earnings_per_share,
 //       collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
-//       stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+//       stable_asset_amount: pool_datum.stable_asset_amount,
 //     }
 
 //   let output =
@@ -371,9 +371,9 @@
 //             pool_datum.underlying_asset_amount,
 //           )
 //         |> assets.add(
-//             pool_datum.stable_collateral_asset.policy_id,
-//             pool_datum.stable_collateral_asset.asset_name,
-//             pool_datum.stable_collateral_asset_amount,
+//             pool_datum.stable_asset.policy_id,
+//             pool_datum.stable_asset.asset_name,
+//             pool_datum.stable_asset_amount,
 //           ),
 //       datum: InlineDatum(updated_pool_datum),
 //       reference_script: None,

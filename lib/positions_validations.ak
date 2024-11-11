@@ -13,11 +13,11 @@ use types.{
   ShortCloseOrder, StopLossClose, TakeProfitClose, TraderClose,
 }
 use utils.{
-  divide, get_address_outputs, get_all_validators_inputs, get_lower_bound,
-  policy_in_value, to_ada_if_lovelace,
+  divide, get_address_outputs, get_all_validators_inputs, get_collateral_asset,
+  get_lower_bound, policy_in_value, to_ada_if_lovelace,
 }
 
-pub fn close_position(
+pub fn close_position_valid(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   current_usd_price: Int,
@@ -33,7 +33,7 @@ pub fn close_position(
     entered_at_usd_price,
     stop_loss_usd_price,
     take_profit_usd_price,
-    last_pay_lend_time,
+    entered_position_time,
     side,
     position_hash,
     margin_requirement,
@@ -80,7 +80,7 @@ pub fn close_position(
         entered_at_usd_price,
         current_usd_price,
         current_time,
-        last_pay_lend_time,
+        entered_position_time,
         hourly_usd_borrow_fee,
         side,
       )
@@ -94,10 +94,9 @@ pub fn close_position(
           entered_at_usd_price,
           stop_loss_usd_price,
           take_profit_usd_price,
-          last_pay_lend_time,
+          entered_position_time,
           position_hash,
           position_asset_amount,
-          collateral_asset,
           margin_requirement,
           hourly_usd_borrow_fee,
           return_amount,
@@ -118,7 +117,7 @@ pub fn close_position(
         entered_at_usd_price,
         current_usd_price,
         current_time,
-        last_pay_lend_time,
+        entered_position_time,
         hourly_usd_borrow_fee,
         side,
       )
@@ -132,10 +131,9 @@ pub fn close_position(
           entered_at_usd_price,
           stop_loss_usd_price,
           take_profit_usd_price,
-          last_pay_lend_time,
+          entered_position_time,
           position_hash,
           position_asset_amount,
-          collateral_asset,
           margin_requirement,
           hourly_usd_borrow_fee,
           return_amount,
@@ -159,7 +157,7 @@ pub fn close_position(
         entered_at_usd_price,
         current_usd_price,
         current_time,
-        last_pay_lend_time,
+        entered_position_time,
         hourly_usd_borrow_fee,
         side,
       )
@@ -173,10 +171,9 @@ pub fn close_position(
           entered_at_usd_price,
           stop_loss_usd_price,
           take_profit_usd_price,
-          last_pay_lend_time,
+          entered_position_time,
           position_hash,
           position_asset_amount,
-          collateral_asset,
           margin_requirement,
           hourly_usd_borrow_fee,
           return_amount,
@@ -216,7 +213,7 @@ pub fn close_position(
         entered_at_usd_price,
         margin_requirement,
         collateral_asset_amount,
-        last_pay_lend_time,
+        entered_position_time,
         hourly_usd_borrow_fee,
         current_time,
       )
@@ -228,7 +225,7 @@ pub fn close_position(
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
-pub fn update_stop_loss(
+pub fn update_stop_loss_valid(
   transaction: Transaction,
   maybe_datum: Option<PositionDatum>,
   stop_loss_usd_price: Int,
@@ -243,7 +240,7 @@ pub fn update_stop_loss(
     entered_at_usd_price,
     leverage_factor,
     take_profit_usd_price,
-    last_pay_lend_time,
+    entered_position_time,
     side,
     margin_requirement,
     hourly_usd_borrow_fee,
@@ -281,7 +278,7 @@ pub fn update_stop_loss(
       collateral_asset,
       stop_loss_usd_price,
       take_profit_usd_price,
-      last_pay_lend_time,
+      entered_position_time,
       margin_requirement,
       hourly_usd_borrow_fee,
       side,
@@ -295,7 +292,7 @@ pub fn update_stop_loss(
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
-pub fn update_take_profit(
+pub fn update_take_profit_valid(
   transaction: Transaction,
   maybe_datum: Option<PositionDatum>,
   take_profit_usd_price: Int,
@@ -309,7 +306,7 @@ pub fn update_take_profit(
     leverage_factor,
     stop_loss_usd_price,
     position_asset_amount,
-    last_pay_lend_time,
+    entered_position_time,
     margin_requirement,
     side,
     hourly_usd_borrow_fee,
@@ -350,7 +347,7 @@ pub fn update_take_profit(
       collateral_asset,
       stop_loss_usd_price,
       take_profit_usd_price,
-      last_pay_lend_time,
+      entered_position_time,
       margin_requirement,
       hourly_usd_borrow_fee,
       side,
@@ -363,7 +360,7 @@ pub fn update_take_profit(
   only_one_input_from_script && only_one_output_to_positions_validator && output_datum_valid && assets_locked_valid
 }
 
-pub fn mint_position(
+pub fn mint_position_valid(
   transaction: Transaction,
   params: PositionsParams,
   current_usd_price: Int,
@@ -383,6 +380,18 @@ pub fn mint_position(
 
   expect orders_datum_typed: OrderDatum = orders_datum
 
+  expect OpenPositionOrder {
+    owner_address_hash,
+    leverage_factor,
+    side,
+    order_submission_time,
+    order_submission_usd_price,
+    position_asset_amount,
+    position_hash,
+    hourly_usd_borrow_fee,
+    ..
+  } = orders_datum_typed.action
+
   let ref_input: List<Input> = transaction.reference_inputs
 
   expect Some(Input {
@@ -393,18 +402,16 @@ pub fn mint_position(
   expect InlineDatum(pool_ref_datum) = pool_ref_datum
   expect pool_ref_datum_typed: PoolDatum = pool_ref_datum
 
-  expect OpenPositionOrder {
-    owner_address_hash,
-    leverage_factor,
-    side,
-    order_submission_time,
-    order_submission_usd_price,
-    position_asset_amount,
-    collateral_asset,
-    position_hash,
-    hourly_usd_borrow_fee,
-    ..
-  } = orders_datum_typed.action
+  let PoolDatum { stable_asset, underlying_asset, .. } = pool_ref_datum_typed
+
+  let collateral_asset: Asset =
+    get_collateral_asset(
+      underlying_asset.policy_id,
+      underlying_asset.asset_name,
+      stable_asset.policy_id,
+      stable_asset.asset_name,
+      side,
+    )
 
   expect current_usd_price == order_submission_usd_price
 
@@ -471,9 +478,6 @@ pub fn mint_position(
   let pool_license_in_transaction: Bool =
     policy_in_value(pool_license, batcher_value)
 
-  let is_valid_collateral: Bool =
-    is_valid_collateral(pool_ref_datum_typed, collateral_asset, side)
-
   let minted_assets_amount_valid: Bool =
     is_position_assets_amount_valid(
       side,
@@ -484,8 +488,7 @@ pub fn mint_position(
       current_usd_price,
     )
 
-  expect
-    minted_assets_amount_valid && is_valid_collateral && pool_license_in_transaction
+  expect minted_assets_amount_valid && pool_license_in_transaction
 
   let contains_strike_collateral: Bool =
     quantity_of(
@@ -498,18 +501,6 @@ pub fn mint_position(
     pool_ref_datum_typed.max_strike_holder_leverage_factor >= leverage_factor
   } else {
     pool_ref_datum_typed.max_leverage_factor >= leverage_factor
-  }
-}
-
-fn is_valid_collateral(
-  pool_ref: PoolDatum,
-  collateral_asset: Asset,
-  side: PositionSide,
-) -> Bool {
-  if side == Long {
-    collateral_asset == pool_ref.underlying_asset
-  } else {
-    collateral_asset == pool_ref.stable_collateral_asset
   }
 }
 
@@ -569,7 +560,7 @@ fn reach_liquidation_price(
   entered_at_usd_price: Int,
   margin_requirement: Int,
   collateral_asset_amount: Int,
-  last_pay_lend_time: POSIXTime,
+  entered_position_time: POSIXTime,
   hourly_borrow_fee: Int,
   current_time: POSIXTime,
 ) -> Bool {
@@ -584,7 +575,7 @@ fn reach_liquidation_price(
     let accumulative_interest_fee: Int =
       calculate_accumulative_interest_fee(
         current_time,
-        last_pay_lend_time,
+        entered_position_time,
         hourly_borrow_fee,
       )
 
@@ -612,7 +603,7 @@ fn reach_liquidation_price(
     let accumulative_interest_fee: Int =
       calculate_accumulative_interest_fee(
         current_time,
-        last_pay_lend_time,
+        entered_position_time,
         hourly_borrow_fee,
       )
 
@@ -631,10 +622,11 @@ fn reach_liquidation_price(
 
 fn calculate_accumulative_interest_fee(
   current_time: POSIXTime,
-  last_pay_lend_time: POSIXTime,
+  entered_position_time: POSIXTime,
   hourly_borrow_rate: Int,
 ) -> Int {
-  let hours_passed: Int = divide(current_time - last_pay_lend_time, 3_600_000)
+  let hours_passed: Int =
+    divide(current_time - entered_position_time, 3_600_000)
 
   hours_passed * hourly_borrow_rate
 }
@@ -687,7 +679,7 @@ fn calculate_return(
   entered_at_usd_price: Int,
   current_usd_price: Int,
   current_time: POSIXTime,
-  last_pay_lend_time: POSIXTime,
+  entered_position_time: POSIXTime,
   hourly_borrow_fee: Int,
   side: PositionSide,
 ) -> CloseSendAmount {
@@ -703,7 +695,7 @@ fn calculate_return(
     let accumulative_interest_fee: Int =
       calculate_accumulative_interest_fee(
         current_time,
-        last_pay_lend_time,
+        entered_position_time,
         hourly_borrow_fee,
       )
 
@@ -729,7 +721,7 @@ fn calculate_return(
     let accumulative_interest_fee: Int =
       calculate_accumulative_interest_fee(
         current_time,
-        last_pay_lend_time,
+        entered_position_time,
         hourly_borrow_fee,
       )
 

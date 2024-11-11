@@ -66,7 +66,7 @@ validator pools(params: PoolParams) {
                 underlying_asset_amount: pool_datum.underlying_asset_amount,
                 underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
                 underlying_interest_rate: new_value,
-                stable_collateral_asset: pool_datum.stable_collateral_asset,
+                stable_asset: pool_datum.stable_asset,
                 max_leverage_factor: pool_datum.max_leverage_factor,
                 margin_requirement: pool_datum.margin_requirement,
                 max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
@@ -74,7 +74,7 @@ validator pools(params: PoolParams) {
                 is_valid_pool_asset: pool_datum.is_valid_pool_asset,
                 earnings_per_share: pool_datum.earnings_per_share,
                 collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
-                stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+                stable_asset_amount: pool_datum.stable_asset_amount,
               }
 
             output_datum_typed == expected_datum
@@ -86,7 +86,7 @@ validator pools(params: PoolParams) {
                 underlying_asset_amount: pool_datum.underlying_asset_amount,
                 underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
                 underlying_interest_rate: pool_datum.underlying_interest_rate,
-                stable_collateral_asset: pool_datum.stable_collateral_asset,
+                stable_asset: pool_datum.stable_asset,
                 max_leverage_factor: pool_datum.max_leverage_factor,
                 margin_requirement: new_value,
                 max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
@@ -94,7 +94,7 @@ validator pools(params: PoolParams) {
                 is_valid_pool_asset: pool_datum.is_valid_pool_asset,
                 earnings_per_share: pool_datum.earnings_per_share,
                 collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
-                stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+                stable_asset_amount: pool_datum.stable_asset_amount,
               }
 
             output_datum_typed == expected_datum
@@ -106,7 +106,7 @@ validator pools(params: PoolParams) {
                 underlying_asset_amount: pool_datum.underlying_asset_amount,
                 underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
                 underlying_interest_rate: pool_datum.underlying_interest_rate,
-                stable_collateral_asset: pool_datum.stable_collateral_asset,
+                stable_asset: pool_datum.stable_asset,
                 max_leverage_factor: new_value,
                 margin_requirement: pool_datum.margin_requirement,
                 max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
@@ -114,7 +114,7 @@ validator pools(params: PoolParams) {
                 is_valid_pool_asset: pool_datum.is_valid_pool_asset,
                 earnings_per_share: pool_datum.earnings_per_share,
                 collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
-                stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+                stable_asset_amount: pool_datum.stable_asset_amount,
               }
 
             output_datum_typed == expected_datum
@@ -126,7 +126,7 @@ validator pools(params: PoolParams) {
                 underlying_asset_amount: pool_datum.underlying_asset_amount,
                 underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
                 underlying_interest_rate: pool_datum.underlying_interest_rate,
-                stable_collateral_asset: pool_datum.stable_collateral_asset,
+                stable_asset: pool_datum.stable_asset,
                 max_leverage_factor: pool_datum.max_leverage_factor,
                 margin_requirement: pool_datum.margin_requirement,
                 max_strike_holder_leverage_factor: new_value,
@@ -134,7 +134,7 @@ validator pools(params: PoolParams) {
                 is_valid_pool_asset: pool_datum.is_valid_pool_asset,
                 earnings_per_share: pool_datum.earnings_per_share,
                 collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
-                stable_collateral_asset_amount: pool_datum.stable_collateral_asset_amount,
+                stable_asset_amount: pool_datum.stable_asset_amount,
               }
 
             output_datum_typed == expected_datum

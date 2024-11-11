@@ -7,9 +7,9 @@ use cardano/transaction.{
 }
 use positions
 use tests/constants.{
-  admin_pkh, batcher_fee, lovelace_asset, orders_script_hash, out_ref,
-  pool_asset, pool_license, position_hash, positions_script_hash,
-  stable_collateral_asset, strike_collateral_asset, trader_pkh,
+  admin_pkh, batcher_fee, orders_script_hash, out_ref, pool_asset, pool_license,
+  position_hash, positions_script_hash, stable_asset, strike_collateral_asset,
+  trader_pkh, underlying_asset,
 }
 use types.{
   Asset, BurnPosition, Close, ClosePositionOrder, LiquidateClose,
@@ -27,8 +27,8 @@ const position_datum =
     position_asset_amount: 10_000_000,
     stop_loss_usd_price: 98,
     take_profit_usd_price: 0,
-    collateral_asset: lovelace_asset,
-    last_pay_lend_time: 1727453227635,
+    collateral_asset: underlying_asset,
+    entered_position_time: 1727453227635,
     margin_requirement: 5,
     hourly_usd_borrow_fee: 20,
     side: Long,
@@ -36,11 +36,11 @@ const position_datum =
 
 const pool_ref_datum =
   PoolDatum {
-    underlying_asset: lovelace_asset,
+    underlying_asset,
     underlying_asset_amount: 100_000_000,
     underlying_asset_lended_amount: 1_000_000,
     underlying_interest_rate: 2,
-    stable_collateral_asset,
+    stable_asset,
     max_leverage_factor: 10,
     margin_requirement: 5,
     max_strike_holder_leverage_factor: 20,
@@ -48,7 +48,7 @@ const pool_ref_datum =
     is_valid_pool_asset: pool_asset,
     earnings_per_share: 0,
     collateral_earnings_per_share: 0,
-    stable_collateral_asset_amount: 100_000_000,
+    stable_asset_amount: 100_000_000,
   }
 
 const pool_ref_input =
@@ -73,7 +73,6 @@ test enter_long_positions_mint() {
         leverage_factor: 10,
         position_hash,
         position_asset_amount: 10_000_000,
-        collateral_asset: lovelace_asset,
         margin_requirement: 5,
         hourly_usd_borrow_fee: 20,
         order_submission_time: 1727453227635,
@@ -88,8 +87,8 @@ test enter_long_positions_mint() {
       value: mint
         |> assets.merge(assets.from_lovelace(batcher_fee))
         |> assets.add(
-            lovelace_asset.policy_id,
-            lovelace_asset.asset_name,
+            underlying_asset.policy_id,
+            underlying_asset.asset_name,
             1_000_000,
           )
         |> assets.add(
@@ -142,7 +141,6 @@ test enter_short_positions_mint() {
         leverage_factor: 10,
         position_hash,
         position_asset_amount: 10_000_000,
-        collateral_asset: stable_collateral_asset,
         margin_requirement: 5,
         hourly_usd_borrow_fee: 1,
         order_submission_time: 1727453227635,
@@ -158,11 +156,7 @@ test enter_short_positions_mint() {
       address: from_script(orders_script_hash),
       value: mint
         |> assets.merge(assets.from_lovelace(batcher_fee))
-        |> assets.add(
-            stable_collateral_asset.policy_id,
-            stable_collateral_asset.asset_name,
-            5,
-          )
+        |> assets.add(stable_asset.policy_id, stable_asset.asset_name, 5)
         |> assets.add(
             strike_collateral_asset.policy_id,
             strike_collateral_asset.asset_name,
@@ -260,8 +254,8 @@ test close_position_signed_by_owner() {
               10,
             )
           |> assets.add(
-              lovelace_asset.policy_id,
-              lovelace_asset.asset_name,
+              underlying_asset.policy_id,
+              underlying_asset.asset_name,
               1_000_000,
             ),
         datum: InlineDatum(position_datum),
@@ -279,9 +273,8 @@ test close_position_signed_by_owner() {
         entered_at_usd_price: position_datum.entered_at_usd_price,
         stop_loss_usd_price: position_datum.stop_loss_usd_price,
         take_profit_usd_price: position_datum.take_profit_usd_price,
-        last_pay_lend_time: position_datum.last_pay_lend_time,
+        entered_position_time: position_datum.entered_position_time,
         position_asset_amount: position_datum.position_asset_amount,
-        collateral_asset: lovelace_asset,
         margin_requirement: position_datum.margin_requirement,
         hourly_usd_borrow_fee: position_datum.hourly_usd_borrow_fee,
         return_amount: LongCloseOrder { asset_amount: 1_000_000 },
@@ -301,7 +294,7 @@ test close_position_signed_by_owner() {
           )
         |> assets.add(
             position_datum.collateral_asset.policy_id,
-            lovelace_asset.asset_name,
+            underlying_asset.asset_name,
             1_000_000,
           ),
       datum: InlineDatum(orders_datum),
@@ -379,9 +372,8 @@ test close_position_take_profit() {
         entered_at_usd_price: position_datum.entered_at_usd_price,
         stop_loss_usd_price: position_datum.stop_loss_usd_price,
         take_profit_usd_price: position_datum.take_profit_usd_price,
-        last_pay_lend_time: position_datum.last_pay_lend_time,
+        entered_position_time: position_datum.entered_position_time,
         position_asset_amount: position_datum.position_asset_amount,
-        collateral_asset: lovelace_asset,
         margin_requirement: position_datum.margin_requirement,
         hourly_usd_borrow_fee: position_datum.hourly_usd_borrow_fee,
         return_amount: LongCloseOrder { asset_amount: 2_666_666 },
@@ -480,9 +472,8 @@ test close_position_stop_loss() {
         entered_at_usd_price: position_datum.entered_at_usd_price,
         stop_loss_usd_price: 98,
         take_profit_usd_price: position_datum.take_profit_usd_price,
-        last_pay_lend_time: position_datum.last_pay_lend_time,
+        entered_position_time: position_datum.entered_position_time,
         position_asset_amount: position_datum.position_asset_amount,
-        collateral_asset: lovelace_asset,
         margin_requirement: position_datum.margin_requirement,
         hourly_usd_borrow_fee: position_datum.hourly_usd_borrow_fee,
         return_amount: LongCloseOrder { asset_amount: 795_918 },
@@ -666,10 +657,10 @@ test update_stop_loss() {
       position_hash,
       leverage_factor: position_datum.leverage_factor,
       position_asset_amount: position_datum.position_asset_amount,
-      collateral_asset: lovelace_asset,
+      collateral_asset: underlying_asset,
       stop_loss_usd_price: 10,
       take_profit_usd_price: position_datum.take_profit_usd_price,
-      last_pay_lend_time: position_datum.last_pay_lend_time,
+      entered_position_time: position_datum.entered_position_time,
       margin_requirement: position_datum.margin_requirement,
       hourly_usd_borrow_fee: position_datum.hourly_usd_borrow_fee,
       side: position_datum.side,
@@ -761,10 +752,10 @@ test update_take_profit() {
       leverage_factor: position_datum.leverage_factor,
       entered_at_usd_price: position_datum.entered_at_usd_price,
       position_asset_amount: position_datum.position_asset_amount,
-      collateral_asset: lovelace_asset,
+      collateral_asset: underlying_asset,
       stop_loss_usd_price: position_datum.stop_loss_usd_price,
       take_profit_usd_price: 10,
-      last_pay_lend_time: position_datum.last_pay_lend_time,
+      entered_position_time: position_datum.entered_position_time,
       margin_requirement: position_datum.margin_requirement,
       hourly_usd_borrow_fee: position_datum.hourly_usd_borrow_fee,
       side: position_datum.side,

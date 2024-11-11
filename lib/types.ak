@@ -24,6 +24,8 @@ pub type OrdersParams {
   maximum_deadline_range: Int,
   underlying_asset_policy_id: PolicyId,
   underlying_asset_name: AssetName,
+  stable_asset_policy_id: PolicyId,
+  stable_asset_name: AssetName,
   burn_address: ScriptHash,
 }
 
@@ -66,8 +68,6 @@ pub type OrderAction {
     // Total position size of the trader
     position_asset_amount: Int,
     // The collateral asset used for the position
-    collateral_asset: Asset,
-    // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
     margin_requirement: Int,
     // Total amount of USD value to pay for borrow each hour
     hourly_usd_borrow_fee: Int,
@@ -88,13 +88,11 @@ pub type OrderAction {
     // Take profit price where the position will be closed
     take_profit_usd_price: Int,
     // Last time the hourly lend was paid
-    last_pay_lend_time: POSIXTime,
+    entered_position_time: POSIXTime,
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
     // Total position size of the trader
     position_asset_amount: Int,
-    // The collateral asset used for the position
-    collateral_asset: Asset,
     // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
     margin_requirement: Int,
     // Total amount of USD value to pay for borrow each hour
@@ -161,7 +159,7 @@ pub type PositionDatum {
   // Take profit price where the position will be closed
   take_profit_usd_price: Int,
   // Last time the hourly lend was paid
-  last_pay_lend_time: POSIXTime,
+  entered_position_time: POSIXTime,
   // The collateral asset used for the position
   collateral_asset: Asset,
   // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
@@ -184,9 +182,9 @@ pub type PoolDatum {
   // The margin required to liquidate the pool, Example: 5 = 5%
   margin_requirement: Int,
   // The stable collateral asset used for the pool
-  stable_collateral_asset: Asset,
+  stable_asset: Asset,
   // Total amount of stable collateral asset
-  stable_collateral_asset_amount: Int,
+  stable_asset_amount: Int,
   // The max leverage factor for the pool
   max_leverage_factor: Int,
   // The max leverage factor for the strike holder

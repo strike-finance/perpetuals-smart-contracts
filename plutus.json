@@ -453,7 +453,7 @@
               "$ref": "#/definitions/Int"
             },
             {
-              "title": "last_pay_lend_time",
+              "title": "entered_position_time",
               "$ref": "#/definitions/POSIXTime"
             },
             {
@@ -629,11 +629,11 @@
               "$ref": "#/definitions/Int"
             },
             {
-              "title": "stable_collateral_asset",
+              "title": "stable_asset",
               "$ref": "#/definitions/types~1Asset"
             },
             {
-              "title": "stable_collateral_asset_amount",
+              "title": "stable_asset_amount",
               "$ref": "#/definitions/Int"
             },
             {
@@ -762,7 +762,7 @@
               "$ref": "#/definitions/Int"
             },
             {
-              "title": "last_pay_lend_time",
+              "title": "entered_position_time",
               "$ref": "#/definitions/POSIXTime"
             },
             {
