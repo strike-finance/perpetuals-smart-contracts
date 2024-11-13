@@ -14,7 +14,7 @@ use types.{
 }
 use utils.{
   divide, get_address_outputs, get_all_validators_inputs, get_collateral_asset,
-  get_lower_bound, policy_in_value, to_ada_if_lovelace,
+  get_lower_bound, to_ada_if_lovelace,
 }
 
 pub fn close_position_valid(
@@ -196,6 +196,8 @@ pub fn close_position_valid(
           position_hash,
           side,
           owner_address_hash,
+          position_asset_amount,
+          leverage_factor,
         },
       }
 
@@ -360,12 +362,12 @@ pub fn update_take_profit_valid(
   only_one_input_from_script && only_one_output_to_positions_validator && output_datum_valid && assets_locked_valid
 }
 
+// TOD: BATCHER VALUE FIX
 pub fn mint_position_valid(
   transaction: Transaction,
   params: PositionsParams,
   current_usd_price: Int,
   policy_id: PolicyId,
-  pool_license: PolicyId,
 ) {
   let Transaction { mint, .. } = transaction
 
@@ -395,14 +397,20 @@ pub fn mint_position_valid(
   let ref_input: List<Input> = transaction.reference_inputs
 
   expect Some(Input {
-    output: Output { value: batcher_value, datum: pool_ref_datum, .. },
+    output: Output { value: pool_value, datum: pool_datum, .. },
     ..
   }) = list.head(ref_input)
 
-  expect InlineDatum(pool_ref_datum) = pool_ref_datum
-  expect pool_ref_datum_typed: PoolDatum = pool_ref_datum
+  expect InlineDatum(pool_datum) = pool_datum
+  expect pool_datum_typed: PoolDatum = pool_datum
 
-  let PoolDatum { stable_asset, underlying_asset, .. } = pool_ref_datum_typed
+  let PoolDatum {
+    underlying_asset,
+    stable_asset,
+    max_strike_holder_leverage_factor,
+    max_leverage_factor,
+    ..
+  } = pool_datum_typed
 
   let collateral_asset: Asset =
     get_collateral_asset(
@@ -433,6 +441,7 @@ pub fn mint_position_valid(
       strike_asset_name,
     )
 
+  // check if lovelace, and subtract collateral_asset_amount with batcher fee, or else it gets counted twice
   if collateral_asset.policy_id == "" {
     let expected_assets_locked: Value =
       assets.from_lovelace(batcher_fee)
@@ -459,24 +468,42 @@ pub fn mint_position_valid(
     expect match(output_to_orders_validator.value, expected_assets_locked, >=)
   }
 
+  let collateral_asset: Asset =
+    get_collateral_asset(
+      underlying_asset.policy_id,
+      underlying_asset.asset_name,
+      stable_asset.policy_id,
+      stable_asset.asset_name,
+      side,
+    )
+
+  let underlying_asset_amount =
+    quantity_of(
+      pool_value,
+      collateral_asset.policy_id,
+      collateral_asset.asset_name,
+    )
+
   let estimated_hourly_usd_borrow_fee: Int =
     calculate_pay_borrow(
       position_asset_amount,
-      pool_ref_datum_typed,
+      pool_datum_typed,
       current_usd_price,
-      pool_ref_datum_typed.underlying_asset,
+      underlying_asset,
+      underlying_asset_amount,
     )
 
-  expect hourly_usd_borrow_fee >= estimated_hourly_usd_borrow_fee
+  let hourly_usd_borrow_fee_valid =
+    hourly_usd_borrow_fee >= estimated_hourly_usd_borrow_fee
 
-  expect get_lower_bound(transaction.validity_range) >= order_submission_time
+  let order_submission_time_valid =
+    get_lower_bound(transaction.validity_range) >= order_submission_time
 
-  expect policy_id == position_hash && owner_address_hash == owner_address_hash
+  let minted_asset_valid =
+    policy_id == position_hash && owner_address_hash == owner_address_hash
 
-  expect list.has(transaction.extra_signatories, owner_address_hash)
-
-  let pool_license_in_transaction: Bool =
-    policy_in_value(pool_license, batcher_value)
+  let owner_signed_tx =
+    list.has(transaction.extra_signatories, owner_address_hash)
 
   let minted_assets_amount_valid: Bool =
     is_position_assets_amount_valid(
@@ -484,11 +511,12 @@ pub fn mint_position_valid(
       position_asset_amount,
       leverage_factor,
       collateral_asset_amount,
-      pool_ref_datum_typed.underlying_asset,
+      underlying_asset,
       current_usd_price,
     )
 
-  expect minted_assets_amount_valid && pool_license_in_transaction
+  expect
+    minted_assets_amount_valid && hourly_usd_borrow_fee_valid && order_submission_time_valid && minted_asset_valid && owner_signed_tx
 
   let contains_strike_collateral: Bool =
     quantity_of(
@@ -498,9 +526,9 @@ pub fn mint_position_valid(
     ) > 0
 
   if contains_strike_collateral {
-    pool_ref_datum_typed.max_strike_holder_leverage_factor >= leverage_factor
+    max_strike_holder_leverage_factor >= leverage_factor
   } else {
-    pool_ref_datum_typed.max_leverage_factor >= leverage_factor
+    max_leverage_factor >= leverage_factor
   }
 }
 
@@ -653,7 +681,7 @@ fn calculate_pay_borrow(
       position_asset_amount * current_usd_price / lovelace_amount
 
     let fee =
-      utilization_percentage * pool_datum.underlying_interest_rate * current_position_usd_value / 100
+      utilization_percentage * pool_datum.interest_rate * current_position_usd_value / 100
 
     if fee < 1 {
       1
@@ -664,7 +692,7 @@ fn calculate_pay_borrow(
     let current_position_usd_value = position_asset_amount * current_usd_price
 
     let fee =
-      utilization_percentage * pool_datum.underlying_interest_rate * current_position_usd_value / 100
+      utilization_percentage * pool_datum.interest_rate * current_position_usd_value / 100
 
     if fee < 1 {
       1

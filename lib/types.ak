@@ -109,6 +109,10 @@ pub type OrderAction {
     position_hash: ScriptHash,
     // Long or short position
     side: PositionSide,
+    // Total size of position
+    position_asset_amount: Int,
+    // Leverage used for this position
+    leverage_factor: Int,
   }
 }
 
@@ -140,7 +144,6 @@ pub type PositionMintRedeemer {
 
 pub type PositionsParams {
   orders_script_hash: ScriptHash,
-  pool_license: PolicyId,
 }
 
 pub type PositionDatum {
@@ -176,7 +179,7 @@ pub type PoolDatum {
   // Total amount of underlying asset that has been lended out
   underlying_asset_lended_amount: Int,
   // The interest rate for the underlying asset
-  underlying_interest_rate: Int,
+  interest_rate: Int,
   // The stable collateral asset used for the pool
   stable_asset: Asset,
   // The max leverage factor for the pool

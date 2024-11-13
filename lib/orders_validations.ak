@@ -41,7 +41,6 @@ pub fn valid_orders(
       },
     )
 
-
   let (
     _,
     _,
@@ -314,8 +313,13 @@ pub fn liquidate_position(
   expected_mint: Value,
   burn_address: ScriptHash,
 ) -> ExpectedPoolOutput {
-  expect LiquidatePositionOrder { position_hash, side, owner_address_hash } =
-    input_datum_typed.action
+  expect LiquidatePositionOrder {
+    position_hash,
+    side,
+    owner_address_hash,
+    position_asset_amount,
+    leverage_factor,
+  } = input_datum_typed.action
 
   let strike_is_burnt = is_strike_collateral_asset_burnt(burn_address, output)
 
@@ -323,6 +327,14 @@ pub fn liquidate_position(
 
   let updated_mint =
     assets.add(expected_mint, position_hash, owner_address_hash, -1)
+
+  let lended_amount: Int = position_asset_amount / leverage_factor
+
+  let updated_datum =
+    PoolDatum {
+      ..pool_output_datum,
+      underlying_asset_lended_amount: pool_output_datum.underlying_asset_lended_amount - lended_amount,
+    }
 
   if side == Long {
     let collateral_asset_amount: Int =
@@ -340,11 +352,9 @@ pub fn liquidate_position(
         collateral_asset_amount,
       )
 
-    let freed_up_lended_amount = 1
-
     ExpectedPoolOutput {
       value: updated_value,
-      datum: pool_output_datum,
+      datum: updated_datum,
       mint: updated_mint,
     }
   } else {
@@ -354,8 +364,6 @@ pub fn liquidate_position(
         pool_output_datum.stable_asset.policy_id,
         pool_output_datum.stable_asset.asset_name,
       )
-
-    let free_up_lended_amount = 1
 
     let updated_value =
       assets.add(
@@ -367,7 +375,7 @@ pub fn liquidate_position(
 
     ExpectedPoolOutput {
       value: updated_value,
-      datum: pool_output_datum,
+      datum: updated_datum,
       mint: updated_mint,
     }
   }
@@ -492,6 +500,3 @@ fn is_strike_collateral_asset_burnt(
     True
   }
 }
-
-
-fn get_free_up_lended

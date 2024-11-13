@@ -64,7 +64,7 @@ validator pools(params: PoolParams) {
               PoolDatum {
                 underlying_asset: pool_datum.underlying_asset,
                 underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
-                underlying_interest_rate: new_value,
+                interest_rate: new_value,
                 stable_asset: pool_datum.stable_asset,
                 max_leverage_factor: pool_datum.max_leverage_factor,
                 max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
@@ -81,7 +81,7 @@ validator pools(params: PoolParams) {
               PoolDatum {
                 underlying_asset: pool_datum.underlying_asset,
                 underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
-                underlying_interest_rate: pool_datum.underlying_interest_rate,
+                interest_rate: pool_datum.interest_rate,
                 stable_asset: pool_datum.stable_asset,
                 max_leverage_factor: pool_datum.max_leverage_factor,
                 max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
@@ -97,8 +97,8 @@ validator pools(params: PoolParams) {
             let expected_datum =
               PoolDatum {
                 underlying_asset: pool_datum.underlying_asset,
-                underlying_asset_amount: pool_datum.underlying_asset_amount,
-                underlying_interest_rate: pool_datum.underlying_interest_rate,
+                underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
+                interest_rate: pool_datum.interest_rate,
                 stable_asset: pool_datum.stable_asset,
                 max_leverage_factor: new_value,
                 max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
@@ -115,7 +115,7 @@ validator pools(params: PoolParams) {
               PoolDatum {
                 underlying_asset: pool_datum.underlying_asset,
                 underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
-                underlying_interest_rate: pool_datum.underlying_interest_rate,
+                interest_rate: pool_datum.interest_rate,
                 stable_asset: pool_datum.stable_asset,
                 max_leverage_factor: pool_datum.max_leverage_factor,
                 max_strike_holder_leverage_factor: new_value,

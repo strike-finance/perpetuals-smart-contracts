@@ -39,13 +39,7 @@ validator positions(params: PositionsParams) {
   ) {
     when redeemer is {
       MintPosition(current_usd_price) ->
-        mint_position_valid(
-          transaction,
-          params,
-          current_usd_price,
-          policy_id,
-          params.pool_license,
-        )
+        mint_position_valid(transaction, params, current_usd_price, policy_id)
       BurnPosition(burn_amount, asset_name) -> {
         let expected_burnt = [(policy_id, asset_name, -burn_amount)]
         expected_burnt == flatten(transaction.mint)
