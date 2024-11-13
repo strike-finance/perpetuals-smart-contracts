@@ -68,7 +68,7 @@ pub type OrderAction {
     // Total position size of the trader
     position_asset_amount: Int,
     // The collateral asset used for the position
-    margin_requirement: Int,
+    maintain_margin_amount: Int,
     // Total amount of USD value to pay for borrow each hour
     hourly_usd_borrow_fee: Int,
     // Long or short position
@@ -94,7 +94,7 @@ pub type OrderAction {
     // Total position size of the trader
     position_asset_amount: Int,
     // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
-    margin_requirement: Int,
+    maintain_margin_amount: Int,
     // Total amount of USD value to pay for borrow each hour
     hourly_usd_borrow_fee: Int,
     // Amount to return to the owner
@@ -162,8 +162,8 @@ pub type PositionDatum {
   entered_position_time: POSIXTime,
   // The collateral asset used for the position
   collateral_asset: Asset,
-  // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
-  margin_requirement: Int,
+  // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5%
+  maintain_margin_amount: Int,
   // Total amount of USD value to pay for borrow each hour
   hourly_usd_borrow_fee: Int,
   // Side of the position
@@ -173,23 +173,17 @@ pub type PositionDatum {
 pub type PoolDatum {
   // The underlying asset that the pool is trading on
   underlying_asset: Asset,
-  // Total amount of underlying asset in the pool
-  underlying_asset_amount: Int,
   // Total amount of underlying asset that has been lended out
   underlying_asset_lended_amount: Int,
   // The interest rate for the underlying asset
   underlying_interest_rate: Int,
-  // The margin required to liquidate the pool, Example: 5 = 5%
-  margin_requirement: Int,
   // The stable collateral asset used for the pool
   stable_asset: Asset,
-  // Total amount of stable collateral asset
-  stable_asset_amount: Int,
   // The max leverage factor for the pool
   max_leverage_factor: Int,
   // The max leverage factor for the strike holder
   max_strike_holder_leverage_factor: Int,
-  // The amount of margin to maintain for the pool
+  // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5%
   maintain_margin_amount: Int,
   // Asset the determines if the pool is valid
   is_valid_pool_asset: Asset,

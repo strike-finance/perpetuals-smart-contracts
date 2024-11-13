@@ -164,7 +164,7 @@ pub fn open_position(
     side,
     order_submission_time,
     order_submission_usd_price,
-    margin_requirement,
+    maintain_margin_amount,
     hourly_usd_borrow_fee,
     position_asset_amount,
   } = input_datum_typed.action
@@ -190,7 +190,7 @@ pub fn open_position(
       stop_loss_usd_price: 0,
       take_profit_usd_price: 0,
       entered_position_time: order_submission_time,
-      margin_requirement,
+      maintain_margin_amount,
       collateral_asset,
       hourly_usd_borrow_fee,
       side,
@@ -208,30 +208,16 @@ pub fn open_position(
 
   let lended_amount: Int = position_asset_amount / leverage_factor
 
-  let updated_pool_datum =
-    PoolDatum {
-      underlying_asset: pool_output_datum.underlying_asset,
-      underlying_asset_amount: pool_output_datum.underlying_asset_amount,
-      underlying_asset_lended_amount: pool_output_datum.underlying_asset_lended_amount + lended_amount,
-      underlying_interest_rate: pool_output_datum.underlying_interest_rate,
-      margin_requirement: pool_output_datum.margin_requirement,
-      stable_asset: pool_output_datum.stable_asset,
-      stable_asset_amount: pool_output_datum.stable_asset_amount,
-      max_leverage_factor: pool_output_datum.max_leverage_factor,
-      max_strike_holder_leverage_factor: pool_output_datum.max_strike_holder_leverage_factor,
-      maintain_margin_amount: pool_output_datum.maintain_margin_amount,
-      is_valid_pool_asset: pool_output_datum.is_valid_pool_asset,
-      earnings_per_share: pool_output_datum.earnings_per_share,
-      collateral_earnings_per_share: pool_output_datum.collateral_earnings_per_share,
-    }
-
   let datum_valid = output_datum_typed == expected_output_datum
 
   expect assets_locked_valid && datum_valid && output_script_hash_valid
 
   ExpectedPoolOutput {
     value: pool_output_value,
-    datum: updated_pool_datum,
+    datum: PoolDatum {
+      ..pool_output_datum,
+      underlying_asset_lended_amount: pool_output_datum.underlying_asset_lended_amount + lended_amount,
+    },
     mint: expected_mint,
   }
 }
@@ -281,10 +267,7 @@ pub fn close_position(
             underlying_asset.asset_name,
             asset_amount,
           ),
-      datum: PoolDatum {
-        ..pool_output_datum,
-        underlying_asset_amount: pool_output_datum.underlying_asset_amount + asset_amount,
-      },
+      datum: pool_output_datum,
       mint,
     }
   } else {
@@ -316,11 +299,7 @@ pub fn close_position(
             underlying_asset.asset_name,
             asset_amount,
           ),
-      datum: PoolDatum {
-        ..pool_output_datum,
-        underlying_asset_amount: pool_output_datum.underlying_asset_amount + asset_amount,
-        stable_asset_amount: pool_output_datum.stable_asset_amount + collateral_amount,
-      },
+      datum: pool_output_datum,
       mint,
     }
   }
@@ -361,15 +340,11 @@ pub fn liquidate_position(
         collateral_asset_amount,
       )
 
-    let updated_datum =
-      PoolDatum {
-        ..pool_output_datum,
-        underlying_asset_amount: pool_output_datum.underlying_asset_amount + collateral_asset_amount,
-      }
+    let freed_up_lended_amount = 1
 
     ExpectedPoolOutput {
       value: updated_value,
-      datum: updated_datum,
+      datum: pool_output_datum,
       mint: updated_mint,
     }
   } else {
@@ -380,6 +355,8 @@ pub fn liquidate_position(
         pool_output_datum.stable_asset.asset_name,
       )
 
+    let free_up_lended_amount = 1
+
     let updated_value =
       assets.add(
         pool_output_value,
@@ -388,14 +365,9 @@ pub fn liquidate_position(
         collateral_asset_amount,
       )
 
-    let updated_datum =
-      PoolDatum {
-        ..pool_output_datum,
-        stable_asset_amount: pool_output_datum.stable_asset_amount + collateral_asset_amount,
-      }
     ExpectedPoolOutput {
       value: updated_value,
-      datum: updated_datum,
+      datum: pool_output_datum,
       mint: updated_mint,
     }
   }
