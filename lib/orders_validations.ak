@@ -14,7 +14,7 @@ use types.{
 use utils.{get_all_validators_inputs, get_collateral_asset}
 
 pub fn valid_orders(
-  redeemer: List<(Int, Int)>,
+  indices: List<(Int, Int)>,
   transaction: Transaction,
   own_validator: ScriptHash,
   pool_utxo: Output,
@@ -41,7 +41,7 @@ pub fn valid_orders(
       },
     )
 
-  let indices: List<(Int, Int)> = redeemer
+
   let (
     _,
     _,
@@ -411,7 +411,7 @@ pub fn cancel_close_position_valid(
     take_profit_usd_price,
     entered_position_time,
     position_asset_amount,
-    margin_requirement,
+    maintain_margin_amount,
     hourly_usd_borrow_fee,
     side,
     ..
@@ -451,7 +451,7 @@ pub fn cancel_close_position_valid(
       entered_position_time,
       hourly_usd_borrow_fee,
       collateral_asset,
-      margin_requirement,
+      maintain_margin_amount,
       side,
     }
 
@@ -492,3 +492,6 @@ fn is_strike_collateral_asset_burnt(
     True
   }
 }
+
+
+fn get_free_up_lended
