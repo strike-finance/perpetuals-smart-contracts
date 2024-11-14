@@ -14,7 +14,7 @@ use types.{
 }
 use utils.{
   divide, get_address_outputs, get_all_validators_inputs, get_collateral_asset,
-  get_lower_bound, to_ada_if_lovelace,
+  get_lower_bound,
 }
 
 pub fn close_position_valid(
@@ -485,11 +485,10 @@ pub fn mint_position_valid(
     )
 
   let estimated_hourly_usd_borrow_fee: Int =
-    calculate_pay_borrow(
+    calculate_hourly_usd_borrow_fee(
       position_asset_amount,
       pool_datum_typed,
       current_usd_price,
-      underlying_asset,
       underlying_asset_amount,
     )
 
@@ -511,7 +510,6 @@ pub fn mint_position_valid(
       position_asset_amount,
       leverage_factor,
       collateral_asset_amount,
-      underlying_asset,
       current_usd_price,
     )
 
@@ -532,23 +530,20 @@ pub fn mint_position_valid(
   }
 }
 
-// USD is in per asset, 1 ada is 1_000_000
+// make sure the amount of position_asset_amount is atleast the collateral asset amount * leverage factor
+// For long position, simply divide by the leverage factor since the collateral is in the same asset as the underlying asset
+// For short position, divide by the leverage factor and then by multiply it by the current usd price to get the expected stable asset amount
 fn is_position_assets_amount_valid(
   position_side: PositionSide,
-  positions_mint_asset_amount: Int,
+  position_asset_amount: Int,
   leverage_factor: Int,
   collateral_asset_amount: Int,
-  underlying_asset: Asset,
   current_usd_price: Int,
 ) -> Bool {
   if position_side == Long {
-    positions_mint_asset_amount / leverage_factor <= collateral_asset_amount
+    position_asset_amount / leverage_factor <= collateral_asset_amount
   } else {
-    let formatted_position_asset_amount =
-      to_ada_if_lovelace(underlying_asset, positions_mint_asset_amount)
-
-    let collateral_in_asset_term: Int =
-      formatted_position_asset_amount / leverage_factor / lovelace_amount
+    let collateral_in_asset_term: Int = position_asset_amount / leverage_factor
 
     let stable_amount_expected: Int =
       collateral_in_asset_term * current_usd_price
@@ -659,13 +654,10 @@ fn calculate_accumulative_interest_fee(
   hours_passed * hourly_borrow_rate
 }
 
-// divide by 100 in the end because interest rate is an int
-// min fee is 1 usd per hour
-fn calculate_pay_borrow(
+fn calculate_hourly_usd_borrow_fee(
   position_asset_amount: Int,
   pool_datum: PoolDatum,
   current_usd_price: Int,
-  underlying_asset: Asset,
   underlying_asset_amount: Int,
 ) -> Int {
   expect Some(utilization) =
@@ -676,29 +668,16 @@ fn calculate_pay_borrow(
 
   let utilization_percentage = rational.ceil(utilization)
 
-  if underlying_asset.policy_id == "" {
-    let current_position_usd_value =
-      position_asset_amount * current_usd_price / lovelace_amount
+  let current_position_usd_value =
+    position_asset_amount * current_usd_price / lovelace_amount
 
-    let fee =
-      utilization_percentage * pool_datum.interest_rate * current_position_usd_value / 100
+  let fee =
+    utilization_percentage * pool_datum.interest_rate * current_position_usd_value / 100
 
-    if fee < 1 {
-      1
-    } else {
-      fee
-    }
+  if fee < 1 {
+    1
   } else {
-    let current_position_usd_value = position_asset_amount * current_usd_price
-
-    let fee =
-      utilization_percentage * pool_datum.interest_rate * current_position_usd_value / 100
-
-    if fee < 1 {
-      1
-    } else {
-      fee
-    }
+    fee
   }
 }
 
