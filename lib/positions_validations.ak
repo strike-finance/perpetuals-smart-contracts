@@ -498,9 +498,6 @@ pub fn mint_position_valid(
   let order_submission_time_valid =
     get_lower_bound(transaction.validity_range) >= order_submission_time
 
-  let minted_asset_valid =
-    policy_id == position_hash && owner_address_hash == owner_address_hash
-
   let owner_signed_tx =
     list.has(transaction.extra_signatories, owner_address_hash)
 
@@ -514,7 +511,7 @@ pub fn mint_position_valid(
     )
 
   expect
-    minted_assets_amount_valid && hourly_usd_borrow_fee_valid && order_submission_time_valid && minted_asset_valid && owner_signed_tx
+    minted_assets_amount_valid && hourly_usd_borrow_fee_valid && order_submission_time_valid && owner_signed_tx
 
   let contains_strike_collateral: Bool =
     quantity_of(
