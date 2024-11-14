@@ -389,7 +389,6 @@ pub fn mint_position_valid(
     order_submission_time,
     order_submission_usd_price,
     position_asset_amount,
-    position_hash,
     hourly_usd_borrow_fee,
     ..
   } = orders_datum_typed.action
