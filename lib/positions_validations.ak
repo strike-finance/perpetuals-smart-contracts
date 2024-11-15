@@ -693,16 +693,10 @@ pub fn calculate_return(
     // Simply calculate the profit or loss and add it to the collateral amount since the collateral is in the same asset as the underlying asset for longs
     let current_position_usd_value: Int = position_amount * current_usd_price
 
-    trace @"current position usd value": current_position_usd_value
-
     let inital_position_usd_value: Int = position_amount * entered_at_usd_price
-
-    trace @"inital position usd value": inital_position_usd_value
 
     let position_usd_value: Int =
       current_position_usd_value - inital_position_usd_value
-
-    trace @"position usd value": position_usd_value
 
     let accumulative_interest_fee: Int =
       calculate_accumulative_interest_fee(
@@ -711,13 +705,7 @@ pub fn calculate_return(
         hourly_borrow_fee,
       )
 
-    trace @"accumulative interest fee": accumulative_interest_fee
-
     let collateral_value: Int = collateral_amount * current_usd_price
-
-    let profit: Int = position_usd_value - accumulative_interest_fee
-
-    trace @"total profit": profit
 
     let asset_amount =
       ( collateral_value + position_usd_value - accumulative_interest_fee ) / current_usd_price
