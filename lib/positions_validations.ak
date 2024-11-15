@@ -4,8 +4,7 @@ use cardano/assets.{PolicyId, Value, flatten, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
-use constants.{batcher_fee,
-  lovelace_amount, strike_asset_name, strike_policy_id}
+use constants.{batcher_fee, strike_asset_name, strike_policy_id, usd_multiplier}
 use types.{
   Asset, ClosePositionOrder, CloseSendAmount, CloseType, LiquidateClose,
   LiquidatePositionOrder, Long, LongCloseOrder, OpenPositionOrder, OrderDatum,
@@ -641,17 +640,21 @@ fn reach_liquidation_price(
   }
 }
 
-fn calculate_accumulative_interest_fee(
+//Only charge for every full hour that has passed, if 1 hour and 1 second has passed, still only charge for 1 hour
+pub fn calculate_accumulative_interest_fee(
   current_time: POSIXTime,
   entered_position_time: POSIXTime,
-  hourly_borrow_rate: Int,
+  hourly_borrow_usd_fee: Int,
 ) -> Int {
-  let hours_passed: Int =
-    divide(current_time - entered_position_time, 3_600_000)
+  expect Some(divided) =
+    rational.new(current_time - entered_position_time, 3_600_000)
 
-  hours_passed * hourly_borrow_rate
+  rational.floor(divided) * hourly_borrow_usd_fee
 }
 
+// Utilization factor is the ratio of the underlying asset amount to the underlying asset lended amount
+// To get the utilization percentage, divide 100 by the utilization factor, EX: 100 / 10 = 10%
+// Divide by 100 in the end to account for interest rate being a int instead of a float
 pub fn calculate_hourly_usd_borrow_fee(
   position_asset_amount: Int,
   underlying_asset_lended_amount: Int,
@@ -659,25 +662,24 @@ pub fn calculate_hourly_usd_borrow_fee(
   underlying_asset_amount: Int,
   interest_rate: Int,
 ) -> Int {
-  expect Some(utilization) =
-    rational.new(underlying_asset_lended_amount, underlying_asset_amount)
+  let utilization_factor =
+    underlying_asset_amount / underlying_asset_lended_amount
 
-  let utilization_percentage = rational.ceil(utilization)
+  let utilization_percentage = 100 / utilization_factor
 
-  let current_position_usd_value =
-    position_asset_amount * current_usd_price / lovelace_amount
+  let current_position_usd_value = position_asset_amount * current_usd_price
 
   let fee =
     utilization_percentage * interest_rate * current_position_usd_value / 100
 
-  if fee < 1 {
-    1
+  if fee < usd_multiplier {
+    usd_multiplier
   } else {
     fee
   }
 }
 
-fn calculate_return(
+pub fn calculate_return(
   position_amount: Int,
   collateral_amount: Int,
   entered_at_usd_price: Int,
@@ -691,10 +693,16 @@ fn calculate_return(
     // Simply calculate the profit or loss and add it to the collateral amount since the collateral is in the same asset as the underlying asset for longs
     let current_position_usd_value: Int = position_amount * current_usd_price
 
+    trace @"current position usd value": current_position_usd_value
+
     let inital_position_usd_value: Int = position_amount * entered_at_usd_price
 
-    let total_value: Int =
+    trace @"inital position usd value": inital_position_usd_value
+
+    let position_usd_value: Int =
       current_position_usd_value - inital_position_usd_value
+
+    trace @"position usd value": position_usd_value
 
     let accumulative_interest_fee: Int =
       calculate_accumulative_interest_fee(
@@ -703,13 +711,16 @@ fn calculate_return(
         hourly_borrow_fee,
       )
 
+    trace @"accumulative interest fee": accumulative_interest_fee
+
     let collateral_value: Int = collateral_amount * current_usd_price
 
-    let collateral_value_after_interest: Int =
-      collateral_value - accumulative_interest_fee
+    let profit: Int = position_usd_value - accumulative_interest_fee
+
+    trace @"total profit": profit
 
     let asset_amount =
-      ( collateral_value_after_interest + total_value ) / current_usd_price
+      ( collateral_value + position_usd_value - accumulative_interest_fee ) / current_usd_price
 
     LongCloseOrder { asset_amount }
   } else {
