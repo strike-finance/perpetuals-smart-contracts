@@ -728,19 +728,20 @@ pub fn calculate_return(
         hourly_borrow_fee,
       )
 
-    let collateral_value: Int = collateral_amount * current_usd_price
-
     if total_value > 0 {
       let asset_amount: Int =
         ( total_value - accumulative_interest_fee ) / current_usd_price
 
       ShortCloseOrder { asset_amount, collateral_amount }
     } else {
-      let collateral_amount_after_interest: Int =
-        collateral_value - accumulative_interest_fee
+      let inital_collateral_asset_amount: Int =
+        collateral_amount / entered_at_usd_price
+
+      let collateral_asset_amount_after_interest: Int =
+        inital_collateral_asset_amount - accumulative_interest_fee
 
       let collateral_amount_after_loss: Int =
-        collateral_amount_after_interest - total_value
+        collateral_asset_amount_after_interest - total_value
 
       ShortCloseOrder {
         asset_amount: 0,
