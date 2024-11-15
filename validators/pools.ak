@@ -70,8 +70,6 @@ validator pools(params: PoolParams) {
                 max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
                 maintain_margin_amount: pool_datum.maintain_margin_amount,
                 is_valid_pool_asset: pool_datum.is_valid_pool_asset,
-                earnings_per_share: pool_datum.earnings_per_share,
-                collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
               }
 
             output_datum_typed == expected_datum
@@ -87,8 +85,6 @@ validator pools(params: PoolParams) {
                 max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
                 maintain_margin_amount: new_value,
                 is_valid_pool_asset: pool_datum.is_valid_pool_asset,
-                earnings_per_share: pool_datum.earnings_per_share,
-                collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
               }
 
             output_datum_typed == expected_datum
@@ -104,8 +100,6 @@ validator pools(params: PoolParams) {
                 max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
                 maintain_margin_amount: pool_datum.maintain_margin_amount,
                 is_valid_pool_asset: pool_datum.is_valid_pool_asset,
-                earnings_per_share: pool_datum.earnings_per_share,
-                collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
               }
 
             output_datum_typed == expected_datum
@@ -121,8 +115,6 @@ validator pools(params: PoolParams) {
                 max_strike_holder_leverage_factor: new_value,
                 maintain_margin_amount: pool_datum.maintain_margin_amount,
                 is_valid_pool_asset: pool_datum.is_valid_pool_asset,
-                earnings_per_share: pool_datum.earnings_per_share,
-                collateral_earnings_per_share: pool_datum.collateral_earnings_per_share,
               }
 
             output_datum_typed == expected_datum

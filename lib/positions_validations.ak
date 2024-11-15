@@ -362,7 +362,6 @@ pub fn update_take_profit_valid(
   only_one_input_from_script && only_one_output_to_positions_validator && output_datum_valid && assets_locked_valid
 }
 
-// TOD: BATCHER VALUE FIX
 pub fn mint_position_valid(
   transaction: Transaction,
   params: PositionsParams,
@@ -408,6 +407,8 @@ pub fn mint_position_valid(
     stable_asset,
     max_strike_holder_leverage_factor,
     max_leverage_factor,
+    underlying_asset_lended_amount,
+    interest_rate,
     ..
   } = pool_datum_typed
 
@@ -486,9 +487,10 @@ pub fn mint_position_valid(
   let estimated_hourly_usd_borrow_fee: Int =
     calculate_hourly_usd_borrow_fee(
       position_asset_amount,
-      pool_datum_typed,
+      underlying_asset_lended_amount,
       current_usd_price,
       underlying_asset_amount,
+      interest_rate,
     )
 
   let hourly_usd_borrow_fee_valid =
@@ -650,17 +652,15 @@ fn calculate_accumulative_interest_fee(
   hours_passed * hourly_borrow_rate
 }
 
-fn calculate_hourly_usd_borrow_fee(
+pub fn calculate_hourly_usd_borrow_fee(
   position_asset_amount: Int,
-  pool_datum: PoolDatum,
+  underlying_asset_lended_amount: Int,
   current_usd_price: Int,
   underlying_asset_amount: Int,
+  interest_rate: Int,
 ) -> Int {
   expect Some(utilization) =
-    rational.new(
-      pool_datum.underlying_asset_lended_amount,
-      underlying_asset_amount,
-    )
+    rational.new(underlying_asset_lended_amount, underlying_asset_amount)
 
   let utilization_percentage = rational.ceil(utilization)
 
@@ -668,7 +668,7 @@ fn calculate_hourly_usd_borrow_fee(
     position_asset_amount * current_usd_price / lovelace_amount
 
   let fee =
-    utilization_percentage * pool_datum.interest_rate * current_position_usd_value / 100
+    utilization_percentage * interest_rate * current_position_usd_value / 100
 
   if fee < 1 {
     1

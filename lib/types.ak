@@ -57,7 +57,7 @@ pub type OrderAction {
   OpenPositionOrder {
     // Owner of the order
     owner_address_hash: AddressHash,
-    // The leverage factor for the position
+    // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
     leverage_factor: Int,
     // The time the order was submitted
     order_submission_time: POSIXTime,
@@ -77,7 +77,7 @@ pub type OrderAction {
   ClosePositionOrder {
     // Owner of the order
     owner_address_hash: AddressHash,
-    // The underlying asset that the perpetual contract is trading on
+    // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
     leverage_factor: Int,
     // The price at which the order was submitted
     order_submission_usd_price: Int,
@@ -151,9 +151,9 @@ pub type PositionDatum {
   owner_address_hash: AddressHash,
   // The script hash for the positions script that holds all the positions of the trader
   position_hash: ScriptHash,
-  // Price at which the position was entered
+  // Price at which the position was entered. This will be 
   entered_at_usd_price: Int,
-  // Leverage used for the postion.
+  // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
   leverage_factor: Int,
   // Total position size of the trader, ie, the inital size of position + leverage
   position_asset_amount: Int,
@@ -190,10 +190,6 @@ pub type PoolDatum {
   maintain_margin_amount: Int,
   // Asset the determines if the pool is valid
   is_valid_pool_asset: Asset,
-  // The earnings per share for the pool, will increase each time the pool earns the underlying asset
-  earnings_per_share: Int,
-  // The earnings per share for the collateral for the pool, will increase each time the pool earns the collateral asset
-  collateral_earnings_per_share: Int,
 }
 
 pub type PoolParams {
