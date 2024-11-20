@@ -101,8 +101,6 @@ pub type OrderAction {
     owner_address_hash: AddressHash,
     // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
     leverage_factor: Int,
-    // The price at which the order was submitted
-    order_submission_usd_price: Int,
     // Entered at USD price
     entered_at_usd_price: Int,
     // Stop loss price where the position will be closed

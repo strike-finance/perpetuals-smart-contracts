@@ -352,7 +352,8 @@ pub fn liquidate_position(
   let updated_mint =
     assets.add(expected_mint, position_hash, owner_address_hash, -1)
 
-  let lended_amount: Int = position_asset_amount / leverage_factor
+  let lended_amount: Int =
+    position_asset_amount - position_asset_amount / leverage_factor
 
   let updated_datum =
     PoolDatum {

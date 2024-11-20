@@ -100,7 +100,6 @@ pub fn close_position_valid(
       OrderDatum {
         action: ClosePositionOrder {
           owner_address_hash,
-          order_submission_usd_price: current_usd_price,
           leverage_factor,
           entered_at_usd_price,
           stop_loss_usd_price,
@@ -142,7 +141,6 @@ pub fn close_position_valid(
       OrderDatum {
         action: ClosePositionOrder {
           owner_address_hash,
-          order_submission_usd_price: current_usd_price,
           leverage_factor,
           entered_at_usd_price,
           stop_loss_usd_price,
@@ -187,7 +185,6 @@ pub fn close_position_valid(
       OrderDatum {
         action: ClosePositionOrder {
           owner_address_hash,
-          order_submission_usd_price: current_usd_price,
           leverage_factor,
           entered_at_usd_price,
           stop_loss_usd_price,
