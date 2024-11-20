@@ -61,60 +61,27 @@ validator pools(params: PoolParams) {
         when redeemer.update_param_type is {
           UpdateInterestRate(new_value) -> {
             let expected_datum =
-              PoolDatum {
-                underlying_asset: pool_datum.underlying_asset,
-                underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
-                interest_rate: new_value,
-                stable_asset: pool_datum.stable_asset,
-                max_leverage_factor: pool_datum.max_leverage_factor,
-                max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
-                maintain_margin_amount: pool_datum.maintain_margin_amount,
-                is_valid_pool_asset: pool_datum.is_valid_pool_asset,
-              }
+              PoolDatum { ..pool_datum, interest_rate: new_value }
 
             output_datum_typed == expected_datum
           }
           UpdateLiquidateMargin(new_value) -> {
             let expected_datum =
-              PoolDatum {
-                underlying_asset: pool_datum.underlying_asset,
-                underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
-                interest_rate: pool_datum.interest_rate,
-                stable_asset: pool_datum.stable_asset,
-                max_leverage_factor: pool_datum.max_leverage_factor,
-                max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
-                maintain_margin_amount: new_value,
-                is_valid_pool_asset: pool_datum.is_valid_pool_asset,
-              }
+              PoolDatum { ..pool_datum, maintain_margin_amount: new_value }
 
             output_datum_typed == expected_datum
           }
           UpdateMaxLeverageFactor(new_value) -> {
             let expected_datum =
-              PoolDatum {
-                underlying_asset: pool_datum.underlying_asset,
-                underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
-                interest_rate: pool_datum.interest_rate,
-                stable_asset: pool_datum.stable_asset,
-                max_leverage_factor: new_value,
-                max_strike_holder_leverage_factor: pool_datum.max_strike_holder_leverage_factor,
-                maintain_margin_amount: pool_datum.maintain_margin_amount,
-                is_valid_pool_asset: pool_datum.is_valid_pool_asset,
-              }
+              PoolDatum { ..pool_datum, max_leverage_factor: new_value }
 
             output_datum_typed == expected_datum
           }
           UpdateMaxStrikeHolderLeverageFactor(new_value) -> {
             let expected_datum =
               PoolDatum {
-                underlying_asset: pool_datum.underlying_asset,
-                underlying_asset_lended_amount: pool_datum.underlying_asset_lended_amount,
-                interest_rate: pool_datum.interest_rate,
-                stable_asset: pool_datum.stable_asset,
-                max_leverage_factor: pool_datum.max_leverage_factor,
+                ..pool_datum,
                 max_strike_holder_leverage_factor: new_value,
-                maintain_margin_amount: pool_datum.maintain_margin_amount,
-                is_valid_pool_asset: pool_datum.is_valid_pool_asset,
               }
 
             output_datum_typed == expected_datum

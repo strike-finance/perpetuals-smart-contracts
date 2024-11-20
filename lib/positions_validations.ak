@@ -38,6 +38,8 @@ pub fn close_position_valid(
     hourly_usd_borrow_fee,
     collateral_asset,
     maintain_margin_amount,
+    underlying_asset_multiplier,
+    stable_asset_multiplier,
   } = datum
 
   let all_validators_inputs: List<Input> =
@@ -75,7 +77,9 @@ pub fn close_position_valid(
     let return_amount =
       calculate_return(
         position_asset_amount,
+        underlying_asset_multiplier,
         collateral_asset_amount,
+        stable_asset_multiplier,
         entered_at_usd_price,
         current_usd_price,
         current_time,
@@ -99,6 +103,8 @@ pub fn close_position_valid(
           maintain_margin_amount,
           hourly_usd_borrow_fee,
           return_amount,
+          underlying_asset_multiplier,
+          stable_asset_multiplier,
           side,
         },
       }
@@ -112,7 +118,9 @@ pub fn close_position_valid(
     let return_amount =
       calculate_return(
         position_asset_amount,
+        underlying_asset_multiplier,
         collateral_asset_amount,
+        stable_asset_multiplier,
         entered_at_usd_price,
         current_usd_price,
         current_time,
@@ -136,6 +144,8 @@ pub fn close_position_valid(
           maintain_margin_amount,
           hourly_usd_borrow_fee,
           return_amount,
+          underlying_asset_multiplier,
+          stable_asset_multiplier,
           side,
         },
       }
@@ -158,6 +168,8 @@ pub fn close_position_valid(
         current_time,
         entered_position_time,
         hourly_usd_borrow_fee,
+        underlying_asset_multiplier,
+        stable_asset_multiplier,
         side,
       )
 
@@ -176,6 +188,8 @@ pub fn close_position_valid(
           maintain_margin_amount,
           hourly_usd_borrow_fee,
           return_amount,
+          underlying_asset_multiplier,
+          stable_asset_multiplier,
           side,
         },
       }
@@ -233,21 +247,6 @@ pub fn update_stop_loss_valid(
 ) -> Bool {
   expect Some(datum) = maybe_datum
 
-  let PositionDatum {
-    position_hash,
-    collateral_asset,
-    position_asset_amount,
-    owner_address_hash,
-    entered_at_usd_price,
-    leverage_factor,
-    take_profit_usd_price,
-    entered_position_time,
-    side,
-    maintain_margin_amount,
-    hourly_usd_borrow_fee,
-    ..
-  } = datum
-
   let all_validators_inputs: List<Input> =
     get_all_validators_inputs(transaction)
   let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
@@ -270,20 +269,7 @@ pub fn update_stop_loss_valid(
     )
 
   let expected_output_datum =
-    PositionDatum {
-      owner_address_hash,
-      position_hash,
-      entered_at_usd_price,
-      leverage_factor,
-      position_asset_amount,
-      collateral_asset,
-      stop_loss_usd_price,
-      take_profit_usd_price,
-      entered_position_time,
-      maintain_margin_amount,
-      hourly_usd_borrow_fee,
-      side,
-    }
+    PositionDatum { ..datum, stop_loss_usd_price: stop_loss_usd_price }
 
   let expected_output_datum_data: Data = expected_output_datum
 
@@ -299,21 +285,6 @@ pub fn update_take_profit_valid(
   take_profit_usd_price: Int,
 ) -> Bool {
   expect Some(datum) = maybe_datum
-
-  let PositionDatum {
-    owner_address_hash,
-    position_hash,
-    entered_at_usd_price,
-    leverage_factor,
-    stop_loss_usd_price,
-    position_asset_amount,
-    entered_position_time,
-    maintain_margin_amount,
-    side,
-    hourly_usd_borrow_fee,
-    collateral_asset,
-    ..
-  } = datum
 
   let all_validators_inputs: List<Input> =
     get_all_validators_inputs(transaction)
@@ -339,20 +310,7 @@ pub fn update_take_profit_valid(
     )
 
   let expected_output_datum =
-    PositionDatum {
-      owner_address_hash,
-      position_hash,
-      entered_at_usd_price,
-      leverage_factor,
-      position_asset_amount,
-      collateral_asset,
-      stop_loss_usd_price,
-      take_profit_usd_price,
-      entered_position_time,
-      maintain_margin_amount,
-      hourly_usd_borrow_fee,
-      side,
-    }
+    PositionDatum { ..datum, take_profit_usd_price: take_profit_usd_price }
 
   let expected_output_datum_data: Data = expected_output_datum
 
@@ -681,7 +639,9 @@ pub fn calculate_hourly_usd_borrow_fee(
 
 pub fn calculate_return(
   position_amount: Int,
+  underlying_asset_multiplier: Int,
   collateral_amount: Int,
+  stable_asset_multiplier: Int,
   entered_at_usd_price: Int,
   current_usd_price: Int,
   current_time: POSIXTime,
@@ -719,7 +679,8 @@ pub fn calculate_return(
 
     let inital_position_usd_value: Int = position_amount * entered_at_usd_price
 
-    let total_value: Int = inital_position_usd_value - current_position_value
+    let position_usd_value: Int =
+      inital_position_usd_value - current_position_value
 
     let accumulative_interest_fee: Int =
       calculate_accumulative_interest_fee(
@@ -728,24 +689,36 @@ pub fn calculate_return(
         hourly_borrow_fee,
       )
 
-    if total_value > 0 {
+    if position_usd_value > 0 {
       let asset_amount: Int =
-        ( total_value - accumulative_interest_fee ) / current_usd_price
+        ( position_usd_value - accumulative_interest_fee ) / current_usd_price
 
       ShortCloseOrder { asset_amount, collateral_amount }
     } else {
-      let inital_collateral_asset_amount: Int =
-        collateral_amount / entered_at_usd_price
+      // total value loss usd in the assets amount 
+      let total_value_loss_usd: Int =
+        position_usd_value - accumulative_interest_fee
 
-      let collateral_asset_amount_after_interest: Int =
-        inital_collateral_asset_amount - accumulative_interest_fee
+      // divide by the underlying asset multiplier to get units lost 
+      let formatted_total_value_loss_usd: Int =
+        total_value_loss_usd / underlying_asset_multiplier
 
-      let collateral_amount_after_loss: Int =
-        collateral_asset_amount_after_interest - total_value
+      // divide the stable collateral amount by the stable asset multiplier and multiply it by the usd price multiplier to get the usd amount of the collateral 
+      // in same unit as the total value loss usd
+      let formatted_collateral_amount: Int =
+        collateral_amount / stable_asset_multiplier * usd_multiplier
+
+      // using a + here because formatted_collateral_amount is negative
+      let total_value_loss: Int =
+        formatted_collateral_amount + formatted_total_value_loss_usd
+
+      // convert to back to collateral asset amount, by dividing by the usd multiplier and multiplying by the asset multiplier
+      let formatted_total_value_loss: Int =
+        total_value_loss * stable_asset_multiplier / usd_multiplier
 
       ShortCloseOrder {
         asset_amount: 0,
-        collateral_amount: collateral_amount_after_loss,
+        collateral_amount: formatted_total_value_loss,
       }
     }
   }

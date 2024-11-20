@@ -166,6 +166,8 @@ pub fn open_position(
     maintain_margin_amount,
     hourly_usd_borrow_fee,
     position_asset_amount,
+    underlying_asset_multiplier,
+    stable_asset_multiplier,
   } = input_datum_typed.action
 
   let PoolDatum { underlying_asset, stable_asset, .. } = pool_output_datum
@@ -192,6 +194,8 @@ pub fn open_position(
       maintain_margin_amount,
       collateral_asset,
       hourly_usd_borrow_fee,
+      underlying_asset_multiplier,
+      stable_asset_multiplier,
       side,
     }
 
@@ -422,6 +426,8 @@ pub fn cancel_close_position_valid(
     maintain_margin_amount,
     hourly_usd_borrow_fee,
     side,
+    underlying_asset_multiplier,
+    stable_asset_multiplier,
     ..
   } = datum.action
 
@@ -461,6 +467,8 @@ pub fn cancel_close_position_valid(
       collateral_asset,
       maintain_margin_amount,
       side,
+      underlying_asset_multiplier,
+      stable_asset_multiplier,
     }
 
   let expected_positions_datum_data: Data = expected_positions_datum

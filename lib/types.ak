@@ -71,6 +71,10 @@ pub type OrderAction {
     maintain_margin_amount: Int,
     // Total amount of USD value to pay for borrow each hour
     hourly_usd_borrow_fee: Int,
+    // Number of decimal places for the underlying asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
+    underlying_asset_multiplier: Int,
+    // Number of decimal places for the stable asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
+    stable_asset_multiplier: Int,
     // Long or short position
     side: PositionSide,
   }
@@ -99,6 +103,10 @@ pub type OrderAction {
     hourly_usd_borrow_fee: Int,
     // Amount to return to the owner
     return_amount: CloseSendAmount,
+    // Number of decimal places for the underlying asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
+    underlying_asset_multiplier: Int,
+    // Number of decimal places for the stable asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
+    stable_asset_multiplier: Int,
     // Long or short position
     side: PositionSide,
   }
@@ -115,9 +123,6 @@ pub type OrderAction {
     leverage_factor: Int,
   }
 }
-
-// ProvideLiquidityOrder
-// WithdrawLiquidityOrder
 
 pub type OrderDatum {
   // Action to be taken for the order
@@ -169,6 +174,10 @@ pub type PositionDatum {
   maintain_margin_amount: Int,
   // Total amount of USD value to pay for borrow each hour
   hourly_usd_borrow_fee: Int,
+  // Number of decimal places for the underlying asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
+  underlying_asset_multiplier: Int,
+  // Number of decimal places for the stable asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
+  stable_asset_multiplier: Int,
   // Side of the position
   side: PositionSide,
 }
@@ -180,7 +189,7 @@ pub type PoolDatum {
   underlying_asset_lended_amount: Int,
   // The interest rate for the underlying asset
   interest_rate: Int,
-  // The stable collateral asset used for the pool
+  // The stable asset that the pool is trading on
   stable_asset: Asset,
   // The max leverage factor for the pool
   max_leverage_factor: Int,
@@ -213,29 +222,6 @@ pub type PoolRedeemerAction {
 pub type PoolRedeemer {
   action: PoolRedeemerAction,
   update_param_type: UpdateParamType,
-}
-
-pub type LiquidityPositionDatum {
-  owner_address_hash: AddressHash,
-  entered_earnings_per_share: Int,
-  entered_collateral_earnings_per_share: Int,
-}
-
-pub type LiquidityParams {
-  orders_script_hash: ByteArray,
-  asset_name: AssetName,
-  underlying_asset_policy_id: PolicyId,
-  underlying_asset_name: AssetName,
-}
-
-pub type LiquidityRedeemer {
-  WithdrawPartialLiquidity
-  WithdrawLiquidity
-}
-
-pub type LiquidityMintsRedeemer {
-  MintLiquidity
-  BurnLiquidity(Int)
 }
 
 pub type ExpectedPoolOutput {

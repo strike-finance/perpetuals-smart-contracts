@@ -40,7 +40,9 @@ test test_calculate_long_profit_return() {
   let return: CloseSendAmount =
     calculate_return(
       position_amount: 100_000_000,
+      underlying_asset_multiplier: 1_000_000,
       collateral_amount: 10_000_000,
+      stable_asset_multiplier: 1_000_000,
       entered_at_usd_price: 58678,
       current_usd_price: 80000,
       current_time: 1727453227635 + 3_800_000,
@@ -75,7 +77,9 @@ test test_calculate_long_loss_return() {
   let return: CloseSendAmount =
     calculate_return(
       position_amount: 100_000_000,
+      underlying_asset_multiplier: 1_000_000,
       collateral_amount: 10_000_000,
+      stable_asset_multiplier: 1_000_000,
       entered_at_usd_price: 58678,
       current_usd_price: 56000,
       current_time: 1727453227635 + 3_800_000,
@@ -110,7 +114,9 @@ test test_calculate_short_profit_return() {
   let return: CloseSendAmount =
     calculate_return(
       position_amount: 100_000_000,
+      underlying_asset_multiplier: 1_000_000,
       collateral_amount: 50,
+      stable_asset_multiplier: 1_000_000,
       entered_at_usd_price: 58678,
       current_usd_price: 56000,
       current_time: 1727453227635 + 3_800_000,
@@ -121,19 +127,33 @@ test test_calculate_short_profit_return() {
 
   expect ShortCloseOrder { asset_amount, collateral_amount } = return
 
-  trace asset_amount
-  trace collateral_amount
-
   asset_amount == 2644587 && collateral_amount == 50
 }
 
-// TODO: The function fails for this 
 test test_calculate_short_loss_return() {
+  // Initial Position:
+  // - Amount: 100 ADA (100_000_000 lovelace)
+  // - Entry Price: $0.58000 per ADA
+  // - Initial Position Value: $58
+  // Current State:
+  // - Current Price: $0.59 per ADA
+  // - Position Loss: $58.00 - $59.00 = -$1
+  // Fees:
+  // - Accumulated Fee: 119_703_120_000 (≈ $1.19703)
+  // - Fee Calculation: amount / 1_000_000 (to ADA) / 10_000 (USD multiplier)
+  // Final Calculation:
+  // 1. Net Loss = -$1 - $1.19703 = -$2.19703
+  // 3. Total Return = Original Collateral + loss = $50 ADA + -$2.19703
+  // 4. Expected Results:
+  //    - asset_amount:  0 lovelace
+  //    - collateral_amount: 47802960 stable asset or ~$47.80296 (unchanged)
   let return: CloseSendAmount =
     calculate_return(
       position_amount: 100_000_000,
-      collateral_amount: 500000,
-      entered_at_usd_price: 58678,
+      underlying_asset_multiplier: 1_000_000,
+      collateral_amount: 50_000_000,
+      stable_asset_multiplier: 1_000_000,
+      entered_at_usd_price: 58000,
       current_usd_price: 59000,
       current_time: 1727453227635 + 3_800_000,
       entered_position_time: 1727453227635,
@@ -143,9 +163,7 @@ test test_calculate_short_loss_return() {
 
   expect ShortCloseOrder { asset_amount, collateral_amount } = return
 
-  trace collateral_amount
-
-  asset_amount == 0 && collateral_amount == 0
+  asset_amount == 0 && collateral_amount == 47802960
 }
 
 test test_calculate_accumulative_interest_fee() {
