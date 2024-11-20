@@ -70,6 +70,13 @@ pub fn close_position_valid(
 
   let current_time: POSIXTime = get_lower_bound(transaction.validity_range)
 
+  let strike_collateral_asset_amount: Int =
+    quantity_of(
+      input_from_script.output.value,
+      strike_policy_id,
+      strike_asset_name,
+    )
+
   if close_type == TraderClose {
     let signed_by_owner: Bool =
       list.has(transaction.extra_signatories, datum.owner_address_hash)
@@ -85,6 +92,7 @@ pub fn close_position_valid(
         current_time,
         entered_position_time,
         hourly_usd_borrow_fee,
+        strike_collateral_asset_amount,
         side,
       )
 
@@ -126,6 +134,7 @@ pub fn close_position_valid(
         current_time,
         entered_position_time,
         hourly_usd_borrow_fee,
+        strike_collateral_asset_amount,
         side,
       )
 
@@ -170,6 +179,7 @@ pub fn close_position_valid(
         hourly_usd_borrow_fee,
         underlying_asset_multiplier,
         stable_asset_multiplier,
+        strike_collateral_asset_amount,
         side,
       )
 
@@ -640,21 +650,24 @@ pub fn calculate_hourly_usd_borrow_fee(
 pub fn calculate_return(
   position_amount: Int,
   underlying_asset_multiplier: Int,
-  collateral_amount: Int,
+  stable_amount: Int,
   stable_asset_multiplier: Int,
   entered_at_usd_price: Int,
   current_usd_price: Int,
   current_time: POSIXTime,
   entered_position_time: POSIXTime,
   hourly_borrow_fee: Int,
+  strike_collateral_amount: Int,
   side: PositionSide,
 ) -> CloseSendAmount {
+  // Simply calculate the profit or loss and add it to the collateral amount since the collateral is in the same asset as the underlying asset for longs
+  // Then calculate how much is taken from the pool or how much is given to the pool based on the profit or loss
   if side == Long {
-    // Simply calculate the profit or loss and add it to the collateral amount since the collateral is in the same asset as the underlying asset for longs
     let current_position_usd_value: Int = position_amount * current_usd_price
 
     let inital_position_usd_value: Int = position_amount * entered_at_usd_price
 
+    // Calculate profit/loss in USD by current value minus initial value for long positions
     let position_usd_value: Int =
       current_position_usd_value - inital_position_usd_value
 
@@ -665,16 +678,31 @@ pub fn calculate_return(
         hourly_borrow_fee,
       )
 
-    let collateral_value: Int = collateral_amount * current_usd_price
+    let collateral_value: Int = stable_amount * current_usd_price
 
-    let asset_amount =
-      ( collateral_value + position_usd_value - accumulative_interest_fee ) / current_usd_price
+    // Subtract interest fees from position profit/loss to get net position value
+    let position_value_after_interest_fee =
+      position_usd_value - accumulative_interest_fee
 
-    LongCloseOrder { asset_amount }
+    // Convert net position value to asset amount that needs to be returned to/from pool
+    // If position_value_after_interest_fee is positive, that means the trader made a profit and the pool needs to send assets to the trader
+    // If position_value_after_interest_fee is negative, that means the trader made a loss and the trader needs to send assets to the pool
+    // this value will be used to determine if the pool is gaining assets or losing assets so we need to multiply it by 1
+    let return_pool_asset_amount =
+      position_value_after_interest_fee / current_usd_price * -1
+
+    let return_asset_amount =
+      ( collateral_value + position_value_after_interest_fee ) / current_usd_price
+
+    LongCloseOrder {
+      asset_amount: return_asset_amount,
+      pool_asset_amount: return_pool_asset_amount,
+      strike_collateral_amount,
+    }
   } else {
     // first calculate if there is a profit or loss
     // If there is a profit, subtract the interest fee from the profit and return the profit + the full collateral amount
-    // If there is a loss, subtract the interest fee from the collateral amount, the collateral is a stable coin for short positions
+    // If there is a loss, subtract the loss and interest fee from the inital collateral amount, the collateral is a stable coin for short positions
     let current_position_value: Int = position_amount * current_usd_price
 
     let inital_position_usd_value: Int = position_amount * entered_at_usd_price
@@ -689,36 +717,54 @@ pub fn calculate_return(
         hourly_borrow_fee,
       )
 
-    if position_usd_value > 0 {
-      let asset_amount: Int =
-        ( position_usd_value - accumulative_interest_fee ) / current_usd_price
+    let total_usd_value = position_usd_value - accumulative_interest_fee
 
-      ShortCloseOrder { asset_amount, collateral_amount }
+    if total_usd_value > 0 {
+      // divide by the usd price to get the asset amount
+      let asset_amount: Int = total_usd_value / current_usd_price
+
+      // pool_asset_amount is negative because the gained assets are from the pool
+      // no stable coin is taken from the pool
+      ShortCloseOrder {
+        asset_amount,
+        stable_amount,
+        pool_stable_amount: 0,
+        pool_asset_amount: -asset_amount,
+        strike_collateral_amount,
+      }
     } else {
-      // total value loss usd in the assets amount 
-      let total_value_loss_usd: Int =
-        position_usd_value - accumulative_interest_fee
-
       // divide by the underlying asset multiplier to get units lost 
-      let formatted_total_value_loss_usd: Int =
-        total_value_loss_usd / underlying_asset_multiplier
+      let formatted_total_loss_usd: Int =
+        total_usd_value / underlying_asset_multiplier
 
       // divide the stable collateral amount by the stable asset multiplier and multiply it by the usd price multiplier to get the usd amount of the collateral 
       // in same unit as the total value loss usd
       let formatted_collateral_amount: Int =
-        collateral_amount / stable_asset_multiplier * usd_multiplier
+        stable_amount / stable_asset_multiplier * usd_multiplier
 
-      // using a + here because formatted_collateral_amount is negative
-      let total_value_loss: Int =
-        formatted_collateral_amount + formatted_total_value_loss_usd
+      // using a + here because total usd loss is negative
+      let stable_amount_lost: Int =
+        formatted_collateral_amount + formatted_total_loss_usd
 
       // convert to back to collateral asset amount, by dividing by the usd multiplier and multiplying by the asset multiplier
-      let formatted_total_value_loss: Int =
-        total_value_loss * stable_asset_multiplier / usd_multiplier
+      let formatted_stable_amount_lost: Int =
+        stable_amount_lost * stable_asset_multiplier / usd_multiplier
 
+      // convert to stable asset amount by multiplying by the stable asset multiplier and dividing by the usd multiplier
+      // the formmated_total_loss_usd is already formatted to unit basis when we divided by the underlying asset multiplier
+      // now we need to convert it to the stable asset amount, and divide by the usd multiplier
+      // then multiply by -1 because this is negative and we want the value to be positive to know how much stable coin the pool with take
+      let pool_stable_amount: Int =
+        formatted_total_loss_usd * stable_asset_multiplier / usd_multiplier * -1
+
+      // no asset is taken from the pool
+      // stable coin is taken from trader and given to pool
       ShortCloseOrder {
         asset_amount: 0,
-        collateral_amount: formatted_total_value_loss,
+        stable_amount: formatted_stable_amount_lost,
+        pool_stable_amount,
+        pool_asset_amount: 0,
+        strike_collateral_amount,
       }
     }
   }

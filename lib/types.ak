@@ -49,8 +49,26 @@ pub type OrdersWithdrawRedeemer {
 }
 
 pub type CloseSendAmount {
-  LongCloseOrder { asset_amount: Int }
-  ShortCloseOrder { collateral_amount: Int, asset_amount: Int }
+  LongCloseOrder {
+    // asset amount sent to trader
+    asset_amount: Int,
+    // asset amount sent or taken from pool
+    pool_asset_amount: Int,
+    // strike collateral sent to trader
+    strike_collateral_amount: Int,
+  }
+  ShortCloseOrder {
+    // stable amount sent to trader
+    stable_amount: Int,
+    // stable amount sent or taken from pool
+    pool_stable_amount: Int,
+    // asset amount sent to trader
+    asset_amount: Int,
+    // asset amount sent or taken from pool
+    pool_asset_amount: Int,
+    // strike collateral sent to trader
+    strike_collateral_amount: Int,
+  }
 }
 
 pub type OrderAction {

@@ -41,19 +41,24 @@ test test_calculate_long_profit_return() {
     calculate_return(
       position_amount: 100_000_000,
       underlying_asset_multiplier: 1_000_000,
-      collateral_amount: 10_000_000,
+      stable_amount: 10_000_000,
       stable_asset_multiplier: 1_000_000,
       entered_at_usd_price: 58678,
       current_usd_price: 80000,
       current_time: 1727453227635 + 3_800_000,
       entered_position_time: 1727453227635,
       hourly_borrow_fee: 119_703_120_000,
+      strike_collateral_amount: 10,
       side: Long,
     )
 
-  expect LongCloseOrder { asset_amount } = return
+  expect LongCloseOrder {
+    asset_amount,
+    strike_collateral_amount,
+    pool_asset_amount,
+  } = return
 
-  asset_amount == 35156211
+  asset_amount == 35156211 && strike_collateral_amount == 10 && pool_asset_amount == -25156211
 }
 
 test test_calculate_long_loss_return() {
@@ -78,19 +83,24 @@ test test_calculate_long_loss_return() {
     calculate_return(
       position_amount: 100_000_000,
       underlying_asset_multiplier: 1_000_000,
-      collateral_amount: 10_000_000,
+      stable_amount: 10_000_000,
       stable_asset_multiplier: 1_000_000,
       entered_at_usd_price: 58678,
       current_usd_price: 56000,
       current_time: 1727453227635 + 3_800_000,
       entered_position_time: 1727453227635,
       hourly_borrow_fee: 119_703_120_000,
+      strike_collateral_amount: 10,
       side: Long,
     )
 
-  expect LongCloseOrder { asset_amount } = return
+  expect LongCloseOrder {
+    asset_amount,
+    strike_collateral_amount,
+    pool_asset_amount,
+  } = return
 
-  asset_amount == 3080301
+  asset_amount == 3080301 && strike_collateral_amount == 10 && pool_asset_amount == 6919699
 }
 
 test test_calculate_short_profit_return() {
@@ -110,24 +120,31 @@ test test_calculate_short_profit_return() {
   // 3. Total Return = Original Collateral + Profit = 10 ADA + 2.64458 ADA
   // 4. Expected Results:
   //    - asset_amount:  2644587 lovelace
-  //    - collateral_amount: 10000000 lovelace (unchanged)
+  //    - stable_amount: 10000000 lovelace (unchanged)
   let return: CloseSendAmount =
     calculate_return(
       position_amount: 100_000_000,
       underlying_asset_multiplier: 1_000_000,
-      collateral_amount: 50,
+      stable_amount: 50,
       stable_asset_multiplier: 1_000_000,
       entered_at_usd_price: 58678,
       current_usd_price: 56000,
       current_time: 1727453227635 + 3_800_000,
       entered_position_time: 1727453227635,
       hourly_borrow_fee: 119_703_120_000,
+      strike_collateral_amount: 10,
       side: Short,
     )
 
-  expect ShortCloseOrder { asset_amount, collateral_amount } = return
+  expect ShortCloseOrder {
+    asset_amount,
+    strike_collateral_amount,
+    stable_amount,
+    pool_asset_amount,
+    pool_stable_amount,
+  } = return
 
-  asset_amount == 2644587 && collateral_amount == 50
+  asset_amount == 2644587 && stable_amount == 50 && strike_collateral_amount == 10 && pool_asset_amount == -2644587 && pool_stable_amount == 0
 }
 
 test test_calculate_short_loss_return() {
@@ -146,24 +163,31 @@ test test_calculate_short_loss_return() {
   // 3. Total Return = Original Collateral + loss = $50 ADA + -$2.19703
   // 4. Expected Results:
   //    - asset_amount:  0 lovelace
-  //    - collateral_amount: 47802960 stable asset or ~$47.80296 (unchanged)
+  //    - stable_amount: 47802960 stable asset or ~$47.80296 (unchanged)
   let return: CloseSendAmount =
     calculate_return(
       position_amount: 100_000_000,
       underlying_asset_multiplier: 1_000_000,
-      collateral_amount: 50_000_000,
+      stable_amount: 50_000_000,
       stable_asset_multiplier: 1_000_000,
       entered_at_usd_price: 58000,
       current_usd_price: 59000,
       current_time: 1727453227635 + 3_800_000,
       entered_position_time: 1727453227635,
       hourly_borrow_fee: 119_703_120_000,
+      strike_collateral_amount: 10,
       side: Short,
     )
 
-  expect ShortCloseOrder { asset_amount, collateral_amount } = return
+  expect ShortCloseOrder {
+    asset_amount,
+    stable_amount,
+    strike_collateral_amount,
+    pool_stable_amount,
+    pool_asset_amount,
+  } = return
 
-  asset_amount == 0 && collateral_amount == 47802960
+  asset_amount == 0 && stable_amount == 47802960 && strike_collateral_amount == 10 && pool_stable_amount == 2197040 && pool_asset_amount == 0
 }
 
 test test_calculate_accumulative_interest_fee() {

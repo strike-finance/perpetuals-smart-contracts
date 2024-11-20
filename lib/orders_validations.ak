@@ -252,7 +252,11 @@ pub fn close_position(
   expect output_is_to_owner
 
   if side == Long {
-    expect LongCloseOrder { asset_amount } = return_amount
+    expect LongCloseOrder {
+      asset_amount,
+      pool_asset_amount,
+      strike_collateral_amount,
+    } = return_amount
 
     let estimated_return =
       assets.from_asset(
@@ -260,6 +264,11 @@ pub fn close_position(
         pool_output_datum.underlying_asset.asset_name,
         asset_amount,
       )
+        |> assets.add(
+            strike_policy_id,
+            strike_asset_name,
+            strike_collateral_amount,
+          )
 
     expect match(output.value, estimated_return, <=)
 
@@ -268,13 +277,19 @@ pub fn close_position(
         |> assets.add(
             underlying_asset.policy_id,
             underlying_asset.asset_name,
-            asset_amount,
+            pool_asset_amount,
           ),
       datum: pool_output_datum,
       mint,
     }
   } else {
-    expect ShortCloseOrder { collateral_amount, asset_amount } = return_amount
+    expect ShortCloseOrder {
+      stable_amount,
+      pool_stable_amount,
+      asset_amount,
+      pool_asset_amount,
+      strike_collateral_amount,
+    } = return_amount
 
     let estimated_return =
       assets.from_asset(
@@ -285,7 +300,12 @@ pub fn close_position(
         |> assets.add(
             stable_asset.policy_id,
             stable_asset.asset_name,
-            collateral_amount,
+            stable_amount,
+          )
+        |> assets.add(
+            strike_policy_id,
+            strike_asset_name,
+            strike_collateral_amount,
           )
 
     expect match(output.value, estimated_return, <=)
@@ -295,12 +315,12 @@ pub fn close_position(
         |> assets.add(
             stable_asset.policy_id,
             stable_asset.asset_name,
-            collateral_amount,
+            pool_stable_amount,
           )
         |> assets.add(
             underlying_asset.policy_id,
             underlying_asset.asset_name,
-            asset_amount,
+            pool_asset_amount,
           ),
       datum: pool_output_datum,
       mint,

@@ -333,7 +333,7 @@
           "index": 1,
           "fields": [
             {
-              "title": "collateral_amount",
+              "title": "stable_amount",
               "$ref": "#/definitions/Int"
             },
             {
