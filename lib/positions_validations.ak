@@ -22,6 +22,8 @@ pub fn close_position_valid(
   current_usd_price: Int,
   orders_script_hash: ByteArray,
   close_type: CloseType,
+  underlying_asset_multiplier: Int,
+  stable_asset_multiplier: Int,
 ) -> Bool {
   expect Some(datum) = datum
 
@@ -38,8 +40,6 @@ pub fn close_position_valid(
     hourly_usd_borrow_fee,
     collateral_asset,
     maintain_margin_amount,
-    underlying_asset_multiplier,
-    stable_asset_multiplier,
   } = datum
 
   let all_validators_inputs: List<Input> =
@@ -110,8 +110,6 @@ pub fn close_position_valid(
           maintain_margin_amount,
           hourly_usd_borrow_fee,
           return_amount,
-          underlying_asset_multiplier,
-          stable_asset_multiplier,
           side,
         },
       }
@@ -151,8 +149,6 @@ pub fn close_position_valid(
           maintain_margin_amount,
           hourly_usd_borrow_fee,
           return_amount,
-          underlying_asset_multiplier,
-          stable_asset_multiplier,
           side,
         },
       }
@@ -195,8 +191,6 @@ pub fn close_position_valid(
           maintain_margin_amount,
           hourly_usd_borrow_fee,
           return_amount,
-          underlying_asset_multiplier,
-          stable_asset_multiplier,
           side,
         },
       }
@@ -347,7 +341,6 @@ pub fn mint_position_valid(
 
   expect OpenPositionOrder {
     owner_address_hash,
-    leverage_factor,
     side,
     order_submission_time,
     order_submission_usd_price,
@@ -405,7 +398,7 @@ pub fn mint_position_valid(
       strike_asset_name,
     )
 
-  // check if lovelace, and subtract collateral_asset_amount with batcher fee, or else it gets counted twice
+  // check if lovelace, and subtract collateral_asset_amount with batcher fee, or else the batcher fee gets counted twice
   if collateral_asset.policy_id == "" {
     let expected_assets_locked: Value =
       assets.from_lovelace(batcher_fee)
@@ -441,7 +434,7 @@ pub fn mint_position_valid(
       side,
     )
 
-  let underlying_asset_amount =
+  let pool_underlying_asset_amount =
     quantity_of(
       pool_value,
       collateral_asset.policy_id,
@@ -453,7 +446,7 @@ pub fn mint_position_valid(
       position_asset_amount,
       underlying_asset_lended_amount,
       current_usd_price,
-      underlying_asset_amount,
+      pool_underlying_asset_amount,
       interest_rate,
     )
 
@@ -466,18 +459,6 @@ pub fn mint_position_valid(
   let owner_signed_tx =
     list.has(transaction.extra_signatories, owner_address_hash)
 
-  let minted_assets_amount_valid: Bool =
-    is_position_assets_amount_valid(
-      side,
-      position_asset_amount,
-      leverage_factor,
-      collateral_asset_amount,
-      current_usd_price,
-    )
-
-  expect
-    minted_assets_amount_valid && hourly_usd_borrow_fee_valid && order_submission_time_valid && owner_signed_tx
-
   let contains_strike_collateral: Bool =
     quantity_of(
       output_to_orders_validator.value,
@@ -485,32 +466,71 @@ pub fn mint_position_valid(
       strike_asset_name,
     ) > 0
 
-  if contains_strike_collateral {
-    max_strike_holder_leverage_factor >= leverage_factor
-  } else {
-    max_leverage_factor >= leverage_factor
-  }
+  let position_max_leverage_factor =
+    get_position_max_leverage_factor(
+      max_leverage_factor,
+      max_strike_holder_leverage_factor,
+      contains_strike_collateral,
+    )
+
+  let assets_amount_valid: Bool =
+    is_position_assets_amount_valid(
+      side,
+      position_asset_amount,
+      position_max_leverage_factor,
+      collateral_asset_amount,
+      current_usd_price,
+      params.underlying_asset_multiplier,
+      params.stable_asset_multiplier,
+    )
+
+  assets_amount_valid && hourly_usd_borrow_fee_valid && order_submission_time_valid && owner_signed_tx
 }
 
 // make sure the amount of position_asset_amount is atleast the collateral asset amount * leverage factor
-// For long position, simply divide by the leverage factor since the collateral is in the same asset as the underlying asset
-// For short position, divide by the leverage factor and then by multiply it by the current usd price to get the expected stable asset amount
+// for strike holders, they have a different leverage factor
 fn is_position_assets_amount_valid(
   position_side: PositionSide,
   position_asset_amount: Int,
-  leverage_factor: Int,
+  max_leverage_factor: Int,
   collateral_asset_amount: Int,
   current_usd_price: Int,
+  underlying_asset_multiplier: Int,
+  stable_asset_multiplier: Int,
 ) -> Bool {
   if position_side == Long {
-    position_asset_amount / leverage_factor <= collateral_asset_amount
+    // for longs, the collateral asset is the same as the underlying asset, so we can simply divide by the leverage factor and compare the two values
+
+    position_asset_amount / max_leverage_factor <= collateral_asset_amount
   } else {
-    let collateral_in_asset_term: Int = position_asset_amount / leverage_factor
+    // for shorts, the collateral asset is a stable coin
+    // use the stable asset multiplier and underlyting asset multiplier to make it into the same unit to compare
+    let collateral_position_asset_amount: Int =
+      position_asset_amount / max_leverage_factor
 
+    // get the total price after dividing by the max leverage factor, then divide by the underlying asset multiplier to get the units
+    // because the posiition asset represents the total asset amount of the position, in the underlying asset
     let stable_amount_expected: Int =
-      collateral_in_asset_term * current_usd_price
+      collateral_position_asset_amount * current_usd_price / underlying_asset_multiplier
 
-    stable_amount_expected <= collateral_asset_amount
+    // now convert the collateral asset amount to the same unit as the stable amount expected. The usd multiplier converts 
+    // the collateral asset amount to the same unit as the position asset amount
+    let stable_amount: Int =
+      collateral_asset_amount / stable_asset_multiplier * usd_multiplier
+
+    stable_amount_expected <= stable_amount
+  }
+}
+
+fn get_position_max_leverage_factor(
+  max_leverage_factor: Int,
+  max_strike_holder_leverage_factor: Int,
+  contains_strike_collateral: Bool,
+) -> Int {
+  if contains_strike_collateral {
+    max_strike_holder_leverage_factor
+  } else {
+    max_leverage_factor
   }
 }
 
@@ -618,30 +638,25 @@ pub fn calculate_accumulative_interest_fee(
 }
 
 // Utilization factor is the ratio of the underlying asset amount to the underlying asset lended amount
-// To get the utilization percentage, divide 100 by the utilization factor, EX: 100 / 10 = 10%
-// Divide by 100 in the end to account for interest rate being a int instead of a float
+// First multiply the underlying asset lended amount so we can divide it by the pool's underlying asset amount to get the utilization percentage
+// Then multiply the current position usd value by the utilization percentage and interest rate to get the fee
+// Then divide by 100 becausse the interest rate is an int, and 10_000 because we used it to get the utilization percentage
 pub fn calculate_hourly_usd_borrow_fee(
   position_asset_amount: Int,
   underlying_asset_lended_amount: Int,
   current_usd_price: Int,
-  underlying_asset_amount: Int,
+  pool_underlying_asset_amount: Int,
   interest_rate: Int,
 ) -> Int {
-  let utilization_factor =
-    underlying_asset_amount / underlying_asset_lended_amount
+  let underlying_asset_lended_amount_multiplier =
+    underlying_asset_lended_amount * 10_000
 
-  let utilization_percentage = 100 / utilization_factor
+  let utilization_percentage =
+    underlying_asset_lended_amount_multiplier / pool_underlying_asset_amount
 
   let current_position_usd_value = position_asset_amount * current_usd_price
 
-  let fee =
-    utilization_percentage * interest_rate * current_position_usd_value / 100
-
-  if fee < usd_multiplier {
-    usd_multiplier
-  } else {
-    fee
-  }
+  utilization_percentage * interest_rate * current_position_usd_value / 100 / 10_000
 }
 
 pub fn calculate_return(

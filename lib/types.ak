@@ -36,7 +36,7 @@ pub type PositionSide {
 
 pub type OrdersRedeemer {
   BatchOrders
-  CancelOrders(Int)
+  CancelOrder(Int)
 }
 
 pub type UTxOIndexer =
@@ -89,10 +89,6 @@ pub type OrderAction {
     maintain_margin_amount: Int,
     // Total amount of USD value to pay for borrow each hour
     hourly_usd_borrow_fee: Int,
-    // Number of decimal places for the underlying asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
-    underlying_asset_multiplier: Int,
-    // Number of decimal places for the stable asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
-    stable_asset_multiplier: Int,
     // Long or short position
     side: PositionSide,
   }
@@ -119,10 +115,6 @@ pub type OrderAction {
     hourly_usd_borrow_fee: Int,
     // Amount to return to the owner
     return_amount: CloseSendAmount,
-    // Number of decimal places for the underlying asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
-    underlying_asset_multiplier: Int,
-    // Number of decimal places for the stable asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
-    stable_asset_multiplier: Int,
     // Long or short position
     side: PositionSide,
   }
@@ -165,6 +157,8 @@ pub type PositionMintRedeemer {
 
 pub type PositionsParams {
   orders_script_hash: ScriptHash,
+  underlying_asset_multiplier: Int,
+  stable_asset_multiplier: Int,
 }
 
 pub type PositionDatum {
@@ -190,10 +184,6 @@ pub type PositionDatum {
   maintain_margin_amount: Int,
   // Total amount of USD value to pay for borrow each hour
   hourly_usd_borrow_fee: Int,
-  // Number of decimal places for the underlying asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
-  underlying_asset_multiplier: Int,
-  // Number of decimal places for the stable asset (e.g. if 1_000_000, then 1_000_000 = 1.0)
-  stable_asset_multiplier: Int,
   // Side of the position
   side: PositionSide,
 }

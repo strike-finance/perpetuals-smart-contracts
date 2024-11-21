@@ -6,7 +6,7 @@ use orders_validations.{
   cancel_close_position_valid, cancel_open_position_valid, valid_orders,
 }
 use types.{
-  BatchOrders, CancelOrders, ClosePositionOrder, LiquidatePositionOrder,
+  BatchOrders, CancelOrder, ClosePositionOrder, LiquidatePositionOrder,
   OpenPositionOrder, OrderDatum, OrdersParams, OrdersRedeemer,
   OrdersWithdrawRedeemer, PoolDatum,
 }
@@ -21,7 +21,7 @@ validator orders(params: OrdersParams) {
   ) {
     when redeemer is {
       BatchOrders -> is_withdrawal(transaction, own_ref)
-      CancelOrders(output_index) -> {
+      CancelOrder(output_index) -> {
         expect Some(datum) = datum
 
         let all_validators_inputs: List<Input> =
@@ -29,6 +29,7 @@ validator orders(params: OrdersParams) {
 
         let only_one_input_from_script: Bool =
           list.length(all_validators_inputs) == 1
+
         expect only_one_input_from_script
 
         when datum.action is {

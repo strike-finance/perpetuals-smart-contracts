@@ -13,11 +13,11 @@ test test_calculate_hourly_usd_borrow_fee() {
       position_asset_amount: 3_400_000,
       underlying_asset_lended_amount: 50_000_000,
       current_usd_price: 58678,
-      underlying_asset_amount: 1_500_000_000,
+      pool_underlying_asset_amount: 1_500_000_000,
       interest_rate: 20,
     )
 
-  hourly_usd_borrow_fee == 119703120000
+  hourly_usd_borrow_fee == 1328704632
 }
 
 test test_calculate_long_profit_return() {

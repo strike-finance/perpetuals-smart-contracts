@@ -12,7 +12,7 @@ use tests/constants.{
   underlying_asset,
 }
 use types.{
-  Asset, CancelOrders, ClosePositionOrder, LiquidatePositionOrder, Long,
+  Asset, CancelOrder, ClosePositionOrder, LiquidatePositionOrder, Long,
   LongCloseOrder, OpenPositionOrder, OrderDatum, OrdersParams,
   OrdersWithdrawRedeemer, PoolDatum, PositionDatum, Short, ShortCloseOrder,
 }
@@ -57,8 +57,6 @@ test test_cancel_open_position() {
       action: OpenPositionOrder {
         owner_address_hash: trader_pkh,
         position_hash,
-        underlying_asset_multiplier: 1_000_000,
-        stable_asset_multiplier: 1_000_000,
         leverage_factor: 10,
         position_asset_amount: 10_000_000,
         maintain_margin_amount: 100,
@@ -122,7 +120,7 @@ test test_cancel_open_position() {
       stable_asset_name: stable_asset.asset_name,
       burn_address,
     }
-  let redeemer = CancelOrders(0)
+  let redeemer = CancelOrder(0)
   orders.orders.spend(params, Some(orders_datum), redeemer, out_ref, tx)
 }
 
@@ -131,8 +129,6 @@ test test_cancel_close_position() {
     OrderDatum {
       action: ClosePositionOrder {
         owner_address_hash: trader_pkh,
-        underlying_asset_multiplier: 1_000_000,
-        stable_asset_multiplier: 1_000_000,
         position_hash,
         leverage_factor: 10,
         hourly_usd_borrow_fee: 100,
@@ -163,8 +159,6 @@ test test_cancel_close_position() {
     maintain_margin_amount,
     side,
     entered_position_time,
-    underlying_asset_multiplier,
-    stable_asset_multiplier,
     ..
   } = orders_datum.action
 
@@ -195,8 +189,6 @@ test test_cancel_close_position() {
       owner_address_hash,
       position_hash,
       entered_at_usd_price,
-      underlying_asset_multiplier,
-      stable_asset_multiplier,
       leverage_factor,
       position_asset_amount,
       maintain_margin_amount,
@@ -262,7 +254,7 @@ test test_cancel_close_position() {
       stable_asset_name: stable_asset.asset_name,
       burn_address,
     }
-  let redeemer = CancelOrders(0)
+  let redeemer = CancelOrder(0)
   orders.orders.spend(params, Some(orders_datum), redeemer, out_ref, tx)
 }
 
@@ -271,8 +263,6 @@ test test_open_position() {
     OrderDatum {
       action: OpenPositionOrder {
         owner_address_hash: trader_pkh,
-        underlying_asset_multiplier: 1_000_000,
-        stable_asset_multiplier: 1_000_000,
         position_hash,
         leverage_factor: 10,
         order_submission_time: 1727453227635,
@@ -294,8 +284,6 @@ test test_open_position() {
     maintain_margin_amount,
     hourly_usd_borrow_fee,
     side,
-    underlying_asset_multiplier,
-    stable_asset_multiplier,
   } = orders_datum.action
 
   let orders_input =
@@ -324,8 +312,6 @@ test test_open_position() {
     PositionDatum {
       owner_address_hash,
       position_hash,
-      underlying_asset_multiplier,
-      stable_asset_multiplier,
       entered_at_usd_price: order_submission_usd_price,
       leverage_factor,
       position_asset_amount,
@@ -450,8 +436,6 @@ test test_close_profit_long_position() {
         owner_address_hash: trader_pkh,
         position_hash,
         leverage_factor: 10,
-        underlying_asset_multiplier: 1_000_000,
-        stable_asset_multiplier: 1_000_000,
         hourly_usd_borrow_fee: 100,
         entered_at_usd_price: 100,
         stop_loss_usd_price: 0,
@@ -624,8 +608,6 @@ test test_close_profit_short_position() {
         owner_address_hash: trader_pkh,
         position_hash,
         leverage_factor: 10,
-        underlying_asset_multiplier: 1_000_000,
-        stable_asset_multiplier: 1_000_000,
         hourly_usd_borrow_fee: 100,
         entered_at_usd_price: 100,
         stop_loss_usd_price: 0,
@@ -801,8 +783,6 @@ test test_close_loss_long_position() {
         owner_address_hash: trader_pkh,
         position_hash,
         leverage_factor: 10,
-        underlying_asset_multiplier: 1_000_000,
-        stable_asset_multiplier: 1_000_000,
         hourly_usd_borrow_fee: 100,
         entered_at_usd_price: 100,
         stop_loss_usd_price: 0,
@@ -969,8 +949,6 @@ test test_close_loss_short_position() {
         owner_address_hash: trader_pkh,
         position_hash,
         leverage_factor: 10,
-        underlying_asset_multiplier: 1_000_000,
-        stable_asset_multiplier: 1_000_000,
         hourly_usd_borrow_fee: 100,
         entered_at_usd_price: 100,
         stop_loss_usd_price: 0,

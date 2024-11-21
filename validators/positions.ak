@@ -24,6 +24,8 @@ validator positions(params: PositionsParams) {
           current_usd_price,
           params.orders_script_hash,
           close_type,
+          params.underlying_asset_multiplier,
+          params.stable_asset_multiplier,
         )
       UpdateStopLoss(stop_loss_price) ->
         update_stop_loss_valid(transaction, datum, stop_loss_price)

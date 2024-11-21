@@ -214,7 +214,7 @@ underlying_asset_name: The underlying
 ```
 pub type OrdersRedeemer {
   BatchOrders
-  CancelOrders
+  CancelOrder
 }
 
 pub type UTxOIndexer =
