@@ -169,14 +169,14 @@ pub fn close_position_valid(
     let return_amount =
       calculate_return(
         position_asset_amount,
+        underlying_asset_multiplier,
         collateral_asset_amount,
+        stable_asset_multiplier,
         entered_at_usd_price,
         current_usd_price,
         current_time,
         entered_position_time,
         hourly_usd_borrow_fee,
-        underlying_asset_multiplier,
-        stable_asset_multiplier,
         strike_collateral_asset_amount,
         side,
       )

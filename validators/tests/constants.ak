@@ -62,6 +62,10 @@ pub const batcher_fee = 2_000_000
 
 pub const maximum_deadline_range = 1_000_000_000
 
+pub const underlying_asset_multiplier = 1_000_000
+
+pub const stable_asset_multiplier = 1_000_000
+
 pub const stable_asset =
   Asset {
     policy_id: stable_collateral_policy_id,
