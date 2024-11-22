@@ -568,7 +568,7 @@ fn price_reached_take_profit(
 // any loss is subtracted from the collateral value
 // the current margin is the collateral value divided by the current position value
 // if the current margin is less than the margin requirement, the liquidation price is reached
-fn reach_liquidation_price(
+pub fn reach_liquidation_price(
   side: PositionSide,
   position_amount: Int,
   current_usd_price: Int,
@@ -604,7 +604,7 @@ fn reach_liquidation_price(
       collateral_value_after_interest - total_value_loss
 
     let current_margin: Int =
-      divide(collateral_value_after_loss, current_position_value)
+      collateral_value_after_loss / current_position_value
 
     current_margin <= maintain_margin_amount
   } else {
@@ -629,7 +629,7 @@ fn reach_liquidation_price(
       collateral_value_after_interest - total_value_loss
 
     let current_margin: Int =
-      divide(collateral_value_after_loss, current_position_value)
+      collateral_value_after_loss / current_position_value
 
     current_margin <= maintain_margin_amount
   }

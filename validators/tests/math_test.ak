@@ -201,3 +201,4 @@ test test_calculate_accumulative_interest_fee() {
   trace accumulative_interest_fee
   accumulative_interest_fee == 119703120000
 }
+// TODO: ADD TESTS FOR REACH LIQUIDATION PRICE
