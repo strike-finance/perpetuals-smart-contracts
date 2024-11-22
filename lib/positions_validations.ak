@@ -20,12 +20,16 @@ pub fn close_position_valid(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   current_usd_price: Int,
-  orders_script_hash: ByteArray,
   close_type: CloseType,
-  underlying_asset_multiplier: Int,
-  stable_asset_multiplier: Int,
+  params: PositionsParams,
 ) -> Bool {
   expect Some(datum) = datum
+
+  let PositionsParams {
+    orders_script_hash,
+    underlying_asset_multiplier,
+    stable_asset_multiplier,
+  } = params
 
   let PositionDatum {
     owner_address_hash,
@@ -326,10 +330,16 @@ pub fn mint_position_valid(
   current_usd_price: Int,
   policy_id: PolicyId,
 ) {
+  let PositionsParams {
+    orders_script_hash,
+    underlying_asset_multiplier,
+    stable_asset_multiplier,
+  } = params
+
   let Transaction { mint, .. } = transaction
 
   let outputs_to_orders_address: List<Output> =
-    find_script_outputs(transaction.outputs, params.orders_script_hash)
+    find_script_outputs(transaction.outputs, orders_script_hash)
 
   expect list.length(outputs_to_orders_address) == 1
 
@@ -480,8 +490,8 @@ pub fn mint_position_valid(
       position_max_leverage_factor,
       collateral_asset_amount,
       current_usd_price,
-      params.underlying_asset_multiplier,
-      params.stable_asset_multiplier,
+      underlying_asset_multiplier,
+      stable_asset_multiplier,
     )
 
   assets_amount_valid && hourly_usd_borrow_fee_valid && order_submission_time_valid && owner_signed_tx

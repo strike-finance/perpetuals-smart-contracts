@@ -6,6 +6,10 @@ use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
 use positions
+use positions_validations.{
+  calculate_accumulative_interest_fee, calculate_hourly_usd_borrow_fee,
+  calculate_return,
+}
 use tests/constants.{
   admin_pkh, batcher_fee, orders_script_hash, out_ref, pool_asset, pool_license,
   position_hash, positions_script_hash, stable_asset, strike_collateral_asset,
@@ -254,205 +258,242 @@ test burn_positions_mint() {
   let redeemer = BurnPosition(1, trader_pkh)
   positions.positions.mint(params, redeemer, position_hash, tx)
 }
-// test close_position_signed_by_owner() {
-//   let own_ref =
-//     OutputReference {
-//       transaction_id: #"b4971034feee28d07f157faf99b850f856d8da3494c70b19b521cfe690258e26",
-//       output_index: 0,
-//     }
 
-//   let input =
-//     Input {
-//       output_reference: own_ref,
-//       output: Output {
-//         address: from_script(positions_script_hash),
-//         value: assets.from_asset(position_hash, trader_pkh, 1)
-//           |> assets.add(
-//               strike_collateral_asset.policy_id,
-//               strike_collateral_asset.asset_name,
-//               10,
-//             )
-//           |> assets.add(
-//               underlying_asset.policy_id,
-//               underlying_asset.asset_name,
-//               1_000_000,
-//             ),
-//         datum: InlineDatum(position_datum),
-//         reference_script: None,
-//       },
-//     }
+test close_position_signed_by_owner() {
+  let own_ref =
+    OutputReference {
+      transaction_id: #"b4971034feee28d07f157faf99b850f856d8da3494c70b19b521cfe690258e26",
+      output_index: 0,
+    }
 
-//   let orders_datum =
-//     OrderDatum {
-//       action: ClosePositionOrder {
-//         owner_address_hash: trader_pkh,
-//         leverage_factor: position_datum.leverage_factor,
-//         order_submission_usd_price: 100,
-//         position_hash,
-//         entered_at_usd_price: position_datum.entered_at_usd_price,
-//         stop_loss_usd_price: position_datum.stop_loss_usd_price,
-//         take_profit_usd_price: position_datum.take_profit_usd_price,
-//         entered_position_time: position_datum.entered_position_time,
-//         position_asset_amount: position_datum.position_asset_amount,
-//         maintain_margin_amount: position_datum.maintain_margin_amount,
-//         hourly_usd_borrow_fee: position_datum.hourly_usd_borrow_fee,
-//         return_amount: LongCloseOrder { asset_amount: 1_000_000 },
-//         side: Long,
-//       },
-//     }
+  let input =
+    Input {
+      output_reference: own_ref,
+      output: Output {
+        address: from_script(positions_script_hash),
+        value: assets.from_asset(position_hash, trader_pkh, 1)
+          |> assets.add(
+              strike_collateral_asset.policy_id,
+              strike_collateral_asset.asset_name,
+              10,
+            )
+          |> assets.add(
+              underlying_asset.policy_id,
+              underlying_asset.asset_name,
+              1_000_000,
+            ),
+        datum: InlineDatum(position_datum),
+        reference_script: None,
+      },
+    }
 
-//   let pos_out =
-//     Output {
-//       address: from_script(orders_script_hash),
-//       value: assets.from_asset(position_hash, trader_pkh, 1)
-//         |> assets.merge(assets.from_lovelace(batcher_fee))
-//         |> assets.add(
-//             strike_collateral_asset.policy_id,
-//             strike_collateral_asset.asset_name,
-//             10,
-//           )
-//         |> assets.add(
-//             position_datum.collateral_asset.policy_id,
-//             underlying_asset.asset_name,
-//             1_000_000,
-//           ),
-//       datum: InlineDatum(orders_datum),
-//       reference_script: None,
-//     }
+  let calculated_return_amount =
+    calculate_return(
+      position_amount: position_datum.position_asset_amount,
+      underlying_asset_multiplier: 1_000_000,
+      stable_amount: 1_000_000,
+      stable_asset_multiplier: 1_000_000,
+      entered_at_usd_price: position_datum.entered_at_usd_price,
+      current_usd_price: 100,
+      current_time: 1727453227635,
+      entered_position_time: position_datum.entered_position_time,
+      hourly_borrow_fee: position_datum.hourly_usd_borrow_fee,
+      strike_collateral_amount: 10,
+      side: Long,
+    )
 
-//   let tx =
-//     Transaction {
-//       inputs: [input],
-//       reference_inputs: [],
-//       outputs: [pos_out],
-//       fee: 0,
-//       mint: assets.zero,
-//       certificates: [],
-//       withdrawals: [],
-//       validity_range: Interval {
-//         lower_bound: IntervalBound {
-//           bound_type: Finite(1727453227635),
-//           is_inclusive: False,
-//         },
-//         upper_bound: IntervalBound {
-//           bound_type: Finite(1727456400000),
-//           is_inclusive: False,
-//         },
-//       },
-//       extra_signatories: [trader_pkh],
-//       redeemers: [],
-//       datums: dict.empty,
-//       id: #"0000000000000000000000000000000000000000000000000000000000000000",
-//       votes: [],
-//       proposal_procedures: [],
-//       current_treasury_amount: None,
-//       treasury_donation: None,
-//     }
-//   let params = PositionsParams { orders_script_hash, pool_license }
-//   let redeemer = Close(100, TraderClose)
-//   positions.positions.spend(params, Some(position_datum), redeemer, own_ref, tx)
-// }
+  let orders_datum =
+    OrderDatum {
+      action: ClosePositionOrder {
+        owner_address_hash: trader_pkh,
+        leverage_factor: position_datum.leverage_factor,
+        position_hash,
+        entered_at_usd_price: position_datum.entered_at_usd_price,
+        stop_loss_usd_price: position_datum.stop_loss_usd_price,
+        take_profit_usd_price: position_datum.take_profit_usd_price,
+        entered_position_time: position_datum.entered_position_time,
+        position_asset_amount: position_datum.position_asset_amount,
+        maintain_margin_amount: position_datum.maintain_margin_amount,
+        hourly_usd_borrow_fee: position_datum.hourly_usd_borrow_fee,
+        return_amount: calculated_return_amount,
+        side: Long,
+      },
+    }
 
-// test close_position_take_profit() {
-//   let own_ref =
-//     OutputReference {
-//       transaction_id: #"b4971034feee28d07f157faf99b850f856d8da3494c70b19b521cfe690258e26",
-//       output_index: 0,
-//     }
+  let pos_out =
+    Output {
+      address: from_script(orders_script_hash),
+      value: assets.from_asset(position_hash, trader_pkh, 1)
+        |> assets.merge(assets.from_lovelace(batcher_fee))
+        |> assets.add(
+            strike_collateral_asset.policy_id,
+            strike_collateral_asset.asset_name,
+            10,
+          )
+        |> assets.add(
+            position_datum.collateral_asset.policy_id,
+            underlying_asset.asset_name,
+            1_000_000,
+          ),
+      datum: InlineDatum(orders_datum),
+      reference_script: None,
+    }
 
-//   let input =
-//     Input {
-//       output_reference: own_ref,
-//       output: Output {
-//         address: from_script(positions_script_hash),
-//         value: assets.from_asset(position_hash, trader_pkh, 1)
-//           |> assets.add(
-//               strike_collateral_asset.policy_id,
-//               strike_collateral_asset.asset_name,
-//               10,
-//             )
-//           |> assets.add(
-//               position_datum.collateral_asset.policy_id,
-//               position_datum.collateral_asset.asset_name,
-//               1_000_000,
-//             ),
-//         datum: InlineDatum(position_datum),
-//         reference_script: None,
-//       },
-//     }
+  let tx =
+    Transaction {
+      inputs: [input],
+      reference_inputs: [],
+      outputs: [pos_out],
+      fee: 0,
+      mint: assets.zero,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [trader_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+  let params =
+    PositionsParams {
+      orders_script_hash,
+      underlying_asset_multiplier: 1_000_000,
+      stable_asset_multiplier: 1_000_000,
+    }
+  let redeemer = Close(100, TraderClose)
+  positions.positions.spend(params, Some(position_datum), redeemer, own_ref, tx)
+}
 
-//   let orders_datum =
-//     OrderDatum {
-//       action: ClosePositionOrder {
-//         owner_address_hash: trader_pkh,
-//         leverage_factor: position_datum.leverage_factor,
-//         order_submission_usd_price: 120,
-//         position_hash,
-//         entered_at_usd_price: position_datum.entered_at_usd_price,
-//         stop_loss_usd_price: position_datum.stop_loss_usd_price,
-//         take_profit_usd_price: position_datum.take_profit_usd_price,
-//         entered_position_time: position_datum.entered_position_time,
-//         position_asset_amount: position_datum.position_asset_amount,
-//         maintain_margin_amount: position_datum.maintain_margin_amount,
-//         hourly_usd_borrow_fee: position_datum.hourly_usd_borrow_fee,
-//         return_amount: LongCloseOrder { asset_amount: 2_666_666 },
-//         side: Long,
-//       },
-//     }
+test close_position_take_profit() {
+  let own_ref =
+    OutputReference {
+      transaction_id: #"b4971034feee28d07f157faf99b850f856d8da3494c70b19b521cfe690258e26",
+      output_index: 0,
+    }
 
-//   let pos_out =
-//     Output {
-//       address: from_script(orders_script_hash),
-//       value: assets.from_asset(position_hash, trader_pkh, 1)
-//         |> assets.merge(assets.from_lovelace(batcher_fee))
-//         |> assets.add(
-//             strike_collateral_asset.policy_id,
-//             strike_collateral_asset.asset_name,
-//             10,
-//           )
-//         |> assets.add(
-//             position_datum.collateral_asset.policy_id,
-//             position_datum.collateral_asset.asset_name,
-//             1_000_000,
-//           ),
-//       datum: InlineDatum(orders_datum),
-//       reference_script: None,
-//     }
+  let input =
+    Input {
+      output_reference: own_ref,
+      output: Output {
+        address: from_script(positions_script_hash),
+        value: assets.from_asset(position_hash, trader_pkh, 1)
+          |> assets.add(
+              strike_collateral_asset.policy_id,
+              strike_collateral_asset.asset_name,
+              10,
+            )
+          |> assets.add(
+              position_datum.collateral_asset.policy_id,
+              position_datum.collateral_asset.asset_name,
+              1_000_000,
+            ),
+        datum: InlineDatum(position_datum),
+        reference_script: None,
+      },
+    }
 
-//   let tx =
-//     Transaction {
-//       inputs: [input],
-//       reference_inputs: [],
-//       outputs: [pos_out],
-//       fee: 0,
-//       mint: assets.zero,
-//       certificates: [],
-//       withdrawals: [],
-//       validity_range: Interval {
-//         lower_bound: IntervalBound {
-//           bound_type: Finite(1727453227635),
-//           is_inclusive: False,
-//         },
-//         upper_bound: IntervalBound {
-//           bound_type: Finite(1727456400000),
-//           is_inclusive: False,
-//         },
-//       },
-//       extra_signatories: [trader_pkh],
-//       redeemers: [],
-//       datums: dict.empty,
-//       id: #"0000000000000000000000000000000000000000000000000000000000000000",
-//       votes: [],
-//       proposal_procedures: [],
-//       current_treasury_amount: None,
-//       treasury_donation: None,
-//     }
-//   let params = PositionsParams { orders_script_hash, pool_license }
+  let calculated_return_amount =
+    calculate_return(
+      position_amount: position_datum.position_asset_amount,
+      underlying_asset_multiplier: 1_000_000,
+      stable_amount: 1_000_000,
+      stable_asset_multiplier: 1_000_000,
+      entered_at_usd_price: position_datum.entered_at_usd_price,
+      current_usd_price: 120,
+      current_time: 1727453227635,
+      entered_position_time: position_datum.entered_position_time,
+      hourly_borrow_fee: position_datum.hourly_usd_borrow_fee,
+      strike_collateral_amount: 10,
+      side: Long,
+    )
 
-//   let redeemer = Close(120, TakeProfitClose)
-//   positions.positions.spend(params, Some(position_datum), redeemer, own_ref, tx)
-// }
+  let orders_datum =
+    OrderDatum {
+      action: ClosePositionOrder {
+        owner_address_hash: trader_pkh,
+        leverage_factor: position_datum.leverage_factor,
+        position_hash,
+        entered_at_usd_price: position_datum.entered_at_usd_price,
+        stop_loss_usd_price: position_datum.stop_loss_usd_price,
+        take_profit_usd_price: position_datum.take_profit_usd_price,
+        entered_position_time: position_datum.entered_position_time,
+        position_asset_amount: position_datum.position_asset_amount,
+        maintain_margin_amount: position_datum.maintain_margin_amount,
+        hourly_usd_borrow_fee: position_datum.hourly_usd_borrow_fee,
+        return_amount: calculated_return_amount,
+        side: Long,
+      },
+    }
 
+  let pos_out =
+    Output {
+      address: from_script(orders_script_hash),
+      value: assets.from_asset(position_hash, trader_pkh, 1)
+        |> assets.merge(assets.from_lovelace(batcher_fee))
+        |> assets.add(
+            strike_collateral_asset.policy_id,
+            strike_collateral_asset.asset_name,
+            10,
+          )
+        |> assets.add(
+            position_datum.collateral_asset.policy_id,
+            position_datum.collateral_asset.asset_name,
+            1_000_000,
+          ),
+      datum: InlineDatum(orders_datum),
+      reference_script: None,
+    }
+
+  let tx =
+    Transaction {
+      inputs: [input],
+      reference_inputs: [],
+      outputs: [pos_out],
+      fee: 0,
+      mint: assets.zero,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [trader_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+  let params =
+    PositionsParams {
+      orders_script_hash,
+      underlying_asset_multiplier: 1_000_000,
+      stable_asset_multiplier: 1_000_000,
+    }
+  let redeemer = Close(120, TakeProfitClose)
+  positions.positions.spend(params, Some(position_datum), redeemer, own_ref, tx)
+}
 // test close_position_stop_loss() {
 //   let own_ref =
 //     OutputReference {
