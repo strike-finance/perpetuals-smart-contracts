@@ -12,7 +12,7 @@ use types.{
   ShortCloseOrder, StopLossClose, TakeProfitClose, TraderClose,
 }
 use utils.{
-  divide, get_address_outputs, get_all_validators_inputs, get_collateral_asset,
+  get_address_outputs, get_all_validators_inputs, get_collateral_asset,
   get_lower_bound,
 }
 
@@ -236,6 +236,8 @@ pub fn close_position_valid(
         entered_position_time,
         hourly_usd_borrow_fee,
         current_time,
+        underlying_asset_multiplier,
+        stable_asset_multiplier,
       )
 
     orders_datum_valid && liquidate_reached
@@ -574,10 +576,12 @@ pub fn reach_liquidation_price(
   current_usd_price: Int,
   entered_at_usd_price: Int,
   maintain_margin_amount: Int,
-  collateral_asset_amount: Int,
+  collateral_amount: Int,
   entered_position_time: POSIXTime,
   hourly_borrow_fee: Int,
   current_time: POSIXTime,
+  stable_asset_multiplier: Int,
+  underlying_asset_multiplier: Int,
 ) -> Bool {
   if side == Long {
     let inital_position_usd_value: Int = position_amount * entered_at_usd_price
@@ -585,28 +589,29 @@ pub fn reach_liquidation_price(
     let current_position_value: Int = position_amount * current_usd_price
 
     let total_value_loss: Int =
-      inital_position_usd_value - current_position_value
+      current_position_value - inital_position_usd_value
 
-    let accumulative_interest_fee: Int =
-      calculate_accumulative_interest_fee(
-        current_time,
-        entered_position_time,
-        hourly_borrow_fee,
-      )
+    // if positive that means this is in profit and return false 
+    if total_value_loss > 0 {
+      False
+    } else {
+      let accumulative_interest_fee: Int =
+        calculate_accumulative_interest_fee(
+          current_time,
+          entered_position_time,
+          hourly_borrow_fee,
+        )
 
-    let inital_collateral_value: Int =
-      collateral_asset_amount * entered_at_usd_price
+      let collateral_value: Int = collateral_amount * current_usd_price
 
-    let collateral_value_after_interest: Int =
-      inital_collateral_value - accumulative_interest_fee
+      let collateral_value_after_loss: Int =
+        collateral_value - accumulative_interest_fee - total_value_loss
 
-    let collateral_value_after_loss: Int =
-      collateral_value_after_interest - total_value_loss
+      let current_margin: Int =
+        collateral_value_after_loss / current_position_value
 
-    let current_margin: Int =
-      collateral_value_after_loss / current_position_value
-
-    current_margin <= maintain_margin_amount
+      current_margin <= maintain_margin_amount
+    }
   } else {
     let inital_position_usd_value: Int = position_amount * entered_at_usd_price
 
@@ -615,23 +620,28 @@ pub fn reach_liquidation_price(
     let total_value_loss: Int =
       inital_position_usd_value - current_position_value
 
-    let accumulative_interest_fee: Int =
-      calculate_accumulative_interest_fee(
-        current_time,
-        entered_position_time,
-        hourly_borrow_fee,
-      )
+    // if positive that means this is in profit and return false 
+    if total_value_loss > 0 {
+      False
+    } else {
+      let accumulative_interest_fee: Int =
+        calculate_accumulative_interest_fee(
+          current_time,
+          entered_position_time,
+          hourly_borrow_fee,
+        )
 
-    let collateral_value_after_interest: Int =
-      collateral_asset_amount - accumulative_interest_fee
+      let collateral_value_after_interest: Int =
+        collateral_amount - accumulative_interest_fee
 
-    let collateral_value_after_loss: Int =
-      collateral_value_after_interest - total_value_loss
+      let collateral_value_after_loss: Int =
+        collateral_value_after_interest - total_value_loss
 
-    let current_margin: Int =
-      collateral_value_after_loss / current_position_value
+      let current_margin: Int =
+        collateral_value_after_loss / current_position_value
 
-    current_margin <= maintain_margin_amount
+      current_margin <= maintain_margin_amount
+    }
   }
 }
 
@@ -672,7 +682,7 @@ pub fn calculate_hourly_usd_borrow_fee(
 pub fn calculate_return(
   position_amount: Int,
   underlying_asset_multiplier: Int,
-  stable_amount: Int,
+  collateral_asset_amount: Int,
   stable_asset_multiplier: Int,
   entered_at_usd_price: Int,
   current_usd_price: Int,
@@ -700,7 +710,7 @@ pub fn calculate_return(
         hourly_borrow_fee,
       )
 
-    let collateral_value: Int = stable_amount * current_usd_price
+    let collateral_value: Int = collateral_asset_amount * current_usd_price
 
     // Subtract interest fees from position profit/loss to get net position value
     let position_value_after_interest_fee =
@@ -749,7 +759,7 @@ pub fn calculate_return(
       // no stable coin is taken from the pool
       ShortCloseOrder {
         asset_amount,
-        stable_amount,
+        stable_amount: collateral_asset_amount,
         pool_stable_amount: 0,
         pool_asset_amount: -asset_amount,
         strike_collateral_amount,
@@ -762,7 +772,7 @@ pub fn calculate_return(
       // divide the stable collateral amount by the stable asset multiplier and multiply it by the usd price multiplier to get the usd amount of the collateral 
       // in same unit as the total value loss usd
       let formatted_collateral_amount: Int =
-        stable_amount / stable_asset_multiplier * usd_multiplier
+        collateral_asset_amount / stable_asset_multiplier * usd_multiplier
 
       // using a + here because total usd loss is negative
       let stable_amount_lost: Int =

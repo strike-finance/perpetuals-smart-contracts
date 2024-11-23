@@ -203,8 +203,6 @@ pub type PoolDatum {
   max_strike_holder_leverage_factor: Int,
   // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5%
   maintain_margin_amount: Int,
-  // Asset the determines if the pool is valid
-  is_valid_pool_asset: Asset,
 }
 
 pub type PoolParams {
