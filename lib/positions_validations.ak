@@ -583,6 +583,13 @@ pub fn reach_liquidation_price(
   stable_asset_multiplier: Int,
   underlying_asset_multiplier: Int,
 ) -> Bool {
+  let accumulative_interest_fee: Int =
+    calculate_accumulative_interest_fee(
+      current_time,
+      entered_position_time,
+      hourly_borrow_fee,
+    )
+
   if side == Long {
     let inital_position_usd_value: Int = position_amount * entered_at_usd_price
 
@@ -595,13 +602,6 @@ pub fn reach_liquidation_price(
     if total_value_loss > 0 {
       False
     } else {
-      let accumulative_interest_fee: Int =
-        calculate_accumulative_interest_fee(
-          current_time,
-          entered_position_time,
-          hourly_borrow_fee,
-        )
-
       let collateral_value: Int = collateral_amount * current_usd_price
 
       let collateral_value_after_loss: Int =
@@ -618,27 +618,28 @@ pub fn reach_liquidation_price(
     let current_position_value: Int = position_amount * current_usd_price
 
     let total_value_loss: Int =
-      inital_position_usd_value - current_position_value
+      inital_position_usd_value - current_position_value - accumulative_interest_fee
 
     // if positive that means this is in profit and return false 
     if total_value_loss > 0 {
       False
     } else {
-      let accumulative_interest_fee: Int =
-        calculate_accumulative_interest_fee(
-          current_time,
-          entered_position_time,
-          hourly_borrow_fee,
-        )
+      let formatted_current_position_value =
+        current_position_value / underlying_asset_multiplier
 
-      let collateral_value_after_interest: Int =
-        collateral_amount - accumulative_interest_fee
+      // divide by the underlying asset multiplier to get units lost 
+      let formatted_total_loss_usd: Int =
+        total_value_loss / underlying_asset_multiplier
 
-      let collateral_value_after_loss: Int =
-        collateral_value_after_interest - total_value_loss
+      let formatted_collateral_amount: Int =
+        collateral_amount / stable_asset_multiplier * usd_multiplier
+
+      // using a + here because total usd loss is negative
+      let stable_amount_lost: Int =
+        formatted_collateral_amount + formatted_total_loss_usd
 
       let current_margin: Int =
-        collateral_value_after_loss / current_position_value
+        stable_amount_lost / formatted_current_position_value
 
       current_margin <= maintain_margin_amount
     }
@@ -692,6 +693,13 @@ pub fn calculate_return(
   strike_collateral_amount: Int,
   side: PositionSide,
 ) -> CloseSendAmount {
+  let accumulative_interest_fee: Int =
+    calculate_accumulative_interest_fee(
+      current_time,
+      entered_position_time,
+      hourly_borrow_fee,
+    )
+
   // Simply calculate the profit or loss and add it to the collateral amount since the collateral is in the same asset as the underlying asset for longs
   // Then calculate how much is taken from the pool or how much is given to the pool based on the profit or loss
   if side == Long {
@@ -702,13 +710,6 @@ pub fn calculate_return(
     // Calculate profit/loss in USD by current value minus initial value for long positions
     let position_usd_value: Int =
       current_position_usd_value - inital_position_usd_value
-
-    let accumulative_interest_fee: Int =
-      calculate_accumulative_interest_fee(
-        current_time,
-        entered_position_time,
-        hourly_borrow_fee,
-      )
 
     let collateral_value: Int = collateral_asset_amount * current_usd_price
 
@@ -741,13 +742,6 @@ pub fn calculate_return(
 
     let position_usd_value: Int =
       inital_position_usd_value - current_position_value
-
-    let accumulative_interest_fee: Int =
-      calculate_accumulative_interest_fee(
-        current_time,
-        entered_position_time,
-        hourly_borrow_fee,
-      )
 
     let total_usd_value = position_usd_value - accumulative_interest_fee
 
