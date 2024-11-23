@@ -624,6 +624,7 @@ pub fn reach_liquidation_price(
     if total_value_loss > 0 {
       False
     } else {
+      // change formatted current position value to the same unit as the stable amount lost
       let formatted_current_position_value =
         current_position_value / underlying_asset_multiplier
 
