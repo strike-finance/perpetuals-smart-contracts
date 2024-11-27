@@ -71,52 +71,38 @@ pub type CloseSendAmount {
   }
 }
 
+pub type PositionDatumInfo {
+  // Owner of the order
+  owner_address_hash: AddressHash,
+  // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
+  leverage_factor: Int,
+  // The time the order was submitted
+  entered_position_time: POSIXTime,
+  // The price at which the order was submitted
+  entered_at_usd_price: Int,
+  // The script hash for the positions script that holds all the positions of the trader
+  position_hash: ScriptHash,
+  // Total position size of the trader
+  position_asset_amount: Int,
+  // The collateral asset used for the position
+  maintain_margin_amount: Int,
+  // Total amount of USD value to pay for borrow each hour
+  hourly_usd_borrow_fee: Int,
+  // Long or short position
+  side: PositionSide,
+}
+
 pub type OrderAction {
-  OpenPositionOrder {
-    // Owner of the order
-    owner_address_hash: AddressHash,
-    // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
-    leverage_factor: Int,
-    // The time the order was submitted
-    order_submission_time: POSIXTime,
-    // The price at which the order was submitted
-    order_submission_usd_price: Int,
-    // The script hash for the positions script that holds all the positions of the trader
-    position_hash: ScriptHash,
-    // Total position size of the trader
-    position_asset_amount: Int,
-    // The collateral asset used for the position
-    maintain_margin_amount: Int,
-    // Total amount of USD value to pay for borrow each hour
-    hourly_usd_borrow_fee: Int,
-    // Long or short position
-    side: PositionSide,
-  }
+  OpenPositionOrder { position_datum: PositionDatumInfo }
   ClosePositionOrder {
-    // Owner of the order
-    owner_address_hash: AddressHash,
-    // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
-    leverage_factor: Int,
-    // Entered at USD price
-    entered_at_usd_price: Int,
     // Stop loss price where the position will be closed
     stop_loss_usd_price: Int,
     // Take profit price where the position will be closed
     take_profit_usd_price: Int,
-    // Last time the hourly lend was paid
-    entered_position_time: POSIXTime,
-    // The script hash for the positions script that holds all the positions of the trader
-    position_hash: ScriptHash,
-    // Total position size of the trader
-    position_asset_amount: Int,
-    // The margin required to liquidate the pool, Example: 5 = 5%. so the collatral needs to be atleast 5% of the position value
-    maintain_margin_amount: Int,
-    // Total amount of USD value to pay for borrow each hour
-    hourly_usd_borrow_fee: Int,
     // Amount to return to the owner
     return_amount: CloseSendAmount,
-    // Long or short position
-    side: PositionSide,
+    // Open position order
+    position_datum: PositionDatumInfo,
   }
   LiquidatePositionOrder {
     // Owner of the position

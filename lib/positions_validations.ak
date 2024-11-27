@@ -8,8 +8,8 @@ use constants.{batcher_fee, strike_asset_name, strike_policy_id, usd_multiplier}
 use types.{
   Asset, ClosePositionOrder, CloseSendAmount, CloseType, LiquidateClose,
   LiquidatePositionOrder, Long, LongCloseOrder, OpenPositionOrder, OrderDatum,
-  POSIXTime, PoolDatum, PositionDatum, PositionSide, PositionsParams,
-  ShortCloseOrder, StopLossClose, TakeProfitClose, TraderClose,
+  POSIXTime, PoolDatum, PositionDatum, PositionDatumInfo, PositionSide,
+  PositionsParams, ShortCloseOrder, StopLossClose, TakeProfitClose, TraderClose,
 }
 use utils.{
   get_address_outputs, get_all_validators_inputs, get_collateral_asset,
@@ -103,18 +103,20 @@ pub fn close_position_valid(
     let expected_order_datum =
       OrderDatum {
         action: ClosePositionOrder {
-          owner_address_hash,
-          leverage_factor,
-          entered_at_usd_price,
           stop_loss_usd_price,
           take_profit_usd_price,
-          entered_position_time,
-          position_hash,
-          position_asset_amount,
-          maintain_margin_amount,
-          hourly_usd_borrow_fee,
           return_amount,
-          side,
+          position_datum: PositionDatumInfo {
+            owner_address_hash,
+            leverage_factor,
+            entered_position_time,
+            entered_at_usd_price,
+            position_hash,
+            position_asset_amount,
+            maintain_margin_amount,
+            hourly_usd_borrow_fee,
+            side,
+          },
         },
       }
 
@@ -142,18 +144,20 @@ pub fn close_position_valid(
     let expected_order_datum =
       OrderDatum {
         action: ClosePositionOrder {
-          owner_address_hash,
-          leverage_factor,
-          entered_at_usd_price,
           stop_loss_usd_price,
           take_profit_usd_price,
-          entered_position_time,
-          position_hash,
-          position_asset_amount,
-          maintain_margin_amount,
-          hourly_usd_borrow_fee,
           return_amount,
-          side,
+          position_datum: PositionDatumInfo {
+            owner_address_hash,
+            leverage_factor,
+            entered_position_time,
+            entered_at_usd_price,
+            position_hash,
+            position_asset_amount,
+            maintain_margin_amount,
+            hourly_usd_borrow_fee,
+            side,
+          },
         },
       }
 
@@ -184,18 +188,20 @@ pub fn close_position_valid(
     let expected_order_datum =
       OrderDatum {
         action: ClosePositionOrder {
-          owner_address_hash,
-          leverage_factor,
-          entered_at_usd_price,
           stop_loss_usd_price,
           take_profit_usd_price,
-          entered_position_time,
-          position_hash,
-          position_asset_amount,
-          maintain_margin_amount,
-          hourly_usd_borrow_fee,
           return_amount,
-          side,
+          position_datum: PositionDatumInfo {
+            owner_address_hash,
+            leverage_factor,
+            entered_position_time,
+            entered_at_usd_price,
+            position_hash,
+            position_asset_amount,
+            maintain_margin_amount,
+            hourly_usd_borrow_fee,
+            side,
+          },
         },
       }
 
@@ -351,15 +357,15 @@ pub fn mint_position_valid(
 
   expect orders_datum_typed: OrderDatum = orders_datum
 
-  expect OpenPositionOrder {
+  expect OpenPositionOrder{position_datum: PositionDatumInfo {
     owner_address_hash,
     side,
-    order_submission_time,
-    order_submission_usd_price,
+    entered_position_time,
+    entered_at_usd_price,
     position_asset_amount,
     hourly_usd_borrow_fee,
     ..
-  } = orders_datum_typed.action
+  }} = orders_datum_typed.action
 
   let ref_input: List<Input> = transaction.reference_inputs
 
@@ -390,7 +396,7 @@ pub fn mint_position_valid(
       side,
     )
 
-  expect current_usd_price == order_submission_usd_price
+  expect current_usd_price == entered_at_usd_price
 
   let expected_mint = [(policy_id, owner_address_hash, 1)]
 
@@ -466,7 +472,7 @@ pub fn mint_position_valid(
     hourly_usd_borrow_fee >= estimated_hourly_usd_borrow_fee
 
   let order_submission_time_valid =
-    get_lower_bound(transaction.validity_range) >= order_submission_time
+    get_lower_bound(transaction.validity_range) >= entered_position_time
 
   let owner_signed_tx =
     list.has(transaction.extra_signatories, owner_address_hash)

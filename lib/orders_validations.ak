@@ -9,7 +9,7 @@ use constants.{strike_asset_name, strike_policy_id}
 use types.{
   Asset, ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder, Long,
   LongCloseOrder, OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum,
-  ShortCloseOrder,
+  PositionDatumInfo, ShortCloseOrder,
 }
 use utils.{get_all_validators_inputs, get_collateral_asset}
 
@@ -156,17 +156,17 @@ pub fn open_position(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect OpenPositionOrder {
+  expect OpenPositionOrder{position_datum: PositionDatumInfo {
     owner_address_hash,
     position_hash,
     leverage_factor,
     side,
-    order_submission_time,
-    order_submission_usd_price,
+    entered_at_usd_price,
+    entered_position_time,
     maintain_margin_amount,
     hourly_usd_borrow_fee,
     position_asset_amount,
-  } = input_datum_typed.action
+  }} = input_datum_typed.action
 
   let PoolDatum { underlying_asset, stable_asset, .. } = pool_output_datum
 
@@ -183,12 +183,12 @@ pub fn open_position(
     PositionDatum {
       owner_address_hash,
       position_hash,
-      entered_at_usd_price: order_submission_usd_price,
+      entered_at_usd_price,
       leverage_factor,
       position_asset_amount,
       stop_loss_usd_price: 0,
       take_profit_usd_price: 0,
-      entered_position_time: order_submission_time,
+      entered_position_time,
       maintain_margin_amount,
       collateral_asset,
       hourly_usd_borrow_fee,
@@ -205,7 +205,9 @@ pub fn open_position(
 
   let output_script_hash_valid = output_script_hash == position_hash
 
-  let lended_amount: Int = position_asset_amount / leverage_factor
+  let collateral_amount = position_asset_amount / leverage_factor
+
+  let lended_amount: Int = position_asset_amount - collateral_amount
 
   let datum_valid = output_datum_typed == expected_output_datum
 
@@ -229,9 +231,12 @@ pub fn close_position(
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
   expect ClosePositionOrder {
-    owner_address_hash,
-    side,
-    position_hash,
+    position_datum: PositionDatumInfo {
+      owner_address_hash,
+      side,
+      position_hash,
+      ..
+    },
     return_amount,
     ..
   } = datum.action
@@ -406,8 +411,11 @@ pub fn cancel_open_position_valid(
   datum: OrderDatum,
   transaction: Transaction,
 ) -> Bool {
-  expect OpenPositionOrder { owner_address_hash, position_hash, .. } =
-    datum.action
+  expect OpenPositionOrder{position_datum: PositionDatumInfo {
+    owner_address_hash,
+    position_hash,
+    ..
+  }} = datum.action
 
   let signed_by_owner =
     list.has(transaction.extra_signatories, owner_address_hash)
@@ -432,17 +440,19 @@ pub fn cancel_close_position_valid(
   stable_asset_name: AssetName,
 ) -> Bool {
   expect ClosePositionOrder {
-    owner_address_hash,
-    position_hash,
-    leverage_factor,
-    entered_at_usd_price,
     stop_loss_usd_price,
     take_profit_usd_price,
-    entered_position_time,
-    position_asset_amount,
-    maintain_margin_amount,
-    hourly_usd_borrow_fee,
-    side,
+    position_datum: PositionDatumInfo {
+      owner_address_hash,
+      position_hash,
+      leverage_factor,
+      entered_at_usd_price,
+      entered_position_time,
+      position_asset_amount,
+      maintain_margin_amount,
+      hourly_usd_borrow_fee,
+      side,
+    },
     ..
   } = datum.action
 
