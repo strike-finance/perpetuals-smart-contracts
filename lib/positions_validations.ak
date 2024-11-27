@@ -9,7 +9,8 @@ use types.{
   Asset, ClosePositionOrder, CloseSendAmount, CloseType, LiquidateClose,
   LiquidatePositionOrder, Long, LongCloseOrder, OpenPositionOrder, OrderDatum,
   POSIXTime, PoolDatum, PositionDatum, PositionDatumInfo, PositionSide,
-  PositionsParams, ShortCloseOrder, StopLossClose, TakeProfitClose, TraderClose,
+  PositionUpdateType, PositionsParams, ShortCloseOrder, StopLossClose,
+  TakeProfitClose, TraderClose, UpdateStopLoss,
 }
 use utils.{
   get_address_outputs, get_all_validators_inputs, get_collateral_asset,
@@ -253,10 +254,11 @@ pub fn close_position_valid(
 }
 
 // assets are not consumed, user signed transaction, only stop lose is updated 
-pub fn update_stop_loss_valid(
+pub fn update_position_valid(
   transaction: Transaction,
   maybe_datum: Option<PositionDatum>,
-  stop_loss_usd_price: Int,
+  update_type: PositionUpdateType,
+  update_price: Int,
 ) -> Bool {
   expect Some(datum) = maybe_datum
 
@@ -281,55 +283,23 @@ pub fn update_stop_loss_valid(
       >=,
     )
 
-  let expected_output_datum =
-    PositionDatum { ..datum, stop_loss_usd_price: stop_loss_usd_price }
+  expect only_one_input_from_script && assets_locked_valid
 
-  let expected_output_datum_data: Data = expected_output_datum
+  if update_type == UpdateStopLoss {
+    let expected_output_datum =
+      PositionDatum { ..datum, stop_loss_usd_price: update_price }
 
-  let output_datum_valid: Bool = expected_output_datum_data == output_datum
+    let expected_output_datum_data: Data = expected_output_datum
 
-  only_one_input_from_script && output_datum_valid && assets_locked_valid
-}
+    expected_output_datum_data == output_datum
+  } else {
+    let expected_output_datum =
+      PositionDatum { ..datum, take_profit_usd_price: update_price }
 
-// assets are not consumed, user signed transaction, only stop lose is updated 
-pub fn update_take_profit_valid(
-  transaction: Transaction,
-  maybe_datum: Option<PositionDatum>,
-  take_profit_usd_price: Int,
-) -> Bool {
-  expect Some(datum) = maybe_datum
+    let expected_output_datum_data: Data = expected_output_datum
 
-  let all_validators_inputs: List<Input> =
-    get_all_validators_inputs(transaction)
-  let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
-
-  expect Some(input_from_script) = list.head(all_validators_inputs)
-
-  let outputs_back_to_positions_validator: List<Output> =
-    get_address_outputs(transaction, input_from_script.output.address)
-  let only_one_output_to_positions_validator: Bool =
-    list.length(outputs_back_to_positions_validator) == 1
-
-  expect Some(output_to_positions_validator) =
-    list.head(outputs_back_to_positions_validator)
-
-  expect InlineDatum(output_datum) = output_to_positions_validator.datum
-
-  let assets_locked_valid: Bool =
-    match(
-      output_to_positions_validator.value,
-      input_from_script.output.value,
-      >=,
-    )
-
-  let expected_output_datum =
-    PositionDatum { ..datum, take_profit_usd_price: take_profit_usd_price }
-
-  let expected_output_datum_data: Data = expected_output_datum
-
-  let output_datum_valid: Bool = expected_output_datum_data == output_datum
-
-  only_one_input_from_script && only_one_output_to_positions_validator && output_datum_valid && assets_locked_valid
+    expected_output_datum_data == output_datum
+  }
 }
 
 pub fn mint_position_valid(
@@ -442,15 +412,6 @@ pub fn mint_position_valid(
 
     expect match(output_to_orders_validator.value, expected_assets_locked, >=)
   }
-
-  let collateral_asset: Asset =
-    get_collateral_asset(
-      underlying_asset.policy_id,
-      underlying_asset.asset_name,
-      stable_asset.policy_id,
-      stable_asset.asset_name,
-      side,
-    )
 
   let pool_underlying_asset_amount =
     quantity_of(

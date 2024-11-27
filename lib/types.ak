@@ -130,10 +130,14 @@ pub type CloseType {
   LiquidateClose
 }
 
+pub type PositionUpdateType {
+  UpdateStopLoss
+  UpdateTakeProfit
+}
+
 pub type PositionRedeemer {
   Close(Int, CloseType)
-  UpdateStopLoss(Int)
-  UpdateTakeProfit(Int)
+  PositionUpdate(PositionUpdateType, Int)
 }
 
 pub type PositionMintRedeemer {
