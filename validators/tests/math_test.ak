@@ -308,10 +308,10 @@ test test_long_position_assets_amount_invalid() {
 // Convert to single unit: 1_100_000 / 1_000_000 = 1.1
 // Current price is 54000
 // Convert to stable asset: 1.1 * 54000 = 59400
-// Convert to usd multiplier 59400 / 10000 = $5.94
 // Collateral asset amount is 10_000_000
 // Convert to stable asset: 10_000_000 / 1_000_000 = 10
-// $5.94 <= $10
+// Stable asset convert to usd multiplier: 10 * 100000 = 100000
+// 59400 <= 100000
 test test_short_position_assets_amount_valid() {
   is_position_assets_amount_valid(
     position_side: Long,
@@ -330,10 +330,10 @@ test test_short_position_assets_amount_valid() {
 // Convert to single unit: 2_000_000 / 1_000_000 = 2
 // Current price is 54000
 // Convert to stable asset: 2 * 54000 = 108000
-// Convert to usd multiplier 108000 / 10000 = $10.8
 // Collateral asset amount is 1_000_000
 // Convert to stable asset: 1_000_000 / 1_000_000 = 1
-// $10.8 !<= $1
+// Stable asset convert to usd multiplier: 1 * 100000 = 100000
+// 108000 !<= 100000
 test test_short_position_assets_amount_invalid() {
   is_position_assets_amount_valid(
     position_side: Short,
