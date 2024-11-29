@@ -314,7 +314,7 @@ test test_long_position_assets_amount_invalid() {
 // 59400 <= 100000
 test test_short_position_assets_amount_valid() {
   is_position_assets_amount_valid(
-    position_side: Long,
+    position_side: Short,
     position_asset_amount: 11_000_000,
     max_leverage_factor: 10,
     collateral_asset_amount: 10_000_000,

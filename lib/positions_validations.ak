@@ -487,21 +487,15 @@ pub fn is_position_assets_amount_valid(
     let collateral_position_asset_amount: Int =
       position_asset_amount / max_leverage_factor
 
-    trace collateral_position_asset_amount
-
     // get the total price after dividing by the max leverage factor, then divide by the underlying asset multiplier to get the units
     // because the posiition asset represents the total asset amount of the position, in the underlying asset
     let stable_amount_expected: Int =
       collateral_position_asset_amount * current_usd_price / underlying_asset_multiplier
 
-    trace stable_amount_expected
-
     // now convert the collateral asset amount to the same unit as the stable amount expected. The usd multiplier converts 
     // the collateral asset amount to the same unit as the position asset amount
     let stable_amount: Int =
       collateral_asset_amount / stable_asset_multiplier * usd_multiplier
-
-    trace stable_amount
 
     stable_amount_expected <= stable_amount
   }
