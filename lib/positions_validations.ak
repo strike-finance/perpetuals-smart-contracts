@@ -643,11 +643,7 @@ pub fn calculate_hourly_usd_borrow_fee(
   let utilization_percentage =
     underlying_asset_lended_amount_multiplier / pool_underlying_asset_amount
 
-  trace utilization_percentage
-
   let current_position_usd_value = position_asset_amount * current_usd_price
-
-  trace current_position_usd_value
 
   utilization_percentage * interest_rate * current_position_usd_value / 100 / 10_000
 }

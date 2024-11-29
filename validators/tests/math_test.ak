@@ -201,7 +201,6 @@ test test_calculate_accumulative_interest_fee() {
       hourly_borrow_usd_fee: 119703120000,
     )
 
-  trace accumulative_interest_fee
   accumulative_interest_fee == 119703120000
 }
 
@@ -241,10 +240,10 @@ test test_short_reach_liquidation_price() {
   reach_liquidation_price(
     side: Short,
     position_amount: 10_000_000,
-    current_usd_price: 5800,
+    current_usd_price: 8000,
     entered_at_usd_price: 5400,
     maintain_margin_amount: 5,
-    collateral_amount: 10_000_000,
+    collateral_amount: 1_000_000,
     entered_position_time: 1727453227635,
     current_time: 1727453227635 + 3_800_000,
     hourly_borrow_fee: 119_703_120_000,
@@ -260,7 +259,7 @@ test test_short_not_reach_liquidation_price() {
     current_usd_price: 5300,
     entered_at_usd_price: 5400,
     maintain_margin_amount: 5,
-    collateral_amount: 1_000_000,
+    collateral_amount: 10_000_000,
     entered_position_time: 1727453227635,
     current_time: 1727453227635 + 3_800_000,
     hourly_borrow_fee: 119_703_120_000,
