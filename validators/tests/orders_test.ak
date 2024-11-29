@@ -7,9 +7,8 @@ use cardano/transaction.{InlineDatum, Input, NoDatum, Output, Transaction}
 use orders
 use tests/constants.{
   batcher_license, burn_address, maximum_deadline_range, orders_script_hash,
-  out_ref, pool_asset, pool_asset_name, pool_license, pool_script_hash,
-  position_hash, stable_asset, strike_collateral_asset, trader_pkh,
-  underlying_asset,
+  out_ref, pool_asset_name, pool_license, pool_script_hash, position_hash,
+  stable_asset, strike_collateral_asset, trader_pkh, underlying_asset,
 }
 use types.{
   Asset, CancelOrder, ClosePositionOrder, LiquidatePositionOrder, Long,

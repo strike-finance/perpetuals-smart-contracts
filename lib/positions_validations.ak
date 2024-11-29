@@ -566,7 +566,7 @@ pub fn reach_liquidation_price(
       current_position_value - inital_position_usd_value
 
     // if positive that means this is in profit and return false 
-    if total_value_loss > 0 {
+    if total_value_loss >= 0 {
       False
     } else {
       let collateral_value: Int = collateral_amount * current_usd_price
