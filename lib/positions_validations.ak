@@ -468,7 +468,7 @@ pub fn mint_position_valid(
 
 // make sure the amount of position_asset_amount is less than the collateral asset amount * leverage factor
 // for strike holders, they have a different leverage factor
-fn is_position_assets_amount_valid(
+pub fn is_position_assets_amount_valid(
   position_side: PositionSide,
   position_asset_amount: Int,
   max_leverage_factor: Int,

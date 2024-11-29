@@ -1,6 +1,6 @@
 use positions_validations.{
   calculate_accumulative_interest_fee, calculate_hourly_usd_borrow_fee,
-  calculate_return, reach_liquidation_price,
+  calculate_return, is_position_assets_amount_valid, reach_liquidation_price,
 }
 use types.{CloseSendAmount, Long, LongCloseOrder, Short, ShortCloseOrder}
 
@@ -268,10 +268,80 @@ test test_short_not_reach_liquidation_price() {
   ) == False
 }
 
-test test_position_assets_amount_valid() {
-  True
+// Max leverage factor is 10
+// Collateral asset amount is 1_000_000
+// Position asset amount is 10_000_000
+// 10_000_000 / 10 = 1_000_000
+// 1_000_000 <= 1_000_000
+test test_long_position_assets_amount_valid() {
+  is_position_assets_amount_valid(
+    position_side: Long,
+    position_asset_amount: 10_000_000,
+    max_leverage_factor: 10,
+    collateral_asset_amount: 1_000_000,
+    current_usd_price: 5400,
+    underlying_asset_multiplier: 1_000_000,
+    stable_asset_multiplier: 1_000_000,
+  ) == True
 }
 
-test test_position_assets_amount_invalid() {
-  False
+// Max leverage factor is 10
+// Collateral asset amount is 1_000_000
+// Position asset amount is 11_000_000
+// 11_000_000 / 10 = 1_100_000
+// 1_100_000 > 1_000_000
+test test_long_position_assets_amount_invalid() {
+  is_position_assets_amount_valid(
+    position_side: Long,
+    position_asset_amount: 11_000_000,
+    max_leverage_factor: 10,
+    collateral_asset_amount: 1_000_000,
+    current_usd_price: 5400,
+    underlying_asset_multiplier: 1_000_000,
+    stable_asset_multiplier: 1_000_000,
+  ) == False
+}
+
+// Max leverage factor is 10
+// Position asset amount is 11_000_000
+// Divide by max leverage factor: 11_000_000 / 10 = 1_100_000
+// Convert to single unit: 1_100_000 / 1_000_000 = 1.1
+// Current price is 54000
+// Convert to stable asset: 1.1 * 54000 = 59400
+// Convert to usd multiplier 59400 / 10000 = $5.94
+// Collateral asset amount is 10_000_000
+// Convert to stable asset: 10_000_000 / 1_000_000 = 10
+// $5.94 <= $10
+test test_short_position_assets_amount_valid() {
+  is_position_assets_amount_valid(
+    position_side: Long,
+    position_asset_amount: 11_000_000,
+    max_leverage_factor: 10,
+    collateral_asset_amount: 10_000_000,
+    current_usd_price: 54000,
+    underlying_asset_multiplier: 1_000_000,
+    stable_asset_multiplier: 1_000_000,
+  ) == True
+}
+
+// Max leverage factor is 10
+// Position asset amount is 20_000_000
+// Divide by max leverage factor: 20_000_000 / 10 = 2_000_000
+// Convert to single unit: 2_000_000 / 1_000_000 = 2
+// Current price is 54000
+// Convert to stable asset: 2 * 54000 = 108000
+// Convert to usd multiplier 108000 / 10000 = $10.8
+// Collateral asset amount is 1_000_000
+// Convert to stable asset: 1_000_000 / 1_000_000 = 1
+// $10.8 !<= $1
+test test_short_position_assets_amount_invalid() {
+  is_position_assets_amount_valid(
+    position_side: Short,
+    position_asset_amount: 20_000_000,
+    max_leverage_factor: 10,
+    collateral_asset_amount: 1_000_000,
+    current_usd_price: 54000,
+    underlying_asset_multiplier: 1_000_000,
+    stable_asset_multiplier: 1_000_000,
+  ) == False
 }
