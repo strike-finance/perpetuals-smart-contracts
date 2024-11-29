@@ -466,7 +466,7 @@ pub fn mint_position_valid(
   assets_amount_valid && hourly_usd_borrow_fee_valid && order_submission_time_valid && owner_signed_tx
 }
 
-// make sure the amount of position_asset_amount is atleast the collateral asset amount * leverage factor
+// make sure the amount of position_asset_amount is less than the collateral asset amount * leverage factor
 // for strike holders, they have a different leverage factor
 fn is_position_assets_amount_valid(
   position_side: PositionSide,

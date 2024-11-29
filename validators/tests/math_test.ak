@@ -267,3 +267,11 @@ test test_short_not_reach_liquidation_price() {
     stable_asset_multiplier: 1_000_000,
   ) == False
 }
+
+test test_position_assets_amount_valid() {
+  True
+}
+
+test test_position_assets_amount_invalid() {
+  False
+}
