@@ -80,7 +80,7 @@ validator orders(params: OrdersParams) {
         redeemer.indexer,
         transaction,
         own_validator,
-        input_pool_utxo.output,
+        input_pool_utxo.output.value,
         input_pool_datum_typed,
         params.burn_address,
       )

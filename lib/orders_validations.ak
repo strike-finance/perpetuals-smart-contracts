@@ -17,7 +17,7 @@ pub fn valid_orders(
   indices: List<(Int, Int)>,
   transaction: Transaction,
   own_validator: ScriptHash,
-  pool_utxo: Output,
+  pool_utxo_value: Value,
   pool_datum: PoolDatum,
   burn_address: ScriptHash,
 ) -> ExpectedPoolOutput {
@@ -51,7 +51,7 @@ pub fn valid_orders(
   ) =
     list.foldl(
       indices,
-      (-1, -1, 0, pool_utxo.value, pool_datum, zero),
+      (-1, -1, 0, pool_utxo_value, pool_datum, zero),
       fn(curr, acc) {
         let (
           in0,
