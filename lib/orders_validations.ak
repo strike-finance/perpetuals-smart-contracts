@@ -460,6 +460,8 @@ pub fn cancel_close_position_valid(
 
   let only_one_input_from_script: Bool = list.length(inputs_from_scripts) == 1
 
+  expect Some(input_from_script) = inputs_from_scripts |> list.at(0)
+
   expect Some(output_to_positions) = list.at(transaction.outputs, output_index)
 
   expect InlineDatum(output_datum) = output_to_positions.datum
@@ -499,7 +501,7 @@ pub fn cancel_close_position_valid(
   let datum_match = expected_positions_datum_data == output_datum
 
   let assets_locked_valid =
-    match(output_to_positions.value, output_to_positions.value, >=)
+    match(input_from_script.output.value, output_to_positions.value, >=)
 
   let signed_by_owner =
     list.has(transaction.extra_signatories, owner_address_hash)
