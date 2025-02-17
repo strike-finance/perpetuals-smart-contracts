@@ -141,8 +141,8 @@ pub type PositionRedeemer {
 }
 
 pub type PositionMintRedeemer {
-  MintPosition(Int)
-  BurnPosition(Int, ByteArray)
+  OpenPosition(Int, OpenAsset)
+  ClosePosition(Int, ByteArray)
 }
 
 pub type PositionsParams {
@@ -160,7 +160,7 @@ pub type PositionDatum {
   entered_at_usd_price: Int,
   // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
   leverage_factor: Int,
-  // Total position size of the trader, ie, the inital size of position + leverage
+  // Total position size of the trader, ie, the inital size of position * leverage
   position_asset_amount: Int,
   // Stop loss price where the position will be closed
   stop_loss_usd_price: Int,
@@ -222,4 +222,17 @@ pub type ExpectedPoolOutput {
   value: Value,
   datum: PoolDatum,
   mint: Value,
+}
+
+pub type CloseAsset {
+  recieve_asset: Asset,
+}
+
+pub type OpenAsset {
+  collateral_asset: Asset,
+}
+
+pub type AssetType {
+  UnderlyingAsset
+  StableAsset
 }

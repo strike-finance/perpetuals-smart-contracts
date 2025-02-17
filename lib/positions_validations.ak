@@ -6,15 +6,16 @@ use cardano/transaction.{
 }
 use constants.{batcher_fee, strike_asset_name, strike_policy_id, usd_multiplier}
 use types.{
-  Asset, ClosePositionOrder, CloseSendAmount, CloseType, LiquidateClose,
-  LiquidatePositionOrder, Long, LongCloseOrder, OpenPositionOrder, OrderDatum,
-  POSIXTime, PoolDatum, PositionDatum, PositionDatumInfo, PositionSide,
-  PositionUpdateType, PositionsParams, ShortCloseOrder, StopLossClose,
-  TakeProfitClose, TraderClose, UpdateStopLoss,
+  Asset, AssetType, ClosePositionOrder, CloseSendAmount, CloseType,
+  LiquidateClose, LiquidatePositionOrder, Long, LongCloseOrder, OpenAsset,
+  OpenPositionOrder, OrderDatum, POSIXTime, PoolDatum, PositionDatum,
+  PositionDatumInfo, PositionSide, PositionUpdateType, PositionsParams,
+  ShortCloseOrder, StableAsset, StopLossClose, TakeProfitClose, TraderClose,
+  UnderlyingAsset, UpdateStopLoss,
 }
 use utils.{
   get_address_outputs, get_all_validators_inputs, get_collateral_asset,
-  get_lower_bound,
+  get_collateral_asset_type, get_lower_bound,
 }
 
 pub fn close_position_valid(
@@ -307,6 +308,7 @@ pub fn mint_position_valid(
   params: PositionsParams,
   current_usd_price: Int,
   policy_id: PolicyId,
+  open_asset: OpenAsset,
 ) {
   let PositionsParams {
     orders_script_hash,
@@ -348,8 +350,8 @@ pub fn mint_position_valid(
   expect pool_datum_typed: PoolDatum = pool_datum
 
   let PoolDatum {
-    underlying_asset,
     stable_asset,
+    underlying_asset,
     max_strike_holder_leverage_factor,
     max_leverage_factor,
     underlying_asset_lended_amount,
@@ -357,14 +359,7 @@ pub fn mint_position_valid(
     ..
   } = pool_datum_typed
 
-  let collateral_asset: Asset =
-    get_collateral_asset(
-      underlying_asset.policy_id,
-      underlying_asset.asset_name,
-      stable_asset.policy_id,
-      stable_asset.asset_name,
-      side,
-    )
+  let OpenAsset { collateral_asset } = open_asset
 
   expect current_usd_price == entered_at_usd_price
 
@@ -452,9 +447,12 @@ pub fn mint_position_valid(
       contains_strike_collateral,
     )
 
+  let collateral_asset_type =
+    get_collateral_asset_type(collateral_asset, stable_asset, underlying_asset)
+
   let assets_amount_valid: Bool =
     is_position_assets_amount_valid(
-      side,
+      collateral_asset_type,
       position_asset_amount,
       position_max_leverage_factor,
       collateral_asset_amount,
@@ -469,7 +467,7 @@ pub fn mint_position_valid(
 // make sure the amount of position_asset_amount is less than the collateral asset amount * leverage factor
 // for strike holders, they have a different leverage factor
 pub fn is_position_assets_amount_valid(
-  position_side: PositionSide,
+  collateral_asset_type: AssetType,
   position_asset_amount: Int,
   max_leverage_factor: Int,
   collateral_asset_amount: Int,
@@ -477,12 +475,12 @@ pub fn is_position_assets_amount_valid(
   underlying_asset_multiplier: Int,
   stable_asset_multiplier: Int,
 ) -> Bool {
-  if position_side == Long {
-    // for longs, the collateral asset is the same as the underlying asset, so we can simply divide by the leverage factor and compare the two values
-
+  if collateral_asset_type == UnderlyingAsset {
+    // If the underlying asset is the collateral asset, so we can simply divide by the leverage factor and compare the two values
     position_asset_amount / max_leverage_factor <= collateral_asset_amount
   } else {
-    // for shorts, the collateral asset is a stable coin
+    // If the stable asset is the collateral asset, we need to convert the collateral asset amount to the same unit as the position asset amount
+
     // use the stable asset multiplier and underlyting asset multiplier to make it into the same unit to compare
     let collateral_position_asset_amount: Int =
       position_asset_amount / max_leverage_factor

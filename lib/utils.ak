@@ -11,7 +11,7 @@ use cardano/assets.{AssetName, PolicyId, Value}
 use cardano/transaction.{
   Input, Output, OutputReference, Transaction, ValidityRange, find_input,
 }
-use types.{Asset, Long, PositionSide}
+use types.{Asset, AssetType, Long, PositionSide, StableAsset, UnderlyingAsset}
 
 const minus_ascii_code = 45
 
@@ -158,5 +158,19 @@ pub fn get_collateral_asset(
     }
   } else {
     Asset { policy_id: stable_asset_policy_id, asset_name: stable_asset_name }
+  }
+}
+
+pub fn get_collateral_asset_type(
+  collateral_asset: Asset,
+  stable_asset: Asset,
+  underlying_asset: Asset,
+) -> AssetType {
+  if collateral_asset == stable_asset {
+    StableAsset
+  } else if collateral_asset == underlying_asset {
+    UnderlyingAsset
+  } else {
+    fail
   }
 }

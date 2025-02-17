@@ -4,7 +4,7 @@ use positions_validations.{
   close_position_valid, mint_position_valid, update_position_valid,
 }
 use types.{
-  BurnPosition, Close, MintPosition, PositionDatum, PositionMintRedeemer,
+  Close, ClosePosition, OpenPosition, PositionDatum, PositionMintRedeemer,
   PositionRedeemer, PositionUpdate, PositionsParams,
 }
 
@@ -35,9 +35,16 @@ validator positions(params: PositionsParams) {
     transaction: Transaction,
   ) {
     when redeemer is {
-      MintPosition(current_usd_price) ->
-        mint_position_valid(transaction, params, current_usd_price, policy_id)
-      BurnPosition(burn_amount, asset_name) -> {
+      OpenPosition(current_usd_price, open_asset) ->
+        mint_position_valid(
+          transaction: transaction,
+          params: params,
+          current_usd_price: current_usd_price,
+          policy_id: policy_id,
+          open_asset: open_asset,
+        )
+      // Batcher might close/liquidate multiple positions at once
+      ClosePosition(burn_amount, asset_name) -> {
         let expected_burnt = [(policy_id, asset_name, -burn_amount)]
         expected_burnt == flatten(transaction.mint)
       }
