@@ -36,15 +36,7 @@ validator orders(params: OrdersParams) {
           OpenPositionOrder(..) ->
             cancel_open_position_valid(datum, transaction)
           ClosePositionOrder(..) ->
-            cancel_close_position_valid(
-              datum,
-              transaction,
-              output_index,
-              params.underlying_asset_policy_id,
-              params.underlying_asset_name,
-              params.stable_asset_policy_id,
-              params.stable_asset_name,
-            )
+            cancel_close_position_valid(datum, transaction, output_index)
           LiquidatePositionOrder(..) -> False
         }
       }

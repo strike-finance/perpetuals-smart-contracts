@@ -7,11 +7,11 @@ use aiken/interval.{Finite}
 use aiken/math/rational
 use aiken/primitive/bytearray
 use cardano/address.{Address, Credential, Script}
-use cardano/assets.{AssetName, PolicyId, Value}
+use cardano/assets.{PolicyId, Value}
 use cardano/transaction.{
   Input, Output, OutputReference, Transaction, ValidityRange, find_input,
 }
-use types.{Asset, AssetType, Long, PositionSide, StableAsset, UnderlyingAsset}
+use types.{Asset, AssetType, StableAsset, UnderlyingAsset}
 
 const minus_ascii_code = 45
 
@@ -142,23 +142,6 @@ pub fn divide(numerator: Int, denominator: Int) -> Int {
   expect Some(divided) = rational.new(numerator, denominator)
 
   rational.ceil(divided)
-}
-
-pub fn get_collateral_asset(
-  underlying_asset_policy_id: PolicyId,
-  underlying_asset_name: AssetName,
-  stable_asset_policy_id: PolicyId,
-  stable_asset_name: AssetName,
-  side: PositionSide,
-) -> Asset {
-  if side == Long {
-    Asset {
-      policy_id: underlying_asset_policy_id,
-      asset_name: underlying_asset_name,
-    }
-  } else {
-    Asset { policy_id: stable_asset_policy_id, asset_name: stable_asset_name }
-  }
 }
 
 pub fn get_asset_type(

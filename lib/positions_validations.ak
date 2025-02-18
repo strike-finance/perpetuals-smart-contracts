@@ -789,19 +789,6 @@ pub fn calculate_return(
       let formatted_total_loss_usd: Int =
         total_usd_value / underlying_asset_multiplier
 
-      // divide the stable collateral amount by the stable asset multiplier and multiply it by the usd price multiplier to get the usd amount of the collateral 
-      // in same unit as the total value loss usd
-      let formatted_collateral_amount: Int =
-        collateral_asset_amount / stable_asset_multiplier * usd_multiplier
-
-      // using a + here because total usd loss is negative
-      let stable_amount_lost: Int =
-        formatted_collateral_amount + formatted_total_loss_usd
-
-      // convert to back to collateral asset amount, by dividing by the usd multiplier and multiplying by the asset multiplier
-      let formatted_stable_amount_lost: Int =
-        stable_amount_lost * stable_asset_multiplier / usd_multiplier
-
       // convert to stable asset amount by multiplying by the stable asset multiplier and dividing by the usd multiplier
       // the formmated_total_loss_usd is already formatted to unit basis when we divided by the underlying asset multiplier
       // now we need to convert it to the stable asset amount, and divide by the usd multiplier
