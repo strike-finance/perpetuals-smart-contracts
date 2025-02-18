@@ -133,6 +133,8 @@ pub fn close_position_valid(
             position_asset_amount,
             maintain_margin_amount,
             hourly_usd_borrow_fee,
+            collateral_asset,
+            collateral_asset_type,
             side,
           },
         },
@@ -175,6 +177,8 @@ pub fn close_position_valid(
             position_asset_amount,
             maintain_margin_amount,
             hourly_usd_borrow_fee,
+            collateral_asset,
+            collateral_asset_type,
             side,
           },
         },
@@ -220,6 +224,8 @@ pub fn close_position_valid(
             position_asset_amount,
             maintain_margin_amount,
             hourly_usd_borrow_fee,
+            collateral_asset,
+            collateral_asset_type,
             side,
           },
         },
@@ -353,7 +359,6 @@ pub fn mint_position_valid(
     entered_at_usd_price,
     position_asset_amount,
     hourly_usd_borrow_fee,
-    collateral_asset,
     ..
   }} = orders_datum_typed.action
 
