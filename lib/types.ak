@@ -52,11 +52,11 @@ pub type CloseSendAmount {
   // stable amount sent to trader
   send_stable_amount: Int,
   // stable amount sent or taken from pool
-  pool_stable_amount: Int,
+  return_pool_stable_amount: Int,
   // asset amount sent to trader
   send_asset_amount: Int,
   // asset amount sent or taken from pool
-  pool_asset_amount: Int,
+  return_pool_asset_amount: Int,
   // strike collateral sent to trader
   strike_collateral_amount: Int,
 }
@@ -75,6 +75,10 @@ pub type PositionDatumInfo {
   // Total position size of the trader
   position_asset_amount: Int,
   // The collateral asset used for the position
+  collateral_asset: Asset,
+  // The collateral asset type
+  collateral_asset_type: AssetType,
+  // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5% 
   maintain_margin_amount: Int,
   // Total amount of USD value to pay for borrow each hour
   hourly_usd_borrow_fee: Int,
@@ -160,6 +164,8 @@ pub type PositionDatum {
   entered_position_time: POSIXTime,
   // The collateral asset used for the position
   collateral_asset: Asset,
+  // Is the collateral asset a stable asset or an underlying asset
+  collateral_asset_type: AssetType,
   // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5%
   maintain_margin_amount: Int,
   // Total amount of USD value to pay for borrow each hour

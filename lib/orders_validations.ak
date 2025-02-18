@@ -8,8 +8,7 @@ use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{strike_asset_name, strike_policy_id}
 use types.{
   Asset, ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder, Long,
-  LongCloseOrder, OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum,
-  PositionDatumInfo, ShortCloseOrder,
+  OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum, PositionDatumInfo,
 }
 use utils.{get_all_validators_inputs, get_collateral_asset}
 
