@@ -764,18 +764,18 @@ pub fn calculate_return(
     if close_asset_type == UnderlyingAsset {
       if collateral_asset_type == UnderlyingAsset {
         CloseSendAmount {
-          asset_amount,
-          pool_asset_amount: -asset_amount,
-          stable_amount: 0,
-          pool_stable_amount: 0,
+          send_asset_amount: asset_amount,
+          return_pool_asset_amount: -asset_amount,
+          send_stable_amount: 0,
+          return_pool_stable_amount: 0,
           strike_collateral_amount,
         }
       } else {
         CloseSendAmount {
-          asset_amount,
-          pool_asset_amount: -asset_amount,
-          stable_amount: collateral_amount,
-          pool_stable_amount: collateral_amount,
+          send_asset_amount: 0,
+          return_pool_asset_amount: asset_amount,
+          send_stable_amount: collateral_amount,
+          return_pool_stable_amount: collateral_amount,
           strike_collateral_amount,
         }
       }
@@ -801,23 +801,25 @@ pub fn calculate_return(
       // the formmated_total_loss_usd is already formatted to unit basis when we divided by the underlying asset multiplier
       // now we need to convert it to the stable asset amount, and divide by the usd multiplier
       // then multiply by -1 because this is negative and we want the value to be positive to know how much stable coin the pool with take
-      let pool_stable_amount: Int =
-        formatted_total_loss_usd * stable_asset_multiplier / usd_multiplier * -1
+      let stable_amount =
+        formatted_total_loss_usd * stable_asset_multiplier / usd_multiplier
 
-      if collateral_asset == UnderlyingAsset {
+      let pool_stable_amount: Int = stable_amount * -1
+
+      if collateral_asset_type == UnderlyingAsset {
         CloseSendAmount {
-          asset_amount,
-          pool_asset_amount: -asset_amount,
-          stable_amount: collateral_asset_amount,
-          pool_stable_amount: 0,
+          send_asset_amount: 0,
+          return_pool_asset_amount: asset_amount,
+          send_stable_amount: stable_amount,
+          return_pool_stable_amount: pool_stable_amount,
           strike_collateral_amount,
         }
       } else {
         CloseSendAmount {
-          asset_amount,
-          pool_asset_amount: -asset_amount,
-          stable_amount: collateral_asset_amount,
-          pool_stable_amount: 0,
+          send_asset_amount: 0,
+          return_pool_asset_amount: 0,
+          send_stable_amount: stable_amount,
+          return_pool_stable_amount: pool_stable_amount,
           strike_collateral_amount,
         }
       }
