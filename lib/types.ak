@@ -131,6 +131,7 @@ pub type PositionUpdateType {
 
 pub type PositionRedeemer {
   Close(Int, CloseType, AssetType)
+  AddCollateral
   PositionUpdate(PositionUpdateType, Int)
 }
 

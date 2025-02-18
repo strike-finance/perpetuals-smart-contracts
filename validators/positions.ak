@@ -1,11 +1,12 @@
 use cardano/assets.{PolicyId, flatten}
 use cardano/transaction.{OutputReference, Transaction}
 use positions_validations.{
-  close_position_valid, mint_position_valid, update_position_valid,
+  add_collateral_valid, close_position_valid, mint_position_valid,
+  update_position_valid,
 }
 use types.{
-  Close, ClosePosition, OpenPosition, PositionDatum, PositionMintRedeemer,
-  PositionRedeemer, PositionUpdate, PositionsParams,
+  AddCollateral, Close, ClosePosition, OpenPosition, PositionDatum,
+  PositionMintRedeemer, PositionRedeemer, PositionUpdate, PositionsParams,
 }
 
 validator positions(params: PositionsParams) {
@@ -25,6 +26,7 @@ validator positions(params: PositionsParams) {
           close_type,
           close_asset_type,
         )
+      AddCollateral -> add_collateral_valid(transaction, datum)
       PositionUpdate(update_type, update_price) ->
         update_position_valid(transaction, datum, update_type, update_price)
     }

@@ -19,13 +19,13 @@ use utils.{
 
 pub fn close_position_valid(
   transaction: Transaction,
-  datum: Option<PositionDatum>,
+  maybe_datum: Option<PositionDatum>,
   current_usd_price: Int,
   params: PositionsParams,
   close_type: CloseType,
   close_asset_type: AssetType,
 ) -> Bool {
-  expect Some(datum) = datum
+  expect Some(datum) = maybe_datum
 
   let PositionsParams {
     orders_script_hash,
@@ -520,6 +520,44 @@ pub fn is_position_assets_amount_valid(
 
     stable_amount_expected <= stable_amount
   }
+}
+
+// Only add asset amount is changed
+// Collateral asset needs to be the same in the datum 
+// No assets has been consumed
+pub fn add_collateral_valid(
+  transaction: Transaction,
+  maybe_datum: Option<PositionDatum>,
+) -> Bool {
+  expect Some(datum) = maybe_datum
+
+  let all_validators_inputs: List<Input> =
+    get_all_validators_inputs(transaction)
+  let only_one_input_from_script: Bool = list.length(all_validators_inputs) == 1
+
+  expect Some(input_from_script) = list.head(all_validators_inputs)
+
+  let outputs_back_to_positions_validator: List<Output> =
+    get_address_outputs(transaction, input_from_script.output.address)
+
+  expect Some(output_to_positions_validator) =
+    list.head(outputs_back_to_positions_validator)
+
+  expect InlineDatum(output_datum) = output_to_positions_validator.datum
+
+  let assets_locked_valid: Bool =
+    match(
+      output_to_positions_validator.value,
+      input_from_script.output.value,
+      >=,
+    )
+
+  let input_datum_data: Data = datum
+  let output_datum_data: Data = output_datum
+
+  let datum_not_changed: Bool = input_datum_data == output_datum_data
+
+  datum_not_changed && only_one_input_from_script && assets_locked_valid
 }
 
 fn get_position_max_leverage_factor(
