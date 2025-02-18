@@ -16,13 +16,14 @@ validator positions(params: PositionsParams) {
     transaction: Transaction,
   ) {
     when redeemer is {
-      Close(current_usd_price, close_type) ->
+      Close(current_usd_price, close_type, close_asset_type) ->
         close_position_valid(
           transaction,
           datum,
           current_usd_price,
-          close_type,
           params,
+          close_type,
+          close_asset_type,
         )
       PositionUpdate(update_type, update_price) ->
         update_position_valid(transaction, datum, update_type, update_price)

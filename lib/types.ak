@@ -49,26 +49,16 @@ pub type OrdersWithdrawRedeemer {
 }
 
 pub type CloseSendAmount {
-  LongCloseOrder {
-    // asset amount sent to trader
-    asset_amount: Int,
-    // asset amount sent or taken from pool
-    pool_asset_amount: Int,
-    // strike collateral sent to trader
-    strike_collateral_amount: Int,
-  }
-  ShortCloseOrder {
-    // stable amount sent to trader
-    stable_amount: Int,
-    // stable amount sent or taken from pool
-    pool_stable_amount: Int,
-    // asset amount sent to trader
-    asset_amount: Int,
-    // asset amount sent or taken from pool
-    pool_asset_amount: Int,
-    // strike collateral sent to trader
-    strike_collateral_amount: Int,
-  }
+  // stable amount sent to trader
+  send_stable_amount: Int,
+  // stable amount sent or taken from pool
+  pool_stable_amount: Int,
+  // asset amount sent to trader
+  send_asset_amount: Int,
+  // asset amount sent or taken from pool
+  pool_asset_amount: Int,
+  // strike collateral sent to trader
+  strike_collateral_amount: Int,
 }
 
 pub type PositionDatumInfo {
@@ -136,7 +126,7 @@ pub type PositionUpdateType {
 }
 
 pub type PositionRedeemer {
-  Close(Int, CloseType)
+  Close(Int, CloseType, AssetType)
   PositionUpdate(PositionUpdateType, Int)
 }
 

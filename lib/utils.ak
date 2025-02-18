@@ -161,7 +161,7 @@ pub fn get_collateral_asset(
   }
 }
 
-pub fn get_collateral_asset_type(
+pub fn get_asset_type(
   collateral_asset: Asset,
   stable_asset: Asset,
   underlying_asset: Asset,

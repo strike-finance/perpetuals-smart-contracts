@@ -7,23 +7,23 @@ use cardano/transaction.{
 use constants.{batcher_fee, strike_asset_name, strike_policy_id, usd_multiplier}
 use types.{
   Asset, AssetType, ClosePositionOrder, CloseSendAmount, CloseType,
-  LiquidateClose, LiquidatePositionOrder, Long, LongCloseOrder, OpenAsset,
-  OpenPositionOrder, OrderDatum, POSIXTime, PoolDatum, PositionDatum,
-  PositionDatumInfo, PositionSide, PositionUpdateType, PositionsParams,
-  ShortCloseOrder, StableAsset, StopLossClose, TakeProfitClose, TraderClose,
-  UnderlyingAsset, UpdateStopLoss,
+  LiquidateClose, LiquidatePositionOrder, Long, OpenAsset, OpenPositionOrder,
+  OrderDatum, POSIXTime, PoolDatum, PositionDatum, PositionDatumInfo,
+  PositionSide, PositionUpdateType, PositionsParams, StopLossClose,
+  TakeProfitClose, TraderClose, UnderlyingAsset, UpdateStopLoss,
 }
 use utils.{
-  get_address_outputs, get_all_validators_inputs, get_collateral_asset,
-  get_collateral_asset_type, get_lower_bound,
+  get_address_outputs, get_all_validators_inputs, get_asset_type,
+  get_lower_bound,
 }
 
 pub fn close_position_valid(
   transaction: Transaction,
   datum: Option<PositionDatum>,
   current_usd_price: Int,
-  close_type: CloseType,
   params: PositionsParams,
+  close_type: CloseType,
+  close_asset_type: AssetType,
 ) -> Bool {
   expect Some(datum) = datum
 
@@ -83,6 +83,13 @@ pub fn close_position_valid(
       strike_asset_name,
     )
 
+  let accumulative_interest_fee: Int =
+    calculate_accumulative_interest_fee(
+      current_time,
+      entered_position_time,
+      hourly_usd_borrow_fee,
+    )
+
   if close_type == TraderClose {
     let signed_by_owner: Bool =
       list.has(transaction.extra_signatories, datum.owner_address_hash)
@@ -95,11 +102,10 @@ pub fn close_position_valid(
         stable_asset_multiplier,
         entered_at_usd_price,
         current_usd_price,
-        current_time,
-        entered_position_time,
-        hourly_usd_borrow_fee,
         strike_collateral_asset_amount,
         side,
+        close_asset_type,
+        accumulative_interest_fee,
       )
 
     let expected_order_datum =
@@ -136,11 +142,10 @@ pub fn close_position_valid(
         stable_asset_multiplier,
         entered_at_usd_price,
         current_usd_price,
-        current_time,
-        entered_position_time,
-        hourly_usd_borrow_fee,
         strike_collateral_asset_amount,
         side,
+        close_asset_type,
+        accumulative_interest_fee,
       )
 
     let expected_order_datum =
@@ -180,11 +185,10 @@ pub fn close_position_valid(
         stable_asset_multiplier,
         entered_at_usd_price,
         current_usd_price,
-        current_time,
-        entered_position_time,
-        hourly_usd_borrow_fee,
         strike_collateral_asset_amount,
         side,
+        close_asset_type,
+        accumulative_interest_fee,
       )
 
     let expected_order_datum =
@@ -254,7 +258,7 @@ pub fn close_position_valid(
   }
 }
 
-// assets are not consumed, user signed transaction, only stop lose is updated 
+// assets are not consumed, user signed transaction, only stop lose or take profit is updated 
 pub fn update_position_valid(
   transaction: Transaction,
   maybe_datum: Option<PositionDatum>,
@@ -331,7 +335,6 @@ pub fn mint_position_valid(
 
   expect OpenPositionOrder{position_datum: PositionDatumInfo {
     owner_address_hash,
-    side,
     entered_position_time,
     entered_at_usd_price,
     position_asset_amount,
@@ -448,7 +451,7 @@ pub fn mint_position_valid(
     )
 
   let collateral_asset_type =
-    get_collateral_asset_type(collateral_asset, stable_asset, underlying_asset)
+    get_asset_type(collateral_asset, stable_asset, underlying_asset)
 
   let assets_amount_valid: Bool =
     is_position_assets_amount_valid(
@@ -653,19 +656,11 @@ pub fn calculate_return(
   stable_asset_multiplier: Int,
   entered_at_usd_price: Int,
   current_usd_price: Int,
-  current_time: POSIXTime,
-  entered_position_time: POSIXTime,
-  hourly_borrow_fee: Int,
   strike_collateral_amount: Int,
   side: PositionSide,
+  close_asset_type: AssetType,
+  accumulative_interest_fee: Int,
 ) -> CloseSendAmount {
-  let accumulative_interest_fee: Int =
-    calculate_accumulative_interest_fee(
-      current_time,
-      entered_position_time,
-      hourly_borrow_fee,
-    )
-
   // Simply calculate the profit or loss and add it to the collateral amount since the collateral is in the same asset as the underlying asset for longs
   // Then calculate how much is taken from the pool or how much is given to the pool based on the profit or loss
   if side == Long {
@@ -693,10 +688,18 @@ pub fn calculate_return(
     let return_asset_amount =
       ( collateral_value + position_value_after_interest_fee ) / current_usd_price
 
-    LongCloseOrder {
-      asset_amount: return_asset_amount,
-      pool_asset_amount: return_pool_asset_amount,
-      strike_collateral_amount,
+    if close_asset_type == UnderlyingAsset {
+      LongCloseOrder {
+        asset_amount: return_asset_amount,
+        pool_asset_amount: return_pool_asset_amount,
+        strike_collateral_amount,
+      }
+    } else {
+      LongCloseOrder {
+        asset_amount: return_asset_amount,
+        pool_asset_amount: return_pool_asset_amount,
+        strike_collateral_amount,
+      }
     }
   } else {
     // first calculate if there is a profit or loss
@@ -717,12 +720,22 @@ pub fn calculate_return(
 
       // pool_asset_amount is negative because the gained assets are from the pool
       // no stable coin is taken from the pool
-      ShortCloseOrder {
-        asset_amount,
-        stable_amount: collateral_asset_amount,
-        pool_stable_amount: 0,
-        pool_asset_amount: -asset_amount,
-        strike_collateral_amount,
+      if close_asset_type == UnderlyingAsset {
+        CloseSendAmount {
+          asset_amount,
+          stable_amount: collateral_asset_amount,
+          pool_stable_amount: 0,
+          pool_asset_amount: -asset_amount,
+          strike_collateral_amount,
+        }
+      } else {
+        CloseSendAmount {
+          asset_amount,
+          stable_amount: collateral_asset_amount,
+          pool_stable_amount: 0,
+          pool_asset_amount: -asset_amount,
+          strike_collateral_amount,
+        }
       }
     } else {
       // divide by the underlying asset multiplier to get units lost 
@@ -751,9 +764,9 @@ pub fn calculate_return(
 
       // no asset is taken from the pool
       // stable coin is taken from trader and given to pool
-      ShortCloseOrder {
-        asset_amount: 0,
-        stable_amount: formatted_stable_amount_lost,
+      CloseSendAmount {
+        send_asset_amount: 0,
+        send_stable_amount: formatted_stable_amount_lost,
         pool_stable_amount,
         pool_asset_amount: 0,
         strike_collateral_amount,
