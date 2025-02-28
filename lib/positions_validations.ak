@@ -538,50 +538,50 @@ pub fn reach_liquidation_price(
       hourly_borrow_fee,
     )
 
-  if side == Long {
-    let inital_position_usd_value: Int = position_amount * entered_at_usd_price
+  let total_value_loss =
+    calculate_position_usd_value_based_on_side(
+      side,
+      position_amount,
+      current_usd_price,
+      entered_at_usd_price,
+      accumulative_interest_fee,
+    )
 
-    let current_position_value: Int = position_amount * current_usd_price
+  let current_position_value: Int = position_amount * current_usd_price
 
-    let total_value_loss: Int =
-      current_position_value - inital_position_usd_value
-
-    // if positive that means this is in profit and return false 
-    if total_value_loss >= 0 {
-      False
-    } else {
-      let collateral_value: Int = collateral_amount * current_usd_price
-
-      let collateral_value_after_loss: Int =
-        collateral_value - accumulative_interest_fee - total_value_loss
-
-      let current_margin: Int =
-        collateral_value_after_loss / current_position_value
-
-      current_margin <= maintain_margin_amount
-    }
+  // if positive that means this is in profit and return false 
+  if total_value_loss >= 0 {
+    False
   } else {
-    let inital_position_usd_value: Int = position_amount * entered_at_usd_price
+    // Calculate maintain margin has not been meet by comparing the collateral value and amount of loss
+    // The collateral value/current_position_value must be within the maintain margin amount
+    let collateral_value: Int = collateral_amount * current_usd_price
 
-    let current_position_value: Int = position_amount * current_usd_price
+    let collateral_value_after_loss: Int =
+      collateral_value - accumulative_interest_fee - total_value_loss
 
-    let total_value_loss: Int =
-      inital_position_usd_value - current_position_value - accumulative_interest_fee
+    let current_margin: Int =
+      collateral_value_after_loss / current_position_value
 
-    // if positive that means this is in profit and return false 
-    if total_value_loss > 0 {
-      False
-    } else {
-      let collateral_value: Int = collateral_amount * current_usd_price
+    current_margin <= maintain_margin_amount
+  }
+}
 
-      let collateral_value_after_loss: Int =
-        collateral_value - accumulative_interest_fee - total_value_loss
+pub fn calculate_position_usd_value_based_on_side(
+  side: PositionSide,
+  position_amount: Int,
+  current_usd_price: Int,
+  entered_at_usd_price: Int,
+  accumulative_interest_fee: Int,
+) -> Int {
+  let inital_position_usd_value: Int = position_amount * entered_at_usd_price
 
-      let current_margin: Int =
-        collateral_value_after_loss / current_position_value
+  let current_position_value: Int = position_amount * current_usd_price
 
-      current_margin <= maintain_margin_amount
-    }
+  if side == Long {
+    current_position_value - inital_position_usd_value - accumulative_interest_fee
+  } else {
+    inital_position_usd_value - current_position_value - accumulative_interest_fee
   }
 }
 
@@ -629,54 +629,29 @@ pub fn calculate_return(
   side: PositionSide,
   accumulative_interest_fee: Int,
 ) -> CloseSendAmount {
-  // Simply calculate the profit or loss and add it to the collateral amount since the collateral is in the same asset as the underlying asset for longs
-  // Then calculate how much is taken from the pool or how much is given to the pool based on the profit or loss
-  if side == Long {
-    let current_position_usd_value: Int = position_amount * current_usd_price
+  let position_usd_value =
+    calculate_position_usd_value_based_on_side(
+      side,
+      position_amount,
+      current_usd_price,
+      entered_at_usd_price,
+      accumulative_interest_fee,
+    )
 
-    let inital_position_usd_value: Int = position_amount * entered_at_usd_price
+  let collateral_value: Int = collateral_asset_amount * current_usd_price
 
-    // Calculate profit/loss in USD by current value minus initial value for long positions
-    let position_usd_value: Int =
-      current_position_usd_value - inital_position_usd_value
+  let position_value_after_interest_fee =
+    position_usd_value - accumulative_interest_fee
 
-    let collateral_value: Int = collateral_asset_amount * current_usd_price
+  let send_asset_amount =
+    ( collateral_value + position_value_after_interest_fee ) / current_usd_price
 
-    // Subtract interest fees from position profit/loss to get net position value
-    let position_value_after_interest_fee =
-      position_usd_value - accumulative_interest_fee
+  let return_pool_asset_amount =
+    position_value_after_interest_fee / current_usd_price * -1
 
-    let send_asset_amount =
-      ( collateral_value + position_value_after_interest_fee ) / current_usd_price
-
-    let return_pool_asset_amount =
-      position_value_after_interest_fee / current_usd_price * -1
-
-    CloseSendAmount {
-      send_asset_amount,
-      return_pool_asset_amount,
-      strike_collateral_amount,
-    }
-  } else {
-    // first calculate if there is a profit or loss
-    // If there is a profit, subtract the interest fee from the profit and return the profit + the full collateral amount
-    // If there is a loss, subtract the loss and interest fee from the inital collateral amount, the collateral is a stable coin for short positions
-    let current_position_value: Int = position_amount * current_usd_price
-
-    let inital_position_usd_value: Int = position_amount * entered_at_usd_price
-
-    let position_usd_value: Int =
-      inital_position_usd_value - current_position_value
-
-    let total_usd_value = position_usd_value - accumulative_interest_fee
-
-    // divide by the usd price to get the asset amount0                                                                                                                                                       
-    let asset_amount: Int = total_usd_value / current_usd_price
-
-    CloseSendAmount {
-      send_asset_amount: asset_amount,
-      return_pool_asset_amount: -asset_amount,
-      strike_collateral_amount,
-    }
+  CloseSendAmount {
+    send_asset_amount,
+    return_pool_asset_amount,
+    strike_collateral_amount,
   }
 }
