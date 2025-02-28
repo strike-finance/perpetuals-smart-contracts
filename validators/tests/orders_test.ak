@@ -13,7 +13,7 @@
 // use types.{
 //   Asset, CancelOrder, ClosePositionOrder, LiquidatePositionOrder, Long,
 //   LongCloseOrder, OpenPositionOrder, OrderDatum, OrdersParams,
-//   OrdersWithdrawRedeemer, PoolDatum, PositionDatum, PositionDatumInfo, Short,
+//   OrdersWithdrawRedeemer, PoolDatum, PositionDatum, PositionDatum, Short,
 //   ShortCloseOrder,
 // }
 
@@ -54,7 +54,7 @@
 //   let orders_datum =
 //     OrderDatum {
 //       action: OpenPositionOrder {
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
@@ -136,7 +136,7 @@
 //           strike_collateral_amount: 10,
 //           pool_asset_amount: -10_000_000,
 //         },
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
@@ -153,7 +153,7 @@
 //   expect ClosePositionOrder {
 //     stop_loss_usd_price,
 //     take_profit_usd_price,
-//     position_datum: PositionDatumInfo {
+//     position_datum: PositionDatum {
 //       owner_address_hash,
 //       position_hash,
 //       leverage_factor,
@@ -267,7 +267,7 @@
 //   let orders_datum =
 //     OrderDatum {
 //       action: OpenPositionOrder {
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
@@ -281,7 +281,7 @@
 //       },
 //     }
 
-//   expect OpenPositionOrder{position_datum: PositionDatumInfo {
+//   expect OpenPositionOrder{position_datum: PositionDatum {
 //     owner_address_hash,
 //     position_hash,
 //     leverage_factor,
@@ -447,7 +447,7 @@
 //           strike_collateral_amount: 10,
 //           pool_asset_amount: -10_000_000,
 //         },
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
@@ -463,7 +463,7 @@
 
 //   expect ClosePositionOrder {
 //     return_amount,
-//     position_datum: PositionDatumInfo {
+//     position_datum: PositionDatum {
 //       leverage_factor,
 //       position_asset_amount,
 //       position_hash,
@@ -625,7 +625,7 @@
 //           stable_amount: 50,
 //           strike_collateral_amount: 10,
 //         },
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
@@ -640,7 +640,7 @@
 //     }
 
 //   expect ClosePositionOrder {
-//     position_datum: PositionDatumInfo { position_hash, .. },
+//     position_datum: PositionDatum { position_hash, .. },
 //     return_amount,
 //     ..
 //   } = orders_datum.action
@@ -802,7 +802,7 @@
 //           strike_collateral_amount: 10,
 //           pool_asset_amount: 5_000_000,
 //         },
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
@@ -817,7 +817,7 @@
 //     }
 
 //   expect ClosePositionOrder {
-//     position_datum: PositionDatumInfo { position_hash, .. },
+//     position_datum: PositionDatum { position_hash, .. },
 //     return_amount,
 //     ..
 //   } = orders_datum.action
@@ -974,7 +974,7 @@
 //           stable_amount: -50,
 //           strike_collateral_amount: 10,
 //         },
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
@@ -1011,7 +1011,7 @@
 //     }
 
 //   expect ClosePositionOrder {
-//     position_datum: PositionDatumInfo { position_hash, .. },
+//     position_datum: PositionDatum { position_hash, .. },
 //     return_amount,
 //     ..
 //   } = orders_datum.action

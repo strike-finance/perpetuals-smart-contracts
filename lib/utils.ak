@@ -11,7 +11,6 @@ use cardano/assets.{PolicyId, Value}
 use cardano/transaction.{
   Input, Output, OutputReference, Transaction, ValidityRange, find_input,
 }
-use types.{Asset, AssetType, StableAsset, UnderlyingAsset}
 
 const minus_ascii_code = 45
 
@@ -144,16 +143,3 @@ pub fn divide(numerator: Int, denominator: Int) -> Int {
   rational.ceil(divided)
 }
 
-pub fn get_asset_type(
-  collateral_asset: Asset,
-  stable_asset: Asset,
-  underlying_asset: Asset,
-) -> AssetType {
-  if collateral_asset == stable_asset {
-    StableAsset
-  } else if collateral_asset == underlying_asset {
-    UnderlyingAsset
-  } else {
-    fail
-  }
-}

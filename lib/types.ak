@@ -49,10 +49,6 @@ pub type OrdersWithdrawRedeemer {
 }
 
 pub type CloseSendAmount {
-  // stable amount sent to trader
-  send_stable_amount: Int,
-  // stable amount sent or taken from pool
-  return_pool_stable_amount: Int,
   // asset amount sent to trader
   send_asset_amount: Int,
   // asset amount sent or taken from pool
@@ -61,7 +57,7 @@ pub type CloseSendAmount {
   strike_collateral_amount: Int,
 }
 
-pub type PositionDatumInfo {
+pub type PositionDatum {
   // Owner of the order
   owner_address_hash: AddressHash,
   // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
@@ -74,37 +70,33 @@ pub type PositionDatumInfo {
   position_hash: ScriptHash,
   // Total position size of the trader
   position_asset_amount: Int,
-  // The collateral asset used for the position
+  // Collateral asset 
   collateral_asset: Asset,
-  // The collateral asset type
-  collateral_asset_type: AssetType,
   // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5% 
   maintain_margin_amount: Int,
   // Total amount of USD value to pay for borrow each hour
   hourly_usd_borrow_fee: Int,
+  // Stop loss price where the position will be closed
+  stop_loss_usd_price: Int,
+  // Take profit price where the position will be closed
+  take_profit_usd_price: Int,
   // Long or short position
   side: PositionSide,
 }
 
 pub type OrderAction {
-  OpenPositionOrder { position_datum: PositionDatumInfo }
+  OpenPositionOrder { position_datum: PositionDatum }
   ClosePositionOrder {
-    // Stop loss price where the position will be closed
-    stop_loss_usd_price: Int,
-    // Take profit price where the position will be closed
-    take_profit_usd_price: Int,
     // Amount to return to the owner
     return_amount: CloseSendAmount,
     // Open position order
-    position_datum: PositionDatumInfo,
+    position_datum: PositionDatum,
   }
   LiquidatePositionOrder {
     // Owner of the position
     owner_address_hash: AddressHash,
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
-    // Long or short position
-    side: PositionSide,
     // Total size of position
     position_asset_amount: Int,
     // Leverage used for this position
@@ -130,49 +122,20 @@ pub type PositionUpdateType {
 }
 
 pub type PositionRedeemer {
-  Close(Int, CloseType, AssetType)
+  // Price, Trader Close || Stop Loss Close || Take Profit Close || Liquidate Close
+  Close(Int, CloseType)
   AddCollateral
   PositionUpdate(PositionUpdateType, Int)
 }
 
 pub type PositionMintRedeemer {
-  OpenPosition(Int, OpenAsset)
+  OpenPosition(Int)
   ClosePosition(Int, ByteArray)
 }
 
 pub type PositionsParams {
   orders_script_hash: ScriptHash,
   underlying_asset_multiplier: Int,
-  stable_asset_multiplier: Int,
-}
-
-pub type PositionDatum {
-  // Owner of the position
-  owner_address_hash: AddressHash,
-  // The script hash for the positions script that holds all the positions of the trader
-  position_hash: ScriptHash,
-  // Price at which the position was entered. This will be 
-  entered_at_usd_price: Int,
-  // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
-  leverage_factor: Int,
-  // Total position size of the trader, ie, the inital size of position * leverage
-  position_asset_amount: Int,
-  // Stop loss price where the position will be closed
-  stop_loss_usd_price: Int,
-  // Take profit price where the position will be closed
-  take_profit_usd_price: Int,
-  // Last time the hourly lend was paid
-  entered_position_time: POSIXTime,
-  // The collateral asset used for the position
-  collateral_asset: Asset,
-  // Is the collateral asset a stable asset or an underlying asset
-  collateral_asset_type: AssetType,
-  // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5%
-  maintain_margin_amount: Int,
-  // Total amount of USD value to pay for borrow each hour
-  hourly_usd_borrow_fee: Int,
-  // Side of the position
-  side: PositionSide,
 }
 
 pub type PoolDatum {
@@ -182,8 +145,6 @@ pub type PoolDatum {
   underlying_asset_lended_amount: Int,
   // The interest rate for the underlying asset
   interest_rate: Int,
-  // The stable asset that the pool is trading on
-  stable_asset: Asset,
   // The max leverage factor for the pool
   max_leverage_factor: Int,
   // The max leverage factor for the strike holder
@@ -219,17 +180,4 @@ pub type ExpectedPoolOutput {
   value: Value,
   datum: PoolDatum,
   mint: Value,
-}
-
-pub type CloseAsset {
-  recieve_asset: Asset,
-}
-
-pub type OpenAsset {
-  collateral_asset: Asset,
-}
-
-pub type AssetType {
-  UnderlyingAsset
-  StableAsset
 }

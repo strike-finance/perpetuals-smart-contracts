@@ -17,14 +17,13 @@ validator positions(params: PositionsParams) {
     transaction: Transaction,
   ) {
     when redeemer is {
-      Close(current_usd_price, close_type, close_asset_type) ->
+      Close(current_usd_price, close_type) ->
         close_position_valid(
           transaction,
           datum,
           current_usd_price,
           params,
           close_type,
-          close_asset_type,
         )
       AddCollateral -> add_collateral_valid(transaction, datum)
       PositionUpdate(update_type, update_price) ->
@@ -38,13 +37,12 @@ validator positions(params: PositionsParams) {
     transaction: Transaction,
   ) {
     when redeemer is {
-      OpenPosition(current_usd_price, open_asset) ->
+      OpenPosition(current_usd_price) ->
         mint_position_valid(
           transaction: transaction,
           params: params,
           current_usd_price: current_usd_price,
           policy_id: policy_id,
-          open_asset: open_asset,
         )
       // Batcher might close/liquidate multiple positions at once
       ClosePosition(burn_amount, asset_name) -> {

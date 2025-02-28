@@ -16,7 +16,7 @@
 // use types.{
 //   Asset, BurnPosition, Close, ClosePositionOrder, LiquidateClose,
 //   LiquidatePositionOrder, Long, MintPosition, OpenPositionOrder, OrderDatum,
-//   PoolDatum, PositionDatum, PositionDatumInfo, PositionUpdate, PositionsParams,
+//   PoolDatum, PositionDatum, PositionDatum, PositionUpdate, PositionsParams,
 //   Short, StopLossClose, TakeProfitClose, TraderClose, UpdateStopLoss,
 //   UpdateTakeProfit,
 // }
@@ -76,7 +76,7 @@
 //   let orders_datum =
 //     OrderDatum {
 //       action: OpenPositionOrder {
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           leverage_factor: 10,
 //           position_hash,
@@ -151,7 +151,7 @@
 //   let orders_datum =
 //     OrderDatum {
 //       action: OpenPositionOrder {
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           leverage_factor: 10,
 //           position_hash,
@@ -310,7 +310,7 @@
 //         stop_loss_usd_price: position_datum.stop_loss_usd_price,
 //         take_profit_usd_price: position_datum.take_profit_usd_price,
 //         return_amount: calculated_return_amount,
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           leverage_factor: position_datum.leverage_factor,
 //           position_hash,
@@ -430,7 +430,7 @@
 //         stop_loss_usd_price: position_datum.stop_loss_usd_price,
 //         take_profit_usd_price: position_datum.take_profit_usd_price,
 //         return_amount: calculated_return_amount,
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           leverage_factor: position_datum.leverage_factor,
 //           position_hash,
@@ -550,7 +550,7 @@
 //         stop_loss_usd_price: 98,
 //         take_profit_usd_price: position_datum.take_profit_usd_price,
 //         return_amount: calculated_return_amount,
-//         position_datum: PositionDatumInfo {
+//         position_datum: PositionDatum {
 //           owner_address_hash: trader_pkh,
 //           leverage_factor: position_datum.leverage_factor,
 //           position_hash,
