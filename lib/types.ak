@@ -36,7 +36,7 @@ pub type PositionSide {
 
 pub type OrdersRedeemer {
   BatchOrders
-  CancelOrder(Int)
+  CancelOrder { output_index: Int }
 }
 
 pub type UTxOIndexer =
@@ -117,16 +117,15 @@ pub type CloseType {
 }
 
 pub type PositionRedeemer {
-  // Price, Trader Close || Stop Loss Close || Take Profit Close || Liquidate Close
-  Close(Int, CloseType)
+  Close { close_price: Int, close_type: CloseType }
   AddCollateral
   // Stop Loss, Take Profit
-  PositionUpdate(Int, Int)
+  PositionUpdate { stop_loss: Int, take_profit: Int }
 }
 
 pub type PositionMintRedeemer {
-  OpenPosition(Int)
-  ClosePosition(Int, ByteArray)
+  OpenPosition { price: Int }
+  ClosePosition { burn_amount: Int, asset_name: AssetName }
 }
 
 pub type PositionsParams {
@@ -156,10 +155,10 @@ pub type PoolParams {
 }
 
 pub type UpdateParamType {
-  UpdateInterestRate(Int)
-  UpdateLiquidateMargin(Int)
-  UpdateMaxLeverageFactor(Int)
-  UpdateMaxStrikeHolderLeverageFactor(Int)
+  UpdateInterestRate { interest_rate: Int }
+  UpdateLiquidateMargin { maintain_margin_amount: Int }
+  UpdateMaxLeverageFactor { max_leverage_factor: Int }
+  UpdateMaxStrikeHolderLeverageFactor { max_strike_holder_leverage_factor: Int }
 }
 
 pub type PoolRedeemerAction {

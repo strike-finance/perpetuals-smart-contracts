@@ -226,9 +226,6 @@
       "title": "AssetName",
       "dataType": "bytes"
     },
-    "ByteArray": {
-      "dataType": "bytes"
-    },
     "Int": {
       "dataType": "integer"
     },
@@ -491,6 +488,7 @@
           "index": 1,
           "fields": [
             {
+              "title": "output_index",
               "$ref": "#/definitions/Int"
             }
           ]
@@ -687,6 +685,7 @@
           "index": 0,
           "fields": [
             {
+              "title": "price",
               "$ref": "#/definitions/Int"
             }
           ]
@@ -697,10 +696,12 @@
           "index": 1,
           "fields": [
             {
+              "title": "burn_amount",
               "$ref": "#/definitions/Int"
             },
             {
-              "$ref": "#/definitions/ByteArray"
+              "title": "asset_name",
+              "$ref": "#/definitions/AssetName"
             }
           ]
         }
@@ -715,9 +716,11 @@
           "index": 0,
           "fields": [
             {
+              "title": "close_price",
               "$ref": "#/definitions/Int"
             },
             {
+              "title": "close_type",
               "$ref": "#/definitions/types~1CloseType"
             }
           ]
@@ -734,9 +737,11 @@
           "index": 2,
           "fields": [
             {
+              "title": "stop_loss",
               "$ref": "#/definitions/Int"
             },
             {
+              "title": "take_profit",
               "$ref": "#/definitions/Int"
             }
           ]
@@ -789,6 +794,7 @@
           "index": 0,
           "fields": [
             {
+              "title": "interest_rate",
               "$ref": "#/definitions/Int"
             }
           ]
@@ -799,6 +805,7 @@
           "index": 1,
           "fields": [
             {
+              "title": "maintain_margin_amount",
               "$ref": "#/definitions/Int"
             }
           ]
@@ -809,6 +816,7 @@
           "index": 2,
           "fields": [
             {
+              "title": "max_leverage_factor",
               "$ref": "#/definitions/Int"
             }
           ]
@@ -819,6 +827,7 @@
           "index": 3,
           "fields": [
             {
+              "title": "max_strike_holder_leverage_factor",
               "$ref": "#/definitions/Int"
             }
           ]
