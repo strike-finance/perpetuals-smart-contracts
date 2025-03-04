@@ -8,8 +8,8 @@ use constants.{batcher_fee, strike_asset_name, strike_policy_id}
 use types.{
   Asset, ClosePositionOrder, CloseSendAmount, CloseType, LiquidateClose,
   LiquidatePositionOrder, Long, OpenPositionOrder, OrderDatum, POSIXTime,
-  PoolDatum, PositionDatum, PositionSide, PositionUpdateType, PositionsParams,
-  StopLossClose, TakeProfitClose, TraderClose, UpdateStopLoss,
+  PoolDatum, PositionDatum, PositionSide, PositionsParams, StopLossClose,
+  TakeProfitClose, TraderClose,
 }
 use utils.{get_address_outputs, get_all_validators_inputs, get_lower_bound}
 
@@ -244,8 +244,8 @@ pub fn close_position_valid(
 pub fn update_position_valid(
   transaction: Transaction,
   maybe_datum: Option<PositionDatum>,
-  update_type: PositionUpdateType,
-  update_price: Int,
+  new_stop_loss: Int,
+  new_take_profit: Int,
 ) -> Bool {
   expect Some(datum) = maybe_datum
 
@@ -270,23 +270,16 @@ pub fn update_position_valid(
       >=,
     )
 
-  expect only_one_input_from_script && assets_locked_valid
+  let expected_output_datum =
+    PositionDatum {
+      ..datum,
+      stop_loss_usd_price: new_stop_loss,
+      take_profit_usd_price: new_take_profit,
+    }
 
-  if update_type == UpdateStopLoss {
-    let expected_output_datum =
-      PositionDatum { ..datum, stop_loss_usd_price: update_price }
+  let expected_output_datum_data: Data = expected_output_datum
 
-    let expected_output_datum_data: Data = expected_output_datum
-
-    expected_output_datum_data == output_datum
-  } else {
-    let expected_output_datum =
-      PositionDatum { ..datum, take_profit_usd_price: update_price }
-
-    let expected_output_datum_data: Data = expected_output_datum
-
-    expected_output_datum_data == output_datum
-  }
+  only_one_input_from_script && assets_locked_valid && expected_output_datum_data == output_datum
 }
 
 pub fn mint_position_valid(

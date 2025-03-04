@@ -26,8 +26,8 @@ validator positions(params: PositionsParams) {
           close_type,
         )
       AddCollateral -> add_collateral_valid(transaction, datum)
-      PositionUpdate(update_type, update_price) ->
-        update_position_valid(transaction, datum, update_type, update_price)
+      PositionUpdate(stop_loss, take_profit) ->
+        update_position_valid(transaction, datum, stop_loss, take_profit)
     }
   }
 

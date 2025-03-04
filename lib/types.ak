@@ -116,16 +116,12 @@ pub type CloseType {
   LiquidateClose
 }
 
-pub type PositionUpdateType {
-  UpdateStopLoss
-  UpdateTakeProfit
-}
-
 pub type PositionRedeemer {
   // Price, Trader Close || Stop Loss Close || Take Profit Close || Liquidate Close
   Close(Int, CloseType)
   AddCollateral
-  PositionUpdate(PositionUpdateType, Int)
+  // Stop Loss, Take Profit
+  PositionUpdate(Int, Int)
 }
 
 pub type PositionMintRedeemer {
