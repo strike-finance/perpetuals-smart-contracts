@@ -10,7 +10,7 @@ use types.{
   OpenPositionOrder, OrderDatum, OrdersParams, OrdersRedeemer,
   OrdersWithdrawRedeemer, PoolDatum,
 }
-use utils.{get_all_validators_inputs, is_withdrawal, validate_batcher_license}
+use utils.{get_all_validators_inputs, is_withdrawal}
 
 validator orders(params: OrdersParams) {
   spend(
@@ -53,14 +53,6 @@ validator orders(params: OrdersParams) {
     let (input_pool_utxo_index, output_pool_utxo_index) =
       redeemer.pool_utxo_index
 
-    let batcher_license_valid =
-      validate_batcher_license(
-        transaction,
-        params.batcher_license,
-        redeemer.batcher_index,
-        params.maximum_deadline_range,
-      )
-
     expect Some(input_pool_utxo) =
       list.at(transaction.inputs, input_pool_utxo_index)
 
@@ -94,7 +86,7 @@ validator orders(params: OrdersParams) {
 
     let expected_mint_valid = expected_pool_output.mint == transaction.mint
 
-    value_valid && output_datum_valid && address_valid && expected_mint_valid && batcher_license_valid
+    value_valid && output_datum_valid && address_valid && expected_mint_valid
   }
 
   else(_) {
