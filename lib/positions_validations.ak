@@ -550,8 +550,7 @@ pub fn reach_liquidation_price(
     // The collateral value/current_position_value must be within the maintain margin amount
     let collateral_value: Int = collateral_amount * current_usd_price
 
-    let collateral_value_after_loss: Int =
-      collateral_value - accumulative_interest_fee - total_value_loss
+    let collateral_value_after_loss: Int = collateral_value - total_value_loss
 
     let current_margin: Int =
       collateral_value_after_loss / current_position_value
@@ -633,14 +632,10 @@ pub fn calculate_return(
 
   let collateral_value: Int = collateral_asset_amount * current_usd_price
 
-  let position_value_after_interest_fee =
-    position_usd_value - accumulative_interest_fee
-
   let send_asset_amount =
-    ( collateral_value + position_value_after_interest_fee ) / current_usd_price
+    ( collateral_value + position_usd_value ) / current_usd_price
 
-  let return_pool_asset_amount =
-    position_value_after_interest_fee / current_usd_price * -1
+  let return_pool_asset_amount = position_usd_value / current_usd_price * -1
 
   CloseSendAmount {
     send_asset_amount,
