@@ -1,13 +1,13 @@
 use aiken/collection/list
 use aiken/crypto.{ScriptHash}
-use cardano/address.{Address, Script, VerificationKey}
+use cardano/address.{Address, Script}
 use cardano/assets.{Value, match, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{position_asset_name, strike_asset_name, strike_policy_id}
 use types.{
-  Asset, ClosePositionOrder, CloseSendAmount, ExpectedPoolOutput,
-  LiquidatePositionOrder, OpenPositionOrder, OrderDatum, PoolDatum,
-  PositionDatum, ProvideLiquidityOrder, WithdrawLiquidityOrder,
+  Asset, ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder,
+  OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder,
+  WithdrawLiquidityOrder,
 }
 
 pub fn valid_orders(
@@ -126,8 +126,8 @@ pub fn validate_individual_order(
       )
     ClosePositionOrder(..) ->
       close_position(
+        input,
         input_datum_typed,
-        output,
         pool_output_value,
         pool_output_datum,
         expected_mint,
@@ -196,7 +196,19 @@ pub fn open_position(
       side,
     }
 
-  let assets_locked_valid = match(output.value, input.value, >=)
+  let collateral_amount = position_asset_amount / leverage_factor
+
+  let lended_amount: Int = position_asset_amount - collateral_amount
+
+  let input_added_lended_amount =
+    input.value
+      |> assets.add(
+          pool_output_datum.underlying_asset.policy_id,
+          pool_output_datum.underlying_asset.asset_name,
+          lended_amount,
+        )
+
+  expect match(output.value, input_added_lended_amount, <=)
 
   expect InlineDatum(output_datum) = output.datum
 
@@ -204,64 +216,42 @@ pub fn open_position(
 
   expect Script(output_script_hash) = output.address.payment_credential
 
-  let output_script_hash_valid = output_script_hash == position_hash
+  expect output_script_hash == position_hash
 
-  let collateral_amount = position_asset_amount / leverage_factor
-
-  let lended_amount: Int = position_asset_amount - collateral_amount
-
-  let datum_valid = output_datum_typed == expected_output_datum
-
-  expect assets_locked_valid && datum_valid && output_script_hash_valid
+  expect output_datum_typed == expected_output_datum
 
   ExpectedPoolOutput {
-    value: pool_output_value,
-    datum: PoolDatum {
-      ..pool_output_datum,
-      underlying_asset_lended_amount: pool_output_datum.underlying_asset_lended_amount + lended_amount,
-    },
+    value: pool_output_value
+      |> assets.add(
+          pool_output_datum.underlying_asset.policy_id,
+          pool_output_datum.underlying_asset.asset_name,
+          -lended_amount,
+        ),
+    datum: pool_output_datum,
     mint: expected_mint,
   }
 }
 
 pub fn close_position(
+  input: Output,
   datum: OrderDatum,
-  output: Output,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect ClosePositionOrder {
-    position_datum: PositionDatum { owner_address_hash, position_hash, .. },
-    return_amount,
-  } = datum.action
+  expect ClosePositionOrder { position_hash, underlying_asset_gain_loss } =
+    datum.action
 
   let PoolDatum { underlying_asset, .. } = pool_output_datum
 
-  expect VerificationKey(output_owner_address_hash) =
-    output.address.payment_credential
+  let mint = assets.add(expected_mint, position_hash, position_asset_name, -1)
 
-  let output_is_to_owner = owner_address_hash == output_owner_address_hash
-
-  let mint = assets.add(expected_mint, position_hash, owner_address_hash, -1)
-
-  expect output_is_to_owner
-
-  let CloseSendAmount {
-    send_asset_amount,
-    return_pool_asset_amount,
-    strike_collateral_amount,
-  } = return_amount
-
-  let estimated_return =
-    assets.from_asset(
+  let return_pool_asset_amount =
+    quantity_of(
+      input.value,
       underlying_asset.policy_id,
       underlying_asset.asset_name,
-      send_asset_amount,
     )
-      |> assets.add(strike_policy_id, strike_asset_name, strike_collateral_amount)
-
-  expect match(output.value, estimated_return, <=)
 
   ExpectedPoolOutput {
     value: pool_output_value
@@ -270,7 +260,10 @@ pub fn close_position(
           underlying_asset.asset_name,
           return_pool_asset_amount,
         ),
-    datum: pool_output_datum,
+    datum: PoolDatum {
+      ..pool_output_datum,
+      total_underlying_asset_amount: pool_output_datum.total_underlying_asset_amount + underlying_asset_gain_loss,
+    },
     mint,
   }
 }
@@ -284,11 +277,8 @@ pub fn liquidate_position(
   expected_mint: Value,
   burn_address: ScriptHash,
 ) -> ExpectedPoolOutput {
-  expect LiquidatePositionOrder {
-    position_hash,
-    position_asset_amount,
-    leverage_factor,
-  } = input_datum_typed.action
+  expect LiquidatePositionOrder { position_hash, underlying_asset_gain } =
+    input_datum_typed.action
 
   let strike_is_burnt = is_strike_collateral_asset_burnt(burn_address, output)
 
@@ -296,15 +286,6 @@ pub fn liquidate_position(
 
   let updated_mint =
     assets.add(expected_mint, position_hash, position_asset_name, -1)
-
-  let lended_amount: Int =
-    position_asset_amount - position_asset_amount / leverage_factor
-
-  let updated_datum =
-    PoolDatum {
-      ..pool_output_datum,
-      underlying_asset_lended_amount: pool_output_datum.underlying_asset_lended_amount - lended_amount,
-    }
 
   let collateral_asset_amount: Int =
     quantity_of(
@@ -323,7 +304,10 @@ pub fn liquidate_position(
 
   ExpectedPoolOutput {
     value: updated_value,
-    datum: updated_datum,
+    datum: PoolDatum {
+      ..pool_output_datum,
+      total_underlying_asset_amount: pool_output_datum.total_underlying_asset_amount + underlying_asset_gain,
+    },
     mint: updated_mint,
   }
 }

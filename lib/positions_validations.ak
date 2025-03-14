@@ -59,7 +59,7 @@ pub fn close_position_valid(
     )
 
   // Calculate return amount (same for all close types)
-  let return_amount =
+  let CloseSendAmount { send_asset_amount, .. } =
     calculate_return(
       datum.position_asset_amount,
       collateral_asset_amount,
@@ -70,30 +70,36 @@ pub fn close_position_valid(
       accumulative_interest_fee,
     )
 
+  let underlying_asset_gain_loss = collateral_asset_amount - send_asset_amount
+
+  let expected_assets_sent =
+    input_from_script.output.value
+      |> assets.add(
+          datum.collateral_asset.policy_id,
+          datum.collateral_asset.asset_name,
+          -send_asset_amount,
+        )
+
+  expect match(expected_assets_sent, output_to_orders_validator.value, >=)
+
   // Create expected order datum (same for all close types)
   let expected_order_datum =
     OrderDatum {
-      action: ClosePositionOrder { return_amount, position_datum: datum },
+      action: ClosePositionOrder {
+        position_hash: datum.position_hash,
+        underlying_asset_gain_loss,
+      },
     }
   let expected_order_datum_data: Data = expected_order_datum
-  let orders_datum_valid = expected_order_datum_data == orders_datum
+
+  expect expected_order_datum_data == orders_datum
 
   // Validate based on close type
   when close_type is {
-    TraderClose -> {
-      let signed_by_owner =
-        list.has(transaction.extra_signatories, datum.owner_address_hash)
-      signed_by_owner && orders_datum_valid
-    }
-    StopLossClose -> {
-      let stop_loss_reached = price_reached_stop_loss(current_usd_price, datum)
-      stop_loss_reached && orders_datum_valid
-    }
-    TakeProfitClose -> {
-      let take_profit_reached =
-        price_reached_take_profit(current_usd_price, datum)
-      take_profit_reached && orders_datum_valid
-    }
+    TraderClose ->
+      list.has(transaction.extra_signatories, datum.owner_address_hash)
+    StopLossClose -> price_reached_stop_loss(current_usd_price, datum)
+    TakeProfitClose -> price_reached_take_profit(current_usd_price, datum)
   }
 }
 
@@ -162,7 +168,6 @@ pub fn liquidate_close_valid(
 
   let PositionDatum {
     position_asset_amount,
-    leverage_factor,
     entered_at_usd_price,
     entered_position_time,
     side,
@@ -173,12 +178,18 @@ pub fn liquidate_close_valid(
     ..
   } = datum
 
+  let collateral_amount =
+    quantity_of(
+      input_from_script.output.value,
+      collateral_asset.policy_id,
+      collateral_asset.asset_name,
+    )
+
   let expected_order_datum =
     OrderDatum {
       action: LiquidatePositionOrder {
         position_hash,
-        position_asset_amount,
-        leverage_factor,
+        underlying_asset_gain: collateral_amount,
       },
     }
 
@@ -254,11 +265,21 @@ pub fn mint_position_valid(
   let PoolDatum {
     max_strike_holder_leverage_factor,
     max_leverage_factor,
-    underlying_asset_lended_amount,
     interest_rate,
     underlying_asset,
+    total_underlying_asset_amount,
     ..
   } = pool_datum_typed
+
+  let pool_asset_amount =
+    quantity_of(
+      pool_value,
+      underlying_asset.policy_id,
+      underlying_asset.asset_name,
+    )
+
+  let underlying_asset_lended_amount =
+    total_underlying_asset_amount - pool_asset_amount
 
   expect current_usd_price == entered_at_usd_price
 

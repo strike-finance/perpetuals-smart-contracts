@@ -82,18 +82,16 @@ pub type PositionDatum {
 pub type OrderAction {
   OpenPositionOrder { position_datum: PositionDatum }
   ClosePositionOrder {
-    // Amount to return to the owner
-    return_amount: CloseSendAmount,
-    // Open position order
-    position_datum: PositionDatum,
+    // The script hash for the positions script that holds all the positions of the trader
+    position_hash: ScriptHash,
+    // The amount of underlying asset gained/loss for liquidity providers
+    underlying_asset_gain_loss: Int,
   }
   LiquidatePositionOrder {
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
-    // Total size of position
-    position_asset_amount: Int,
-    // Leverage used for this position
-    leverage_factor: Int,
+    // The amount of underlying asset gained/loss for liquidity providers
+    underlying_asset_gain: Int,
   }
   ProvideLiquidityOrder {
     // Amount of liquidity to provide
@@ -142,8 +140,10 @@ pub type PositionsParams {
 pub type PoolDatum {
   // The underlying asset that the pool is trading on
   underlying_asset: Asset,
-  // Total amount of underlying asset that has been lended out
-  underlying_asset_lended_amount: Int,
+  // Total amount of underlying asset that belongs to liquidity providers
+  total_underlying_asset_amount: Int,
+  // Total amount of lp tokens minted
+  total_lp_tokens_minted: Int,
   // The interest rate for the underlying asset
   interest_rate: Int,
   // The max leverage factor for the pool
