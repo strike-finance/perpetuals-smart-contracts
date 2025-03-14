@@ -88,8 +88,6 @@ pub type OrderAction {
     position_datum: PositionDatum,
   }
   LiquidatePositionOrder {
-    // Owner of the position
-    owner_address_hash: AddressHash,
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
     // Total size of position
@@ -120,13 +118,13 @@ pub type CloseType {
   TraderClose
   StopLossClose
   TakeProfitClose
-  LiquidateClose
 }
 
 pub type PositionRedeemer {
   Close { close_price: Int, close_type: CloseType }
   AddCollateral
   PositionUpdate { stop_loss: Int, take_profit: Int }
+  LiquidateClose { current_usd_price: Int }
   RebalancePosition
   IncreasePositionFromProfit
 }
@@ -137,7 +135,6 @@ pub type PositionMintRedeemer {
 }
 
 pub type PositionsParams {
-  asset_name: AssetName,
   orders_script_hash: ScriptHash,
   underlying_asset_multiplier: Int,
 }

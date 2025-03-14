@@ -3,7 +3,7 @@ use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script, VerificationKey}
 use cardano/assets.{Value, match, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
-use constants.{strike_asset_name, strike_policy_id}
+use constants.{position_asset_name, strike_asset_name, strike_policy_id}
 use types.{
   Asset, ClosePositionOrder, CloseSendAmount, ExpectedPoolOutput,
   LiquidatePositionOrder, OpenPositionOrder, OrderDatum, PoolDatum,
@@ -286,7 +286,6 @@ pub fn liquidate_position(
 ) -> ExpectedPoolOutput {
   expect LiquidatePositionOrder {
     position_hash,
-    owner_address_hash,
     position_asset_amount,
     leverage_factor,
   } = input_datum_typed.action
@@ -296,7 +295,7 @@ pub fn liquidate_position(
   expect strike_is_burnt
 
   let updated_mint =
-    assets.add(expected_mint, position_hash, owner_address_hash, -1)
+    assets.add(expected_mint, position_hash, position_asset_name, -1)
 
   let lended_amount: Int =
     position_asset_amount - position_asset_amount / leverage_factor
