@@ -1,15 +1,14 @@
 use aiken/collection/list
 use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script, VerificationKey}
-use cardano/assets.{Value, flatten, match, quantity_of, zero}
+use cardano/assets.{Value, match, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{strike_asset_name, strike_policy_id}
 use types.{
   Asset, ClosePositionOrder, CloseSendAmount, ExpectedPoolOutput,
   LiquidatePositionOrder, OpenPositionOrder, OrderDatum, PoolDatum,
-  PositionDatum,
+  PositionDatum, ProvideLiquidityOrder, WithdrawLiquidityOrder,
 }
-use utils.{get_all_validators_inputs}
 
 pub fn valid_orders(
   indices: List<(Int, Int)>,
@@ -142,6 +141,18 @@ pub fn validate_individual_order(
         pool_output_datum,
         expected_mint,
         burn_address,
+      )
+    ProvideLiquidityOrder(..) ->
+      provide_liquidity_valid(
+        pool_output_value,
+        pool_output_datum,
+        expected_mint,
+      )
+    WithdrawLiquidityOrder(..) ->
+      withdraw_liquidy_valid(
+        pool_output_value,
+        pool_output_datum,
+        expected_mint,
       )
   }
 }
@@ -318,94 +329,28 @@ pub fn liquidate_position(
   }
 }
 
-pub fn cancel_open_position_valid(
-  datum: OrderDatum,
-  transaction: Transaction,
-) -> Bool {
-  expect OpenPositionOrder{position_datum: PositionDatum {
-    owner_address_hash,
-    position_hash,
-    ..
-  }} = datum.action
-
-  let signed_by_owner =
-    list.has(transaction.extra_signatories, owner_address_hash)
-
-  let only_one_input_from_script =
-    list.length(get_all_validators_inputs(transaction)) == 1
-
-  let expected_burnt = [(position_hash, owner_address_hash, -1)]
-
-  let mint_valid: Bool = expected_burnt == flatten(transaction.mint)
-
-  signed_by_owner && only_one_input_from_script && mint_valid
+fn provide_liquidity_valid(
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+  expected_mint: Value,
+) -> ExpectedPoolOutput {
+  ExpectedPoolOutput {
+    value: pool_output_value,
+    datum: pool_output_datum,
+    mint: expected_mint,
+  }
 }
 
-pub fn cancel_close_position_valid(
-  datum: OrderDatum,
-  transaction: Transaction,
-  output_index: Int,
-) -> Bool {
-  expect ClosePositionOrder {
-    position_datum: PositionDatum {
-      owner_address_hash,
-      position_hash,
-      leverage_factor,
-      entered_at_usd_price,
-      entered_position_time,
-      position_asset_amount,
-      maintain_margin_amount,
-      hourly_usd_borrow_fee,
-      side,
-      collateral_asset,
-      stop_loss_usd_price,
-      take_profit_usd_price,
-    },
-    ..
-  } = datum.action
-
-  let inputs_from_scripts = get_all_validators_inputs(transaction)
-
-  let only_one_input_from_script: Bool = list.length(inputs_from_scripts) == 1
-
-  expect Some(input_from_script) = inputs_from_scripts |> list.at(0)
-
-  expect Some(output_to_positions) = list.at(transaction.outputs, output_index)
-
-  expect InlineDatum(output_datum) = output_to_positions.datum
-
-  expect Script(output_script_hash) =
-    output_to_positions.address.payment_credential
-
-  let output_script_hash_valid = output_script_hash == position_hash
-
-  let expected_positions_datum =
-    PositionDatum {
-      owner_address_hash,
-      position_hash,
-      entered_at_usd_price,
-      leverage_factor,
-      position_asset_amount,
-      stop_loss_usd_price,
-      take_profit_usd_price,
-      entered_position_time,
-      hourly_usd_borrow_fee,
-      collateral_asset,
-      maintain_margin_amount,
-      side,
-    }
-
-  let expected_positions_datum_data: Data = expected_positions_datum
-
-  let datum_match = expected_positions_datum_data == output_datum
-
-  let assets_locked_valid =
-    match(input_from_script.output.value, output_to_positions.value, >=)
-
-  let signed_by_owner =
-    list.has(transaction.extra_signatories, owner_address_hash)
-
-  output_script_hash_valid && datum_match && assets_locked_valid && signed_by_owner && only_one_input_from_script
+fn withdraw_liquidy_valid(
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+  expected_mint: Value,
+) -> ExpectedPoolOutput {
+  ExpectedPoolOutput {
+    value: pool_output_value,
+    datum: pool_output_datum,
+    mint: expected_mint,
+  }
 }
 
 fn is_strike_collateral_asset_burnt(

@@ -34,11 +34,6 @@ pub type PositionSide {
   Short
 }
 
-pub type OrdersRedeemer {
-  BatchOrders
-  CancelOrder { output_index: Int }
-}
-
 pub type UTxOIndexer =
   List<(Int, Int)>
 
@@ -101,6 +96,14 @@ pub type OrderAction {
     position_asset_amount: Int,
     // Leverage used for this position
     leverage_factor: Int,
+  }
+  ProvideLiquidityOrder {
+    // Amount of liquidity to provide
+    liquidity_amount: Int,
+  }
+  WithdrawLiquidityOrder {
+    // Amount of liquidity to withdraw
+    liquidity_amount: Int,
   }
 }
 

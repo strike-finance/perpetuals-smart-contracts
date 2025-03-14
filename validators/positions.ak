@@ -45,10 +45,8 @@ validator positions(params: PositionsParams) {
           policy_id: policy_id,
         )
       // Batcher might close/liquidate multiple positions at once
-      ClosePosition(burn_amount, asset_name) -> {
-        let expected_burnt = [(policy_id, asset_name, -burn_amount)]
-        expected_burnt == flatten(transaction.mint)
-      }
+      ClosePosition(burn_amount, asset_name) ->
+        [(policy_id, asset_name, -burn_amount)] == flatten(transaction.mint)
     }
   }
 

@@ -1,7 +1,6 @@
 use aiken/collection/list
 use aiken/collection/pairs
-use cardano/address.{Script}
-use cardano/assets.{PolicyId, flatten, match, quantity_of}
+use cardano/assets.{match}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
@@ -89,33 +88,6 @@ validator pools(params: PoolParams) {
         }
       }
     }
-  }
-
-  mint(_redeemer: Int, policy_id: PolicyId, transaction: Transaction) {
-    let Transaction { outputs, extra_signatories, mint, .. } = transaction
-    let PoolParams { asset_name, admin_pkh, .. } = params
-
-    expect Some(output_back_to_pool_script) =
-      list.find(
-        outputs,
-        fn(output: Output) {
-          expect Script(output_to_liquidate_hash) =
-            output.address.payment_credential
-
-          output_to_liquidate_hash == policy_id
-        },
-      )
-
-    let output_contains_pool_asset: Bool =
-      quantity_of(output_back_to_pool_script.value, policy_id, asset_name) == 1
-
-    let expected_mint = [(policy_id, params.asset_name, 1)]
-
-    let mint_valid = expected_mint == flatten(mint)
-
-    let signed_by_admin = list.has(extra_signatories, admin_pkh)
-
-    mint_valid && signed_by_admin && output_contains_pool_asset
   }
 
   else(_) {

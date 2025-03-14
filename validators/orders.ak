@@ -2,45 +2,18 @@ use aiken/collection/list
 use cardano/address.{Credential, Script}
 use cardano/assets.{match}
 use cardano/transaction.{InlineDatum, Input, OutputReference, Transaction}
-use orders_validations.{
-  cancel_close_position_valid, cancel_open_position_valid, valid_orders,
-}
-use types.{
-  BatchOrders, CancelOrder, ClosePositionOrder, LiquidatePositionOrder,
-  OpenPositionOrder, OrderDatum, OrdersParams, OrdersRedeemer,
-  OrdersWithdrawRedeemer, PoolDatum,
-}
-use utils.{get_all_validators_inputs, is_withdrawal}
+use orders_validations.{valid_orders}
+use types.{OrderDatum, OrdersParams, OrdersWithdrawRedeemer, PoolDatum}
+use utils.{is_withdrawal}
 
 validator orders(params: OrdersParams) {
   spend(
-    datum: Option<OrderDatum>,
-    redeemer: OrdersRedeemer,
+    _datum: Option<OrderDatum>,
+    _redeemer: Int,
     own_ref: OutputReference,
     transaction: Transaction,
   ) {
-    when redeemer is {
-      BatchOrders -> is_withdrawal(transaction, own_ref)
-      CancelOrder(output_index) -> {
-        expect Some(datum) = datum
-
-        let all_validators_inputs: List<Input> =
-          get_all_validators_inputs(transaction)
-
-        let only_one_input_from_script: Bool =
-          list.length(all_validators_inputs) == 1
-
-        expect only_one_input_from_script
-
-        when datum.action is {
-          OpenPositionOrder(..) ->
-            cancel_open_position_valid(datum, transaction)
-          ClosePositionOrder(..) ->
-            cancel_close_position_valid(datum, transaction, output_index)
-          LiquidatePositionOrder(..) -> False
-        }
-      }
-    }
+    is_withdrawal(transaction, own_ref)
   }
 
   withdraw(
