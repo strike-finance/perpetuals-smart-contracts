@@ -100,10 +100,14 @@ pub type OrderAction {
   ProvideLiquidityOrder {
     // Amount of liquidity to provide
     liquidity_amount: Int,
+    // Owner of the liquidity, to send the lp tokens
+    owner_address_hash: AddressHash,
   }
   WithdrawLiquidityOrder {
     // Amount of liquidity to withdraw
     liquidity_amount: Int,
+    // Owner of the liquidity, to send their withdrawal amount
+    owner_address_hash: AddressHash,
   }
 }
 
@@ -128,10 +132,11 @@ pub type PositionRedeemer {
 
 pub type PositionMintRedeemer {
   OpenPosition { price: Int }
-  ClosePosition { burn_amount: Int, asset_name: AssetName }
+  ClosePosition { burn_amount: Int }
 }
 
 pub type PositionsParams {
+  asset_name: AssetName,
   orders_script_hash: ScriptHash,
   underlying_asset_multiplier: Int,
 }

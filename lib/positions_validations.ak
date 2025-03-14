@@ -328,14 +328,13 @@ pub fn mint_position_valid(
     max_leverage_factor,
     underlying_asset_lended_amount,
     interest_rate,
+    underlying_asset,
     ..
   } = pool_datum_typed
 
   expect current_usd_price == entered_at_usd_price
 
-  let expected_mint = [(policy_id, owner_address_hash, 1)]
-
-  expect expected_mint == flatten(mint)
+  expect [(policy_id, params.asset_name, 1)] == flatten(mint)
 
   let collateral_asset_amount =
     quantity_of(
@@ -355,7 +354,7 @@ pub fn mint_position_valid(
   if collateral_asset.policy_id == "" {
     let expected_assets_locked: Value =
       assets.from_lovelace(batcher_fee)
-        |> assets.add(policy_id, owner_address_hash, 1)
+        |> assets.add(policy_id, params.asset_name, 1)
         |> assets.add(
             collateral_asset.policy_id,
             collateral_asset.asset_name,
@@ -367,7 +366,7 @@ pub fn mint_position_valid(
   } else {
     let expected_assets_locked: Value =
       assets.from_lovelace(batcher_fee)
-        |> assets.add(policy_id, owner_address_hash, 1)
+        |> assets.add(policy_id, params.asset_name, 1)
         |> assets.add(
             collateral_asset.policy_id,
             collateral_asset.asset_name,
@@ -381,8 +380,8 @@ pub fn mint_position_valid(
   let pool_underlying_asset_amount =
     quantity_of(
       pool_value,
-      collateral_asset.policy_id,
-      collateral_asset.asset_name,
+      underlying_asset.policy_id,
+      underlying_asset.asset_name,
     )
 
   let estimated_hourly_usd_borrow_fee: Int =
@@ -394,14 +393,9 @@ pub fn mint_position_valid(
       interest_rate,
     )
 
-  let hourly_usd_borrow_fee_valid =
-    hourly_usd_borrow_fee >= estimated_hourly_usd_borrow_fee
+  expect hourly_usd_borrow_fee >= estimated_hourly_usd_borrow_fee
 
-  let order_submission_time_valid =
-    get_lower_bound(transaction.validity_range) >= entered_position_time
-
-  let owner_signed_tx =
-    list.has(transaction.extra_signatories, owner_address_hash)
+  expect get_lower_bound(transaction.validity_range) >= entered_position_time
 
   let contains_strike_collateral: Bool =
     quantity_of(
@@ -417,14 +411,11 @@ pub fn mint_position_valid(
       contains_strike_collateral,
     )
 
-  let assets_amount_valid: Bool =
-    is_position_assets_amount_valid(
-      position_asset_amount,
-      position_max_leverage_factor,
-      collateral_asset_amount,
-    )
-
-  assets_amount_valid && hourly_usd_borrow_fee_valid && order_submission_time_valid && owner_signed_tx
+  is_position_assets_amount_valid(
+    position_asset_amount,
+    position_max_leverage_factor,
+    collateral_asset_amount,
+  )
 }
 
 // make sure the amount of position_asset_amount is less than the collateral asset amount * leverage factor
