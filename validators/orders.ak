@@ -3,17 +3,23 @@ use cardano/address.{Credential, Script}
 use cardano/assets.{match}
 use cardano/transaction.{InlineDatum, Input, OutputReference, Transaction}
 use orders_validations.{valid_orders}
-use types.{OrderDatum, OrdersParams, OrdersWithdrawRedeemer, PoolDatum}
+use types.{
+  ClosePendingOpenOrders, OrderDatum, OrdersParams, OrdersRedeemer,
+  OrdersWithdrawRedeemer, PoolDatum, ProcessOrders,
+}
 use utils.{is_withdrawal}
 
 validator orders(params: OrdersParams) {
   spend(
     _datum: Option<OrderDatum>,
-    _redeemer: Int,
+    redeemer: OrdersRedeemer,
     own_ref: OutputReference,
     transaction: Transaction,
   ) {
-    is_withdrawal(transaction, own_ref)
+    when redeemer is {
+      ProcessOrders -> is_withdrawal(transaction, own_ref)
+      ClosePendingOpenOrders -> is_withdrawal(transaction, own_ref)
+    }
   }
 
   withdraw(

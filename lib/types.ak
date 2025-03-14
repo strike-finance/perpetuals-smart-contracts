@@ -126,8 +126,9 @@ pub type CloseType {
 pub type PositionRedeemer {
   Close { close_price: Int, close_type: CloseType }
   AddCollateral
-  // Stop Loss, Take Profit
   PositionUpdate { stop_loss: Int, take_profit: Int }
+  RebalancePosition
+  IncreasePositionFromProfit
 }
 
 pub type PositionMintRedeemer {
@@ -183,4 +184,9 @@ pub type ExpectedPoolOutput {
   value: Value,
   datum: PoolDatum,
   mint: Value,
+}
+
+pub type OrdersRedeemer {
+  ProcessOrders
+  ClosePendingOpenOrders
 }

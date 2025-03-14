@@ -304,7 +304,6 @@ pub fn mint_position_valid(
   expect orders_datum_typed: OrderDatum = orders_datum
 
   expect OpenPositionOrder{position_datum: PositionDatum {
-    owner_address_hash,
     entered_position_time,
     entered_at_usd_price,
     position_asset_amount,
@@ -416,6 +415,14 @@ pub fn mint_position_valid(
     position_max_leverage_factor,
     collateral_asset_amount,
   )
+}
+
+pub fn rebalance_position_valid() -> Bool {
+  True
+}
+
+pub fn increase_position_from_profit_valid() -> Bool {
+  True
 }
 
 // make sure the amount of position_asset_amount is less than the collateral asset amount * leverage factor
