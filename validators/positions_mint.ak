@@ -1,8 +1,17 @@
-use cardano/assets.{PolicyId, flatten}
-use cardano/transaction.{OutputReference, Transaction}
-use constants.{position_asset_name}
-use positions_validations.{mint_position_valid}
-use types.{ClosePosition, OpenPosition, PositionDatum, ScriptHash}
+use aiken/collection/list
+use cardano/assets.{PolicyId, Value, flatten, match, quantity_of}
+use cardano/transaction.{
+  InlineDatum, Input, Output, OutputReference, Transaction, find_script_outputs,
+}
+use constants.{
+  batcher_fee, position_asset_name, strike_asset_name, strike_policy_id,
+}
+use math.{calculate_hourly_usd_borrow_fee}
+use types.{
+  ClosePosition, OpenPosition, OpenPositionOrder, OrderDatum, PoolDatum,
+  PositionDatum, ScriptHash,
+}
+use utils.{get_lower_bound}
 
 pub type LimitOrderRedeemer {
   CompleteLimitOrder { price: Int }
@@ -57,5 +66,143 @@ validator positions_mint(orders_script_hash: ScriptHash) {
 
   else(_) {
     False
+  }
+}
+
+pub fn mint_position_valid(
+  transaction: Transaction,
+  orders_script_hash: ScriptHash,
+  current_usd_price: Int,
+  policy_id: PolicyId,
+) {
+  let Transaction { mint, .. } = transaction
+
+  let outputs_to_orders_address: List<Output> =
+    find_script_outputs(transaction.outputs, orders_script_hash)
+
+  expect list.length(outputs_to_orders_address) == 1
+
+  expect Some(output_to_orders_validator) = list.head(outputs_to_orders_address)
+
+  expect InlineDatum(orders_datum) = output_to_orders_validator.datum
+
+  expect orders_datum_typed: OrderDatum = orders_datum
+
+  expect OpenPositionOrder{position_datum: PositionDatum {
+    entered_position_time,
+    entered_at_usd_price,
+    position_asset_amount,
+    hourly_usd_borrow_fee,
+    collateral_asset,
+    ..
+  }} = orders_datum_typed.action
+
+  let ref_input: List<Input> = transaction.reference_inputs
+
+  expect Some(Input {
+    output: Output { value: pool_value, datum: pool_datum, .. },
+    ..
+  }) = list.head(ref_input)
+
+  expect InlineDatum(pool_datum) = pool_datum
+  expect pool_datum_typed: PoolDatum = pool_datum
+
+  let PoolDatum {
+    max_strike_holder_leverage_factor,
+    max_leverage_factor,
+    interest_rate,
+    underlying_asset,
+    total_underlying_asset_amount,
+    ..
+  } = pool_datum_typed
+
+  let pool_asset_amount =
+    quantity_of(
+      pool_value,
+      underlying_asset.policy_id,
+      underlying_asset.asset_name,
+    )
+
+  let underlying_asset_lended_amount =
+    total_underlying_asset_amount - pool_asset_amount
+
+  expect current_usd_price == entered_at_usd_price
+
+  expect [(policy_id, position_asset_name, 1)] == flatten(mint)
+
+  let collateral_asset_amount =
+    quantity_of(
+      output_to_orders_validator.value,
+      collateral_asset.policy_id,
+      collateral_asset.asset_name,
+    )
+
+  let strike_asset_amount =
+    quantity_of(
+      output_to_orders_validator.value,
+      strike_policy_id,
+      strike_asset_name,
+    )
+
+  // check if lovelace, and subtract collateral_asset_amount with batcher fee, or else the batcher fee gets counted twice
+  if collateral_asset.policy_id == "" {
+    let expected_assets_locked: Value =
+      assets.from_lovelace(batcher_fee)
+        |> assets.add(policy_id, position_asset_name, 1)
+        |> assets.add(
+            collateral_asset.policy_id,
+            collateral_asset.asset_name,
+            collateral_asset_amount - batcher_fee,
+          )
+        |> assets.add(strike_policy_id, strike_asset_name, strike_asset_amount)
+
+    expect match(output_to_orders_validator.value, expected_assets_locked, >=)
+  } else {
+    let expected_assets_locked: Value =
+      assets.from_lovelace(batcher_fee)
+        |> assets.add(policy_id, position_asset_name, 1)
+        |> assets.add(
+            collateral_asset.policy_id,
+            collateral_asset.asset_name,
+            collateral_asset_amount,
+          )
+        |> assets.add(strike_policy_id, strike_asset_name, strike_asset_amount)
+
+    expect match(output_to_orders_validator.value, expected_assets_locked, >=)
+  }
+
+  let pool_underlying_asset_amount =
+    quantity_of(
+      pool_value,
+      underlying_asset.policy_id,
+      underlying_asset.asset_name,
+    )
+
+  let estimated_hourly_usd_borrow_fee: Int =
+    calculate_hourly_usd_borrow_fee(
+      position_asset_amount,
+      underlying_asset_lended_amount,
+      current_usd_price,
+      pool_underlying_asset_amount,
+      interest_rate,
+    )
+
+  expect hourly_usd_borrow_fee >= estimated_hourly_usd_borrow_fee
+
+  expect get_lower_bound(transaction.validity_range) >= entered_position_time
+
+  let contains_strike_collateral: Bool =
+    quantity_of(
+      output_to_orders_validator.value,
+      strike_policy_id,
+      strike_asset_name,
+    ) > 0
+
+  // Make sure the amount of position_asset_amount is less than the collateral asset amount * leverage factor
+  // for strike holders, they have a different leverage factor
+  if contains_strike_collateral {
+    position_asset_amount / max_strike_holder_leverage_factor <= collateral_asset_amount
+  } else {
+    position_asset_amount / max_leverage_factor <= collateral_asset_amount
   }
 }
