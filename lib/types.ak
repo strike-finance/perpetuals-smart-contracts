@@ -19,16 +19,6 @@ pub type POSIXTime =
 pub type LovelaceAmount =
   Int
 
-pub type OrdersParams {
-  batcher_license: PolicyId,
-  maximum_deadline_range: Int,
-  underlying_asset_policy_id: PolicyId,
-  underlying_asset_name: AssetName,
-  stable_asset_policy_id: PolicyId,
-  stable_asset_name: AssetName,
-  burn_address: ScriptHash,
-}
-
 pub type PositionSide {
   Long
   Short
@@ -36,12 +26,6 @@ pub type PositionSide {
 
 pub type UTxOIndexer =
   List<(Int, Int)>
-
-pub type OrdersWithdrawRedeemer {
-  indexer: UTxOIndexer,
-  pool_utxo_index: (Int, Int),
-  batcher_index: Int,
-}
 
 pub type CloseSendAmount {
   // asset amount sent to trader
@@ -119,22 +103,14 @@ pub type CloseType {
 }
 
 pub type PositionRedeemer {
-  Close { close_price: Int, close_type: CloseType }
-  AddCollateral
-  PositionUpdate { stop_loss: Int, take_profit: Int }
-  LiquidateClose { current_usd_price: Int }
-  RebalancePosition
-  IncreasePositionFromProfit
+  CompleteLimitOrder { price: Int }
+  CancelLimitOrder { price: Int }
 }
 
-pub type PositionMintRedeemer {
+pub type MintPositionRedeemer {
   OpenPosition { price: Int }
   ClosePosition { burn_amount: Int }
-}
-
-pub type PositionsParams {
-  orders_script_hash: ScriptHash,
-  underlying_asset_multiplier: Int,
+  OpenLimitPosition { price: Int }
 }
 
 pub type PoolDatum {
@@ -158,23 +134,6 @@ pub type PoolParams {
   orders_stake_cred: Credential,
   admin_pkh: AddressHash,
   asset_name: AssetName,
-}
-
-pub type UpdateParamType {
-  UpdateInterestRate { interest_rate: Int }
-  UpdateLiquidateMargin { maintain_margin_amount: Int }
-  UpdateMaxLeverageFactor { max_leverage_factor: Int }
-  UpdateMaxStrikeHolderLeverageFactor { max_strike_holder_leverage_factor: Int }
-}
-
-pub type PoolRedeemerAction {
-  UtilizePool
-  UpdateParam
-}
-
-pub type PoolRedeemer {
-  action: PoolRedeemerAction,
-  update_param_type: UpdateParamType,
 }
 
 pub type ExpectedPoolOutput {

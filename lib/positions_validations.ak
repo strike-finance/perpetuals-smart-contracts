@@ -10,7 +10,7 @@ use constants.{
 use types.{
   Asset, ClosePositionOrder, CloseSendAmount, CloseType, LiquidatePositionOrder,
   Long, OpenPositionOrder, OrderDatum, POSIXTime, PoolDatum, PositionDatum,
-  PositionSide, PositionsParams, StopLossClose, TakeProfitClose, TraderClose,
+  PositionSide, ScriptHash, StopLossClose, TakeProfitClose, TraderClose,
 }
 use utils.{get_address_outputs, get_all_validators_inputs, get_lower_bound}
 
@@ -18,11 +18,10 @@ pub fn close_position_valid(
   transaction: Transaction,
   maybe_datum: Option<PositionDatum>,
   current_usd_price: Int,
-  params: PositionsParams,
+  orders_script_hash: ScriptHash,
   close_type: CloseType,
 ) -> Bool {
   expect Some(datum) = maybe_datum
-  let PositionsParams { orders_script_hash, .. } = params
 
   // Validate basic transaction structure
   let all_validators_inputs = get_all_validators_inputs(transaction)
@@ -149,12 +148,10 @@ pub fn update_position_valid(
 pub fn liquidate_close_valid(
   transaction: Transaction,
   maybe_datum: Option<PositionDatum>,
-  params: PositionsParams,
+  orders_script_hash: ScriptHash,
   current_usd_price: Int,
 ) -> Bool {
   expect Some(datum) = maybe_datum
-
-  let PositionsParams { orders_script_hash, .. } = params
 
   let outputs_to_orders_validator =
     find_script_outputs(transaction.outputs, orders_script_hash)
@@ -224,12 +221,10 @@ pub fn liquidate_close_valid(
 
 pub fn mint_position_valid(
   transaction: Transaction,
-  params: PositionsParams,
+  orders_script_hash: ScriptHash,
   current_usd_price: Int,
   policy_id: PolicyId,
 ) {
-  let PositionsParams { orders_script_hash, .. } = params
-
   let Transaction { mint, .. } = transaction
 
   let outputs_to_orders_address: List<Output> =

@@ -1,15 +1,21 @@
 use aiken/collection/list
 use cardano/address.{Credential, Script}
-use cardano/assets.{match}
+use cardano/assets.{PolicyId, match}
 use cardano/transaction.{InlineDatum, Input, OutputReference, Transaction}
 use orders_validations.{valid_orders}
 use types.{
-  ClosePendingOpenOrders, OrderDatum, OrdersParams, OrdersRedeemer,
-  OrdersWithdrawRedeemer, PoolDatum, ProcessOrders,
+  ClosePendingOpenOrders, OrderDatum, OrdersRedeemer, PoolDatum, ProcessOrders,
+  ScriptHash, UTxOIndexer,
 }
 use utils.{is_withdrawal}
 
-validator orders(params: OrdersParams) {
+pub type OrdersWithdrawRedeemer {
+  indexer: UTxOIndexer,
+  pool_utxo_index: (Int, Int),
+  batcher_index: Int,
+}
+
+validator orders(batcher_license: PolicyId, burn_address: ScriptHash) {
   spend(
     _datum: Option<OrderDatum>,
     redeemer: OrdersRedeemer,
@@ -45,7 +51,7 @@ validator orders(params: OrdersParams) {
         own_validator,
         input_pool_utxo.output.value,
         input_pool_datum_typed,
-        params.burn_address,
+        burn_address,
       )
 
     expect Some(output_pool_utxo) =

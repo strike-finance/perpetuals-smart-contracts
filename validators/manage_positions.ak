@@ -1,21 +1,24 @@
-use cardano/assets.{PolicyId, flatten}
 use cardano/transaction.{OutputReference, Transaction}
-use constants.{position_asset_name}
 use positions_validations.{
   add_collateral_valid, close_position_valid,
   increase_position_from_profit_valid, liquidate_close_valid,
-  mint_position_valid, rebalance_position_valid, update_position_valid,
+  rebalance_position_valid, update_position_valid,
 }
-use types.{
-  AddCollateral, Close, ClosePosition, IncreasePositionFromProfit,
-  LiquidateClose, OpenPosition, PositionDatum, PositionMintRedeemer,
-  PositionRedeemer, PositionUpdate, PositionsParams, RebalancePosition,
+use types.{CloseType, PositionDatum, ScriptHash}
+
+pub type ManagePositionRedeemer {
+  Close { close_price: Int, close_type: CloseType }
+  AddCollateral
+  PositionUpdate { stop_loss: Int, take_profit: Int }
+  LiquidateClose { current_usd_price: Int }
+  RebalancePosition
+  IncreasePositionFromProfit
 }
 
-validator positions(params: PositionsParams) {
+validator manage_positions(orders_script_hash: ScriptHash) {
   spend(
     datum: Option<PositionDatum>,
-    redeemer: PositionRedeemer,
+    redeemer: ManagePositionRedeemer,
     _own_ref: OutputReference,
     transaction: Transaction,
   ) {
@@ -25,37 +28,21 @@ validator positions(params: PositionsParams) {
           transaction,
           datum,
           current_usd_price,
-          params,
+          orders_script_hash,
           close_type,
         )
       LiquidateClose(current_usd_price) ->
-        liquidate_close_valid(transaction, datum, params, current_usd_price)
+        liquidate_close_valid(
+          transaction,
+          datum,
+          orders_script_hash,
+          current_usd_price,
+        )
       AddCollateral -> add_collateral_valid(transaction, datum)
       PositionUpdate(stop_loss, take_profit) ->
         update_position_valid(transaction, datum, stop_loss, take_profit)
       RebalancePosition -> rebalance_position_valid()
       IncreasePositionFromProfit -> increase_position_from_profit_valid()
-    }
-  }
-
-  mint(
-    redeemer: PositionMintRedeemer,
-    policy_id: PolicyId,
-    transaction: Transaction,
-  ) {
-    when redeemer is {
-      OpenPosition(current_usd_price) ->
-        mint_position_valid(
-          transaction: transaction,
-          params: params,
-          current_usd_price: current_usd_price,
-          policy_id: policy_id,
-        )
-      // Batcher might close/liquidate multiple positions at once
-      ClosePosition(burn_amount) ->
-        [(policy_id, position_asset_name, -burn_amount)] == flatten(
-          transaction.mint,
-        )
     }
   }
 

@@ -1,26 +1,19 @@
-use aiken/collection/list
 use aiken/collection/pairs
-use cardano/assets.{match}
-use cardano/transaction.{
-  InlineDatum, Input, Output, OutputReference, Transaction,
-}
-use types.{
-  PoolDatum, PoolParams, PoolRedeemer, UpdateInterestRate, UpdateLiquidateMargin,
-  UpdateMaxLeverageFactor, UpdateMaxStrikeHolderLeverageFactor, UpdateParam,
-  UtilizePool,
-}
+use cardano/address.{Credential}
+use cardano/transaction.{OutputReference, Transaction}
+use types.{PoolDatum}
 
 // All pool validations are passed to the orders script. The orders script handles interactions with the pool UTxO. 
-validator pools(params: PoolParams) {
+validator pools(orders_stake_cred: Credential) {
   spend(
-    datum: Option<PoolDatum>,
+    _datum: Option<PoolDatum>,
     _redeemer: Int,
     _own_ref: OutputReference,
     transaction: Transaction,
   ) {
     let withdrawals = transaction.withdrawals
 
-    pairs.has_key(withdrawals, params.orders_stake_cred)
+    pairs.has_key(withdrawals, orders_stake_cred)
   }
 
   else(_) {
