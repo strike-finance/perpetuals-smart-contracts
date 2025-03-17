@@ -114,8 +114,6 @@ pub fn close_position_valid(
       accumulative_interest_fee,
     )
 
-  let underlying_asset_gain_loss = collateral_asset_amount - send_asset_amount
-
   let expected_assets_sent =
     input_from_script.output.value
       |> assets.add(
@@ -131,7 +129,7 @@ pub fn close_position_valid(
     OrderDatum {
       action: ClosePositionOrder {
         position_hash: datum.position_hash,
-        underlying_asset_gain_loss,
+        underlying_asset_amount: collateral_asset_amount - send_asset_amount,
         side: datum.side,
       },
     }
@@ -203,7 +201,7 @@ pub fn liquidate_close_valid(
     OrderDatum {
       action: LiquidatePositionOrder {
         position_hash,
-        underlying_asset_gain: collateral_amount,
+        underlying_asset_amount: collateral_amount,
         side,
       },
     }

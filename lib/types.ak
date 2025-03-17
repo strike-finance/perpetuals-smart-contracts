@@ -36,6 +36,42 @@ pub type CloseSendAmount {
   strike_collateral_amount: Int,
 }
 
+pub type OrderAction {
+  OpenPositionOrder { position_datum: PositionDatum }
+  ClosePositionOrder {
+    // The script hash for the positions script that holds all the positions of the trader
+    position_hash: ScriptHash,
+    // The amount of underlying asset gained/loss for liquidity providers
+    underlying_asset_amount: Int,
+    // Long or short position close
+    side: PositionSide,
+  }
+  LiquidatePositionOrder {
+    // The script hash for the positions script that holds all the positions of the trader
+    position_hash: ScriptHash,
+    // The amount of underlying asset gained/loss for liquidity providers
+    underlying_asset_amount: Int,
+    // Long or short position close
+    side: PositionSide,
+  }
+  ProvideLiquidityOrder {
+    // Owner of the liquidity, to send the lp tokens
+    owner_pkh: AddressHash,
+    // Stake key if present 
+    owner_stake_key: Option<AddressHash>,
+    // Amount of liquidity to provide for the long side
+    long_liquidity_amount: Int,
+    // Amount of liquidity to provide for the short side
+    short_liquidity_amount: Int,
+  }
+  WithdrawLiquidityOrder {
+    // Owner of the liquidity, to send the lp tokens
+    owner_pkh: AddressHash,
+    // Stake key if present 
+    owner_stake_key: Option<AddressHash>,
+  }
+}
+
 pub type PositionDatum {
   // Owner of the order
   owner_pkh: AddressHash,
@@ -61,41 +97,6 @@ pub type PositionDatum {
   take_profit_usd_price: Int,
   // Long or short position
   side: PositionSide,
-}
-
-pub type LiquidityActionInfo {
-  // Amount of liquidity to provide for the long side
-  long_liquidity_amount: Int,
-  // Amount of liquidity to provide for the short side
-  short_liquidity_amount: Int,
-  // Owner of the liquidity, to send the lp tokens
-  owner_pkh: AddressHash,
-  // Stake key if present 
-  owner_stake_key: Option<AddressHash>,
-  // LP token Policy Id 
-  policy_id: PolicyId,
-}
-
-pub type OrderAction {
-  OpenPositionOrder { position_datum: PositionDatum }
-  ClosePositionOrder {
-    // The script hash for the positions script that holds all the positions of the trader
-    position_hash: ScriptHash,
-    // The amount of underlying asset gained/loss for liquidity providers
-    underlying_asset_gain_loss: Int,
-    // Long or short position close
-    side: PositionSide,
-  }
-  LiquidatePositionOrder {
-    // The script hash for the positions script that holds all the positions of the trader
-    position_hash: ScriptHash,
-    // The amount of underlying asset gained/loss for liquidity providers
-    underlying_asset_gain: Int,
-    // Long or short position liquidated
-    side: PositionSide,
-  }
-  ProvideLiquidityOrder { info: LiquidityActionInfo }
-  WithdrawLiquidityOrder { info: LiquidityActionInfo }
 }
 
 pub type OrderDatum {

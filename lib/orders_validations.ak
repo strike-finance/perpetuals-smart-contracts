@@ -9,9 +9,9 @@ use constants.{
 }
 use math.{calculate_assets_get_back, calculate_lp_assets_sent}
 use types.{
-  Asset, ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder,
-  LiquidityActionInfo, Long, OpenPositionOrder, OrderDatum, PoolDatum,
-  PositionDatum, ProvideLiquidityOrder, WithdrawLiquidityOrder,
+  Asset, ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder, Long,
+  OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder,
+  WithdrawLiquidityOrder,
 }
 
 pub fn valid_orders(
@@ -270,7 +270,7 @@ pub fn close_position(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect ClosePositionOrder { position_hash, underlying_asset_gain_loss, side } =
+  expect ClosePositionOrder { position_hash, underlying_asset_amount, side } =
     datum.action
 
   let PoolDatum { underlying_asset, .. } = pool_output_datum
@@ -294,7 +294,7 @@ pub fn close_position(
           ),
       datum: PoolDatum {
         ..pool_output_datum,
-        long_total_asset_amount: pool_output_datum.long_total_asset_amount + underlying_asset_gain_loss,
+        long_total_asset_amount: pool_output_datum.long_total_asset_amount + underlying_asset_amount,
       },
       mint,
     }
@@ -308,7 +308,7 @@ pub fn close_position(
           ),
       datum: PoolDatum {
         ..pool_output_datum,
-        short_total_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_gain_loss,
+        short_total_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_amount,
       },
       mint,
     }
@@ -324,7 +324,7 @@ pub fn liquidate_position(
   expected_mint: Value,
   expected_burn_address: ScriptHash,
 ) -> ExpectedPoolOutput {
-  expect LiquidatePositionOrder { position_hash, underlying_asset_gain, side } =
+  expect LiquidatePositionOrder { position_hash, underlying_asset_amount, side } =
     input_datum_typed.action
 
   let strike_asset_amount: Int =
@@ -372,8 +372,8 @@ pub fn liquidate_position(
       value: updated_value,
       datum: PoolDatum {
         ..pool_output_datum,
-        long_total_asset_amount: pool_output_datum.long_total_asset_amount + underlying_asset_gain,
-        long_available_asset_amount: pool_output_datum.long_available_asset_amount + underlying_asset_gain,
+        long_total_asset_amount: pool_output_datum.long_total_asset_amount + underlying_asset_amount,
+        long_available_asset_amount: pool_output_datum.long_available_asset_amount + underlying_asset_amount,
       },
       mint: updated_mint,
     }
@@ -382,8 +382,8 @@ pub fn liquidate_position(
       value: updated_value,
       datum: PoolDatum {
         ..pool_output_datum,
-        short_total_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_gain,
-        short_available_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_gain,
+        short_total_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_amount,
+        short_available_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_amount,
       },
       mint: updated_mint,
     }
@@ -398,13 +398,12 @@ fn provide_liquidity_valid(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect ProvideLiquidityOrder{info: LiquidityActionInfo {
+  expect ProvideLiquidityOrder {
     owner_pkh,
     owner_stake_key,
     long_liquidity_amount,
     short_liquidity_amount,
-    ..
-  }} = input_datum_typed.action
+  } = input_datum_typed.action
 
   let PoolDatum {
     underlying_asset,
@@ -477,11 +476,8 @@ fn withdraw_liquidy_valid(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect ProvideLiquidityOrder{info: LiquidityActionInfo {
-    owner_pkh,
-    owner_stake_key,
-    ..
-  }} = input_datum_typed.action
+  expect WithdrawLiquidityOrder { owner_pkh, owner_stake_key } =
+    input_datum_typed.action
 
   let PoolDatum {
     long_total_asset_amount,
