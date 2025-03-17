@@ -2,6 +2,10 @@ use cardano/assets.{AssetName, PolicyId}
 
 pub const batcher_fee = 2_000_000
 
+pub const long_lp_name: ByteArray = #""
+
+pub const short_lp_name: ByteArray = #""
+
 pub const position_asset_name: AssetName =
   #"00000000000000000000000000000000000000000000000000000000"
 

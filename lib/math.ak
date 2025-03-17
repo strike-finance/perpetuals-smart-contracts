@@ -1,6 +1,5 @@
 use aiken/math/rational
-use cardano/transaction.{InlineDatum, Input, Output, Transaction}
-use types.{CloseSendAmount, Long, POSIXTime, PositionDatum, PositionSide}
+use types.{CloseSendAmount, Long, POSIXTime, PositionSide}
 
 //TODO: CLEANER
 // the loss is their inital position value minus the current position value  
@@ -137,4 +136,33 @@ pub fn calculate_return(
     return_pool_asset_amount,
     strike_collateral_amount,
   }
+}
+
+// The lp = shares of the pool that the user has deposited
+// The ratio of the lp they recive and total lp minted is the same as the ratio of the asset they deposit and total asset amount
+pub fn calculate_lp_assets_sent(
+  total_asset_amount: Int,
+  total_lp_minted_amount: Int,
+  deposit_asset_amount: Int,
+) -> Int {
+  let deposit_asset_amount_multiplier = deposit_asset_amount * 10_000
+
+  let total_liquidity_ratio =
+    deposit_asset_amount_multiplier / total_asset_amount
+
+  total_liquidity_ratio * total_lp_minted_amount / 10_000
+}
+
+// The ratio of the asset they get back and total asset amount is the same as the ratio of the lp they deposit and total lp minted
+pub fn calculate_assets_get_back(
+  total_asset_amount: Int,
+  total_lp_minted_amount: Int,
+  deposit_lp_assets_amount: Int,
+) -> Int {
+  let deposit_lp_assets_amount_multiplier = deposit_lp_assets_amount * 10_000
+
+  let total_liquidity_ratio =
+    deposit_lp_assets_amount_multiplier / total_lp_minted_amount
+
+  total_liquidity_ratio * total_asset_amount / 10_000
 }

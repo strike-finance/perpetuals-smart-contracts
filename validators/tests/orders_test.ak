@@ -55,7 +55,7 @@
 //     OrderDatum {
 //       action: OpenPositionOrder {
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
 //           position_asset_amount: 10_000_000,
@@ -137,7 +137,7 @@
 //           pool_asset_amount: -10_000_000,
 //         },
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
 //           hourly_usd_borrow_fee: 100,
@@ -154,7 +154,7 @@
 //     stop_loss_usd_price,
 //     take_profit_usd_price,
 //     position_datum: PositionDatum {
-//       owner_address_hash,
+//       owner_pkh,
 //       position_hash,
 //       leverage_factor,
 //       hourly_usd_borrow_fee,
@@ -191,7 +191,7 @@
 
 //   let positions_datum =
 //     PositionDatum {
-//       owner_address_hash,
+//       owner_pkh,
 //       position_hash,
 //       entered_at_usd_price,
 //       leverage_factor,
@@ -268,7 +268,7 @@
 //     OrderDatum {
 //       action: OpenPositionOrder {
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
 //           entered_position_time: 1727453227635,
@@ -282,7 +282,7 @@
 //     }
 
 //   expect OpenPositionOrder{position_datum: PositionDatum {
-//     owner_address_hash,
+//     owner_pkh,
 //     position_hash,
 //     leverage_factor,
 //     entered_position_time,
@@ -317,7 +317,7 @@
 
 //   let positions_datum =
 //     PositionDatum {
-//       owner_address_hash,
+//       owner_pkh,
 //       position_hash,
 //       entered_at_usd_price,
 //       leverage_factor,
@@ -448,7 +448,7 @@
 //           pool_asset_amount: -10_000_000,
 //         },
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
 //           entered_at_usd_price: 100,
@@ -626,7 +626,7 @@
 //           strike_collateral_amount: 10,
 //         },
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
 //           hourly_usd_borrow_fee: 100,
@@ -803,7 +803,7 @@
 //           pool_asset_amount: 5_000_000,
 //         },
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
 //           hourly_usd_borrow_fee: 100,
@@ -975,7 +975,7 @@
 //           strike_collateral_amount: 10,
 //         },
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           position_hash,
 //           leverage_factor: 10,
 //           hourly_usd_borrow_fee: 100,
@@ -1138,7 +1138,7 @@
 //   let orders_datum =
 //     OrderDatum {
 //       action: LiquidatePositionOrder {
-//         owner_address_hash: trader_pkh,
+//         owner_pkh: trader_pkh,
 //         position_hash,
 //         side: Long,
 //         position_asset_amount: 10_000_000,
@@ -1286,7 +1286,7 @@
 //   let orders_datum =
 //     OrderDatum {
 //       action: LiquidatePositionOrder {
-//         owner_address_hash: trader_pkh,
+//         owner_pkh: trader_pkh,
 //         position_hash,
 //         side: Short,
 //         position_asset_amount: 10_000_000,

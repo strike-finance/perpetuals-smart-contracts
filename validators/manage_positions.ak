@@ -9,7 +9,7 @@ use math.{
 }
 use types.{
   ClosePositionOrder, CloseSendAmount, CloseType, LiquidatePositionOrder, Long,
-  OrderDatum, POSIXTime, PositionDatum, ScriptHash, Short, StopLossClose,
+  OrderDatum, POSIXTime, PositionDatum, ScriptHash, StopLossClose,
   TakeProfitClose, TraderClose,
 }
 use utils.{get_address_outputs, get_all_validators_inputs, get_lower_bound}
@@ -132,6 +132,7 @@ pub fn close_position_valid(
       action: ClosePositionOrder {
         position_hash: datum.position_hash,
         underlying_asset_gain_loss,
+        side: datum.side,
       },
     }
   let expected_order_datum_data: Data = expected_order_datum
@@ -141,8 +142,7 @@ pub fn close_position_valid(
   // Validate based on close type
   when close_type is {
     // TraderClose: only owner can close
-    TraderClose ->
-      list.has(transaction.extra_signatories, datum.owner_address_hash)
+    TraderClose -> list.has(transaction.extra_signatories, datum.owner_pkh)
     // In a long position, a loss is when the current price is less than the inital price, so 
     // a stop loss is reached when the price is below or equal to the stop_loss_usd_price
     StopLossClose ->
@@ -204,6 +204,7 @@ pub fn liquidate_close_valid(
       action: LiquidatePositionOrder {
         position_hash,
         underlying_asset_gain: collateral_amount,
+        side,
       },
     }
 

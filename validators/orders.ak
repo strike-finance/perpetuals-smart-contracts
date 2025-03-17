@@ -6,16 +6,18 @@ use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
 use orders_validations.{valid_orders}
-use types.{
-  ClosePendingOpenOrders, OrderDatum, OrdersRedeemer, PoolDatum, ProcessOrders,
-  ScriptHash, UTxOIndexer,
-}
+use types.{OrderDatum, PoolDatum, ScriptHash, UTxOIndexer}
 use utils.{is_withdrawal}
 
 pub type OrdersWithdrawRedeemer {
   indexer: UTxOIndexer,
   pool_utxo_index: (Int, Int),
   batcher_index: Int,
+}
+
+pub type OrdersRedeemer {
+  ProcessOrders
+  ClosePendingOpenOrders
 }
 
 validator orders(batcher_license: PolicyId, burn_address: ScriptHash) {

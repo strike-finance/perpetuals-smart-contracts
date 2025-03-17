@@ -23,7 +23,7 @@
 
 // const position_datum =
 //   PositionDatum {
-//     owner_address_hash: trader_pkh,
+//     owner_pkh: trader_pkh,
 //     entered_at_usd_price: 100,
 //     position_hash,
 //     leverage_factor: 10,
@@ -77,7 +77,7 @@
 //     OrderDatum {
 //       action: OpenPositionOrder {
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           leverage_factor: 10,
 //           position_hash,
 //           position_asset_amount: 10_000_000,
@@ -152,7 +152,7 @@
 //     OrderDatum {
 //       action: OpenPositionOrder {
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           leverage_factor: 10,
 //           position_hash,
 //           position_asset_amount: 10_000_000_000,
@@ -311,7 +311,7 @@
 //         take_profit_usd_price: position_datum.take_profit_usd_price,
 //         return_amount: calculated_return_amount,
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           leverage_factor: position_datum.leverage_factor,
 //           position_hash,
 //           entered_at_usd_price: position_datum.entered_at_usd_price,
@@ -431,7 +431,7 @@
 //         take_profit_usd_price: position_datum.take_profit_usd_price,
 //         return_amount: calculated_return_amount,
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           leverage_factor: position_datum.leverage_factor,
 //           position_hash,
 //           entered_at_usd_price: position_datum.entered_at_usd_price,
@@ -551,7 +551,7 @@
 //         take_profit_usd_price: position_datum.take_profit_usd_price,
 //         return_amount: calculated_return_amount,
 //         position_datum: PositionDatum {
-//           owner_address_hash: trader_pkh,
+//           owner_pkh: trader_pkh,
 //           leverage_factor: position_datum.leverage_factor,
 //           position_hash,
 //           entered_at_usd_price: position_datum.entered_at_usd_price,
@@ -630,7 +630,7 @@
 
 //   let position_datum =
 //     PositionDatum {
-//       owner_address_hash: trader_pkh,
+//       owner_pkh: trader_pkh,
 //       entered_at_usd_price: 100,
 //       position_hash,
 //       leverage_factor: 10,
@@ -668,7 +668,7 @@
 //   let orders_datum =
 //     OrderDatum {
 //       action: LiquidatePositionOrder {
-//         owner_address_hash: trader_pkh,
+//         owner_pkh: trader_pkh,
 //         position_hash,
 //         side: Long,
 //         position_asset_amount: position_datum.position_asset_amount,
@@ -763,7 +763,7 @@
 
 //   let new_datum =
 //     PositionDatum {
-//       owner_address_hash: trader_pkh,
+//       owner_pkh: trader_pkh,
 //       entered_at_usd_price: position_datum.entered_at_usd_price,
 //       position_hash,
 //       leverage_factor: position_datum.leverage_factor,
@@ -863,7 +863,7 @@
 
 //   let new_datum =
 //     PositionDatum {
-//       owner_address_hash: trader_pkh,
+//       owner_pkh: trader_pkh,
 //       position_hash,
 //       leverage_factor: position_datum.leverage_factor,
 //       entered_at_usd_price: position_datum.entered_at_usd_price,

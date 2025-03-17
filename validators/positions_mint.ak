@@ -8,8 +8,8 @@ use constants.{
 }
 use math.{calculate_hourly_usd_borrow_fee}
 use types.{
-  ClosePosition, OpenPosition, OpenPositionOrder, OrderDatum, PoolDatum,
-  PositionDatum, ScriptHash,
+  Long, OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum, ScriptHash,
+  SettingsDatum, Short,
 }
 use utils.{get_lower_bound}
 
@@ -75,7 +75,7 @@ pub fn mint_position_valid(
   current_usd_price: Int,
   policy_id: PolicyId,
 ) {
-  let Transaction { mint, .. } = transaction
+  let Transaction { mint, reference_inputs, .. } = transaction
 
   let outputs_to_orders_address: List<Output> =
     find_script_outputs(transaction.outputs, orders_script_hash)
@@ -94,37 +94,39 @@ pub fn mint_position_valid(
     position_asset_amount,
     hourly_usd_borrow_fee,
     collateral_asset,
+    side,
     ..
   }} = orders_datum_typed.action
-
-  let ref_input: List<Input> = transaction.reference_inputs
 
   expect Some(Input {
     output: Output { value: pool_value, datum: pool_datum, .. },
     ..
-  }) = list.head(ref_input)
+  }) = list.head(reference_inputs)
 
   expect InlineDatum(pool_datum) = pool_datum
   expect pool_datum_typed: PoolDatum = pool_datum
 
   let PoolDatum {
-    max_strike_holder_leverage_factor,
-    max_leverage_factor,
-    interest_rate,
     underlying_asset,
-    total_underlying_asset_amount,
+    long_total_asset_amount,
+    short_total_asset_amount,
+    long_available_asset_amount,
+    short_available_asset_amount,
     ..
   } = pool_datum_typed
 
-  let pool_asset_amount =
-    quantity_of(
-      pool_value,
-      underlying_asset.policy_id,
-      underlying_asset.asset_name,
-    )
+  expect Some(Input { output: Output { datum: global_settings_datum, .. }, .. }) =
+    list.at(reference_inputs, 1)
 
-  let underlying_asset_lended_amount =
-    total_underlying_asset_amount - pool_asset_amount
+  expect InlineDatum(global_settings_datum) = global_settings_datum
+  expect global_settings_datum_typed: SettingsDatum = global_settings_datum
+
+  let SettingsDatum {
+    interest_rate,
+    max_leverage_factor,
+    max_strike_holder_leverage_factor,
+    ..
+  } = global_settings_datum_typed
 
   expect current_usd_price == entered_at_usd_price
 
@@ -177,6 +179,12 @@ pub fn mint_position_valid(
       underlying_asset.policy_id,
       underlying_asset.asset_name,
     )
+
+  let underlying_asset_lended_amount =
+    when side is {
+      Long -> long_total_asset_amount - long_available_asset_amount
+      Short -> short_total_asset_amount - short_available_asset_amount
+    }
 
   let estimated_hourly_usd_borrow_fee: Int =
     calculate_hourly_usd_borrow_fee(

@@ -40,7 +40,7 @@ This is a multivalidator with a spending and minting script. When the traders op
 
 #### Datum
 
-- _owner_address_hash_: Owner of the position
+- _owner_pkh_: Owner of the position
 - _entered_at_usd_price_: Price at which the position was entered
 - _underlying_asset_: The underlying asset that the perpetual contract is trading on
 - _leverage_factor_: Leverage used for the position
@@ -132,7 +132,7 @@ This is a multivalidator with a spending and minting script. When someone wants 
 
 #### Datum
 
-- _owner_address_hash_: Only the owner can withdraw liquidity
+- _owner_pkh_: Only the owner can withdraw liquidity
 - _entered_earnings_per_share_: Will be used to compared with the earnings per share of the singular pool UTxO to calculate earnings
 - _entered_collateral_earnings_per_share_: Will be used to compared with the collateral per share of the singular pool UTxO to calculate earnings by subtracting
 
@@ -229,7 +229,7 @@ pub type OrdersWithdrawRedeemer {
 
 #### Datum
 
-- _owner_address_hash_: Owner of the order
+- _owner_pkh_: Owner of the order
 - _underlying_asset_: The underlying asset that the perpetual contract is trading on
 - _underlying_asset_amount_: Initial size of the position
 - _leverage_factor_: Leverage used for the position

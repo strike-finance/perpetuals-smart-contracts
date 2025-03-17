@@ -3,11 +3,15 @@ use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script}
 use cardano/assets.{Value, match, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
-use constants.{position_asset_name, strike_asset_name, strike_policy_id}
+use constants.{
+  long_lp_name, position_asset_name, short_lp_name, strike_asset_name,
+  strike_policy_id,
+}
+use math.{calculate_assets_get_back, calculate_lp_assets_sent}
 use types.{
   Asset, ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder,
-  OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder,
-  WithdrawLiquidityOrder,
+  LiquidityActionInfo, Long, OpenPositionOrder, OrderDatum, PoolDatum,
+  PositionDatum, ProvideLiquidityOrder, WithdrawLiquidityOrder,
 }
 
 pub fn valid_orders(
@@ -144,12 +148,18 @@ pub fn validate_individual_order(
       )
     ProvideLiquidityOrder(..) ->
       provide_liquidity_valid(
+        input,
+        input_datum_typed,
+        output,
         pool_output_value,
         pool_output_datum,
         expected_mint,
       )
     WithdrawLiquidityOrder(..) ->
       withdraw_liquidy_valid(
+        input,
+        input_datum_typed,
+        output,
         pool_output_value,
         pool_output_datum,
         expected_mint,
@@ -166,7 +176,7 @@ pub fn open_position(
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
   expect OpenPositionOrder{position_datum: PositionDatum {
-    owner_address_hash,
+    owner_pkh,
     leverage_factor,
     position_hash,
     entered_at_usd_price,
@@ -182,7 +192,7 @@ pub fn open_position(
 
   let expected_output_datum =
     PositionDatum {
-      owner_address_hash,
+      owner_pkh,
       position_hash,
       entered_at_usd_price,
       leverage_factor,
@@ -220,15 +230,36 @@ pub fn open_position(
 
   expect output_datum_typed == expected_output_datum
 
-  ExpectedPoolOutput {
-    value: pool_output_value
-      |> assets.add(
-          pool_output_datum.underlying_asset.policy_id,
-          pool_output_datum.underlying_asset.asset_name,
-          -lended_amount,
-        ),
-    datum: pool_output_datum,
-    mint: expected_mint,
+  if side == Long {
+    ExpectedPoolOutput {
+      value: pool_output_value
+        |> assets.add(
+            pool_output_datum.underlying_asset.policy_id,
+            pool_output_datum.underlying_asset.asset_name,
+            -lended_amount,
+          ),
+      datum: PoolDatum {
+        ..pool_output_datum,
+        long_total_asset_amount: pool_output_datum.long_total_asset_amount - lended_amount,
+        long_available_asset_amount: pool_output_datum.long_available_asset_amount - lended_amount,
+      },
+      mint: expected_mint,
+    }
+  } else {
+    ExpectedPoolOutput {
+      value: pool_output_value
+        |> assets.add(
+            pool_output_datum.underlying_asset.policy_id,
+            pool_output_datum.underlying_asset.asset_name,
+            -lended_amount,
+          ),
+      datum: PoolDatum {
+        ..pool_output_datum,
+        short_total_asset_amount: pool_output_datum.short_total_asset_amount - lended_amount,
+        short_available_asset_amount: pool_output_datum.short_available_asset_amount - lended_amount,
+      },
+      mint: expected_mint,
+    }
   }
 }
 
@@ -239,7 +270,7 @@ pub fn close_position(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect ClosePositionOrder { position_hash, underlying_asset_gain_loss } =
+  expect ClosePositionOrder { position_hash, underlying_asset_gain_loss, side } =
     datum.action
 
   let PoolDatum { underlying_asset, .. } = pool_output_datum
@@ -253,18 +284,34 @@ pub fn close_position(
       underlying_asset.asset_name,
     )
 
-  ExpectedPoolOutput {
-    value: pool_output_value
-      |> assets.add(
-          underlying_asset.policy_id,
-          underlying_asset.asset_name,
-          return_pool_asset_amount,
-        ),
-    datum: PoolDatum {
-      ..pool_output_datum,
-      total_underlying_asset_amount: pool_output_datum.total_underlying_asset_amount + underlying_asset_gain_loss,
-    },
-    mint,
+  if side == Long {
+    ExpectedPoolOutput {
+      value: pool_output_value
+        |> assets.add(
+            underlying_asset.policy_id,
+            underlying_asset.asset_name,
+            return_pool_asset_amount,
+          ),
+      datum: PoolDatum {
+        ..pool_output_datum,
+        long_total_asset_amount: pool_output_datum.long_total_asset_amount + underlying_asset_gain_loss,
+      },
+      mint,
+    }
+  } else {
+    ExpectedPoolOutput {
+      value: pool_output_value
+        |> assets.add(
+            underlying_asset.policy_id,
+            underlying_asset.asset_name,
+            -return_pool_asset_amount,
+          ),
+      datum: PoolDatum {
+        ..pool_output_datum,
+        short_total_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_gain_loss,
+      },
+      mint,
+    }
   }
 }
 
@@ -275,14 +322,32 @@ pub fn liquidate_position(
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
-  burn_address: ScriptHash,
+  expected_burn_address: ScriptHash,
 ) -> ExpectedPoolOutput {
-  expect LiquidatePositionOrder { position_hash, underlying_asset_gain } =
+  expect LiquidatePositionOrder { position_hash, underlying_asset_gain, side } =
     input_datum_typed.action
 
-  let strike_is_burnt = is_strike_collateral_asset_burnt(burn_address, output)
+  let strike_asset_amount: Int =
+    quantity_of(input.value, strike_policy_id, strike_asset_name)
 
-  expect strike_is_burnt
+  let contains_strike_collateral = strike_asset_amount > 0
+
+  expect
+    if contains_strike_collateral {
+      expect Script(burn_address) = output.address.payment_credential
+      expect expected_burn_address == burn_address
+
+      let expected_assets_locked =
+        assets.from_asset(
+          strike_policy_id,
+          strike_asset_name,
+          strike_asset_amount,
+        )
+
+      match(output.value, expected_assets_locked, >=)
+    } else {
+      True
+    }
 
   let updated_mint =
     assets.add(expected_mint, position_hash, position_asset_name, -1)
@@ -302,61 +367,180 @@ pub fn liquidate_position(
       collateral_asset_amount,
     )
 
-  ExpectedPoolOutput {
-    value: updated_value,
-    datum: PoolDatum {
-      ..pool_output_datum,
-      total_underlying_asset_amount: pool_output_datum.total_underlying_asset_amount + underlying_asset_gain,
-    },
-    mint: updated_mint,
+  if side == Long {
+    ExpectedPoolOutput {
+      value: updated_value,
+      datum: PoolDatum {
+        ..pool_output_datum,
+        long_total_asset_amount: pool_output_datum.long_total_asset_amount + underlying_asset_gain,
+        long_available_asset_amount: pool_output_datum.long_available_asset_amount + underlying_asset_gain,
+      },
+      mint: updated_mint,
+    }
+  } else {
+    ExpectedPoolOutput {
+      value: updated_value,
+      datum: PoolDatum {
+        ..pool_output_datum,
+        short_total_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_gain,
+        short_available_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_gain,
+      },
+      mint: updated_mint,
+    }
   }
 }
 
 fn provide_liquidity_valid(
+  input: Output,
+  input_datum_typed: OrderDatum,
+  output: Output,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
+  expect ProvideLiquidityOrder{info: LiquidityActionInfo {
+    owner_pkh,
+    owner_stake_key,
+    long_liquidity_amount,
+    short_liquidity_amount,
+    ..
+  }} = input_datum_typed.action
+
+  let PoolDatum {
+    underlying_asset,
+    long_total_asset_amount,
+    long_total_lp_minted,
+    short_total_asset_amount,
+    short_total_lp_minted,
+    lp_policy_id,
+    ..
+  } = pool_output_datum
+
+  expect
+    quantity_of(
+      input.value,
+      underlying_asset.policy_id,
+      underlying_asset.asset_name,
+    ) >= long_liquidity_amount + short_liquidity_amount
+
+  let (expected_long_lp_token_sent, expected_short_lp_token_sent) =
+    (
+      calculate_lp_assets_sent(
+        long_total_asset_amount,
+        long_total_lp_minted,
+        long_liquidity_amount,
+      ),
+      calculate_lp_assets_sent(
+        short_total_asset_amount,
+        short_total_lp_minted,
+        short_liquidity_amount,
+      ),
+    )
+
+  let (long_lp_token_sent, short_lp_token_sent) =
+    (
+      quantity_of(output.value, lp_policy_id, long_lp_name),
+      quantity_of(output.value, lp_policy_id, short_lp_name),
+    )
+
+  expect
+    long_lp_token_sent <= expected_long_lp_token_sent && short_lp_token_sent <= expected_short_lp_token_sent
+
+  let owner_address =
+    when owner_stake_key is {
+      Some(key) ->
+        address.from_verification_key(owner_pkh)
+          |> address.with_delegation_key(key)
+      None -> address.from_verification_key(owner_pkh)
+    }
+
+  expect owner_address == output.address
+
   ExpectedPoolOutput {
     value: pool_output_value,
-    datum: pool_output_datum,
+    datum: PoolDatum {
+      ..pool_output_datum,
+      long_total_lp_minted: long_total_lp_minted + long_lp_token_sent,
+      long_available_asset_amount: long_total_asset_amount + long_liquidity_amount,
+      short_total_lp_minted: short_total_lp_minted + short_lp_token_sent,
+      short_available_asset_amount: short_total_asset_amount + short_liquidity_amount,
+    },
     mint: expected_mint,
   }
 }
 
 fn withdraw_liquidy_valid(
+  input: Output,
+  input_datum_typed: OrderDatum,
+  output: Output,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
+  expect ProvideLiquidityOrder{info: LiquidityActionInfo {
+    owner_pkh,
+    owner_stake_key,
+    ..
+  }} = input_datum_typed.action
+
+  let PoolDatum {
+    long_total_asset_amount,
+    long_total_lp_minted,
+    short_total_asset_amount,
+    short_total_lp_minted,
+    lp_policy_id,
+    underlying_asset,
+    ..
+  } = pool_output_datum
+
+  let (long_lp_deposited, short_lp_deposited) =
+    (
+      quantity_of(input.value, lp_policy_id, long_lp_name),
+      quantity_of(input.value, lp_policy_id, short_lp_name),
+    )
+
+  let (expected_long_assets_sent, expected_short_assets_sent) =
+    (
+      calculate_assets_get_back(
+        long_total_asset_amount,
+        long_total_lp_minted,
+        long_lp_deposited,
+      ),
+      calculate_assets_get_back(
+        short_total_asset_amount,
+        short_total_lp_minted,
+        short_lp_deposited,
+      ),
+    )
+
+  let assets_sent =
+    quantity_of(
+      output.value,
+      underlying_asset.policy_id,
+      underlying_asset.asset_name,
+    )
+
+  expect assets_sent <= expected_long_assets_sent + expected_short_assets_sent
+
+  let owner_address =
+    when owner_stake_key is {
+      Some(key) ->
+        address.from_verification_key(owner_pkh)
+          |> address.with_delegation_key(key)
+      None -> address.from_verification_key(owner_pkh)
+    }
+
+  expect owner_address == output.address
+
   ExpectedPoolOutput {
     value: pool_output_value,
-    datum: pool_output_datum,
+    datum: PoolDatum {
+      ..pool_output_datum,
+      long_total_lp_minted: long_total_lp_minted - long_lp_deposited,
+      long_available_asset_amount: long_total_asset_amount - expected_long_assets_sent,
+      short_total_lp_minted: short_total_lp_minted - short_lp_deposited,
+      short_available_asset_amount: short_total_asset_amount - expected_short_assets_sent,
+    },
     mint: expected_mint,
-  }
-}
-
-fn is_strike_collateral_asset_burnt(
-  expected_burn_address: ScriptHash,
-  output: Output,
-) -> Bool {
-  let strike_asset_amount: Int =
-    quantity_of(output.value, strike_policy_id, strike_asset_name)
-
-  if strike_asset_amount > 0 {
-    expect Script(burn_address) = output.address.payment_credential
-
-    let burn_address_valid = expected_burn_address == burn_address
-
-    let expected_assets_locked =
-      assets.from_asset(
-        strike_policy_id,
-        strike_asset_name,
-        strike_asset_amount,
-      )
-
-    match(output.value, expected_assets_locked, >=) && burn_address_valid
-  } else {
-    True
   }
 }

@@ -38,7 +38,7 @@ pub type CloseSendAmount {
 
 pub type PositionDatum {
   // Owner of the order
-  owner_address_hash: AddressHash,
+  owner_pkh: AddressHash,
   // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
   leverage_factor: Int,
   // The time the order was submitted
@@ -63,6 +63,19 @@ pub type PositionDatum {
   side: PositionSide,
 }
 
+pub type LiquidityActionInfo {
+  // Amount of liquidity to provide for the long side
+  long_liquidity_amount: Int,
+  // Amount of liquidity to provide for the short side
+  short_liquidity_amount: Int,
+  // Owner of the liquidity, to send the lp tokens
+  owner_pkh: AddressHash,
+  // Stake key if present 
+  owner_stake_key: Option<AddressHash>,
+  // LP token Policy Id 
+  policy_id: PolicyId,
+}
+
 pub type OrderAction {
   OpenPositionOrder { position_datum: PositionDatum }
   ClosePositionOrder {
@@ -70,29 +83,22 @@ pub type OrderAction {
     position_hash: ScriptHash,
     // The amount of underlying asset gained/loss for liquidity providers
     underlying_asset_gain_loss: Int,
+    // Long or short position close
+    side: PositionSide,
   }
   LiquidatePositionOrder {
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
     // The amount of underlying asset gained/loss for liquidity providers
     underlying_asset_gain: Int,
+    // Long or short position liquidated
+    side: PositionSide,
   }
-  ProvideLiquidityOrder {
-    // Amount of liquidity to provide
-    liquidity_amount: Int,
-    // Owner of the liquidity, to send the lp tokens
-    owner_address_hash: AddressHash,
-  }
-  WithdrawLiquidityOrder {
-    // Amount of liquidity to withdraw
-    liquidity_amount: Int,
-    // Owner of the liquidity, to send their withdrawal amount
-    owner_address_hash: AddressHash,
-  }
+  ProvideLiquidityOrder { info: LiquidityActionInfo }
+  WithdrawLiquidityOrder { info: LiquidityActionInfo }
 }
 
 pub type OrderDatum {
-  // Action to be taken for the order
   action: OrderAction,
 }
 
@@ -102,24 +108,26 @@ pub type CloseType {
   TakeProfitClose
 }
 
-pub type PositionRedeemer {
-  CompleteLimitOrder { price: Int }
-  CancelLimitOrder { price: Int }
-}
-
-pub type MintPositionRedeemer {
-  OpenPosition { price: Int }
-  ClosePosition { burn_amount: Int }
-  OpenLimitPosition { price: Int }
-}
-
 pub type PoolDatum {
   // The underlying asset that the pool is trading on
   underlying_asset: Asset,
-  // Total amount of underlying asset that belongs to liquidity providers
-  total_underlying_asset_amount: Int,
-  // Total amount of lp tokens minted
-  total_lp_tokens_minted: Int,
+  // Token For Lp, the asset name determines if the lp is for a long or short pool
+  lp_policy_id: PolicyId,
+  // Total amount of underlying asset that belongs to long liquidity providers
+  long_total_asset_amount: Int,
+  // Total amount of underlying asset that belongs to short liquidity providers
+  short_total_asset_amount: Int,
+  // Amount of long assets currently available for traders 
+  long_available_asset_amount: Int,
+  // Amount of short assets currently available for traders
+  short_available_asset_amount: Int,
+  // Total amount of lp tokens minted for long liquidity providers
+  long_total_lp_minted: Int,
+  // Total amount of lp tokens minted for short liquidity providers
+  short_total_lp_minted: Int,
+}
+
+pub type SettingsDatum {
   // The interest rate for the underlying asset
   interest_rate: Int,
   // The max leverage factor for the pool
@@ -140,9 +148,4 @@ pub type ExpectedPoolOutput {
   value: Value,
   datum: PoolDatum,
   mint: Value,
-}
-
-pub type OrdersRedeemer {
-  ProcessOrders
-  ClosePendingOpenOrders
 }

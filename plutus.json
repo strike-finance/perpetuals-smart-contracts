@@ -784,7 +784,7 @@
               "$ref": "#/definitions/Int"
             },
             {
-              "title": "owner_address_hash",
+              "title": "owner_pkh",
               "$ref": "#/definitions/AddressHash"
             }
           ]
@@ -799,7 +799,7 @@
               "$ref": "#/definitions/Int"
             },
             {
-              "title": "owner_address_hash",
+              "title": "owner_pkh",
               "$ref": "#/definitions/AddressHash"
             }
           ]
@@ -888,7 +888,7 @@
           "index": 0,
           "fields": [
             {
-              "title": "owner_address_hash",
+              "title": "owner_pkh",
               "$ref": "#/definitions/AddressHash"
             },
             {

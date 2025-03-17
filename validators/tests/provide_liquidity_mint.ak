@@ -22,7 +22,7 @@
 
 //   let orders_datum =
 //     OrderDatum {
-//       owner_address_hash: trader_pkh,
+//       owner_pkh: trader_pkh,
 //       underlying_asset,
 //       underlying_asset_amount: 5000000,
 //       leverage_factor: 2,
