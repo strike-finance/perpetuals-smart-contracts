@@ -83,8 +83,6 @@ pub type PositionDatum {
   entered_at_usd_price: Int,
   // The script hash for the positions script that holds all the positions of the trader
   position_hash: ScriptHash,
-  // Total position size of the trader
-  position_asset_amount: Int,
   // Collateral asset 
   collateral_asset: Asset,
   // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5% 
@@ -95,6 +93,10 @@ pub type PositionDatum {
   stop_loss_usd_price: Int,
   // Take profit price where the position will be closed
   take_profit_usd_price: Int,
+  // Amount of collateral asset in the position
+  collateral_asset_amount: Int,
+  // Amount of position asset in the position
+  position_asset_amount: Int,
   // Long or short position
   side: PositionSide,
 }

@@ -166,3 +166,11 @@ pub fn calculate_assets_get_back(
 
   total_liquidity_ratio * total_asset_amount / 10_000
 }
+
+// Calculate the reblance method and amount of assets to sent back 
+// Since there are no floats in this, we want to send back 10 percent 
+// of the position asset amount. We first multiple it by 10, then divide it by a 
+// 100 to get 1 percent
+pub fn calculate_rebalance_asset_sent_to_pool(position_asset_amount: Int) -> Int {
+  position_asset_amount * 10 / 100
+}

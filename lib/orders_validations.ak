@@ -181,54 +181,56 @@ pub fn open_position(
     position_hash,
     entered_at_usd_price,
     entered_position_time,
-    position_asset_amount,
     maintain_margin_amount,
     hourly_usd_borrow_fee,
     stop_loss_usd_price,
     take_profit_usd_price,
     collateral_asset,
     side,
+    collateral_asset_amount,
+    position_asset_amount,
   }} = input_datum_typed.action
 
   let expected_output_datum =
     PositionDatum {
       owner_pkh,
+      leverage_factor,
       position_hash,
       entered_at_usd_price,
-      leverage_factor,
-      position_asset_amount,
-      stop_loss_usd_price,
-      take_profit_usd_price,
       entered_position_time,
       maintain_margin_amount,
       hourly_usd_borrow_fee,
+      stop_loss_usd_price,
+      take_profit_usd_price,
       collateral_asset,
       side,
+      collateral_asset_amount,
+      position_asset_amount,
     }
 
-  let collateral_amount = position_asset_amount / leverage_factor
+  expect InlineDatum(output_datum) = output.datum
 
-  let lended_amount: Int = position_asset_amount - collateral_amount
+  let expected_output_datum_data: Data = expected_output_datum
+
+  expect output_datum == expected_output_datum_data
+
+  let lended_amount: Int = position_asset_amount - collateral_asset_amount
+
+  let PoolDatum { underlying_asset, .. } = pool_output_datum
 
   let input_added_lended_amount =
     input.value
       |> assets.add(
-          pool_output_datum.underlying_asset.policy_id,
-          pool_output_datum.underlying_asset.asset_name,
+          underlying_asset.policy_id,
+          underlying_asset.asset_name,
           lended_amount,
         )
 
   expect match(output.value, input_added_lended_amount, <=)
 
-  expect InlineDatum(output_datum) = output.datum
-
-  expect output_datum_typed: PositionDatum = output_datum
-
   expect Script(output_script_hash) = output.address.payment_credential
 
   expect output_script_hash == position_hash
-
-  expect output_datum_typed == expected_output_datum
 
   if side == Long {
     ExpectedPoolOutput {
