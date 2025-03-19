@@ -1,7 +1,6 @@
 use aiken/collection/list
-use cardano/assets.{flatten}
+use cardano/assets.{AssetName, PolicyId, flatten}
 use cardano/transaction.{Transaction}
-use types.{Asset}
 
 pub type LicenseRedeemer {
   deadline: ByteArray,
@@ -9,7 +8,10 @@ pub type LicenseRedeemer {
 }
 
 // Checks that the protocol auth is in the input, can only mint batcher license if it is
-validator batcher_license(authority_nft: Asset) {
+validator batcher_license(
+  auth_policy_id: PolicyId,
+  auth_asset_name: AssetName,
+) {
   mint(redeemer: LicenseRedeemer, policy_id: ByteArray, self: Transaction) {
     let Transaction { inputs, mint, .. } = self
     expect Some(protocol_manager_input) =
@@ -17,8 +19,8 @@ validator batcher_license(authority_nft: Asset) {
     expect
       assets.quantity_of(
         protocol_manager_input.output.value,
-        authority_nft.policy_id,
-        authority_nft.asset_name,
+        auth_policy_id,
+        auth_asset_name,
       ) == 1
 
     flatten(mint) == [(policy_id, redeemer.deadline, 1)]
