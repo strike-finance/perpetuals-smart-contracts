@@ -70,7 +70,6 @@ pub fn close_position_valid(
   expect Some(datum) = maybe_datum
 
   let PositionDatum {
-    collateral_asset,
     entered_at_usd_price,
     side,
     collateral_asset_amount,
