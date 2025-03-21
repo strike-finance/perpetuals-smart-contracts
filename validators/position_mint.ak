@@ -26,7 +26,7 @@ pub type PositionMintRedeemer {
 
 // Create positions and send to orders script
 // Can create limit orders and send to orders script once the limit order price is reached
-validator positions_mint(
+validator position_mint(
   orders_script_hash: ScriptHash,
   pool_nft_policy_id: PolicyId,
   pool_nft_asset_name: AssetName,
