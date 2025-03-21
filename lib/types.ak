@@ -128,6 +128,8 @@ pub type PoolDatum {
   long_total_lp_minted: Int,
   // Total amount of lp tokens minted for short liquidity providers
   short_total_lp_minted: Int,
+  // Batcher license
+  batcher_license: PolicyId,
 }
 
 pub type SettingsDatum {

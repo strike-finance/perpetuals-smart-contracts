@@ -1,5 +1,5 @@
 use aiken/collection/list
-use cardano/assets.{PolicyId, Value, flatten, match, quantity_of}
+use cardano/assets.{AssetName, PolicyId, Value, flatten, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction, find_script_outputs,
 }
@@ -26,7 +26,11 @@ pub type PositionMintRedeemer {
 
 // Create positions and send to orders script
 // Can create limit orders and send to orders script once the limit order price is reached
-validator positions_mint(orders_script_hash: ScriptHash) {
+validator positions_mint(
+  orders_script_hash: ScriptHash,
+  auth_policy_id: PolicyId,
+  auth_asset_name: AssetName,
+) {
   spend(
     datum: Option<PositionDatum>,
     redeemer: LimitOrderRedeemer,
@@ -48,6 +52,8 @@ validator positions_mint(orders_script_hash: ScriptHash) {
           orders_script_hash: orders_script_hash,
           current_usd_price: current_usd_price,
           policy_id: policy_id,
+          auth_policy_id: auth_policy_id,
+          auth_asset_name: auth_asset_name,
         )
       OpenLimitPosition(current_usd_price) ->
         mint_position_valid(
@@ -55,6 +61,8 @@ validator positions_mint(orders_script_hash: ScriptHash) {
           orders_script_hash: orders_script_hash,
           current_usd_price: current_usd_price,
           policy_id: policy_id,
+          auth_policy_id: auth_policy_id,
+          auth_asset_name: auth_asset_name,
         )
       // Batcher might close/liquidate multiple positions at once
       ClosePosition(burn_amount) ->
@@ -74,6 +82,8 @@ pub fn mint_position_valid(
   orders_script_hash: ScriptHash,
   current_usd_price: Int,
   policy_id: PolicyId,
+  auth_policy_id: PolicyId,
+  auth_asset_name: AssetName,
 ) {
   let Transaction { mint, reference_inputs, .. } = transaction
 
@@ -115,8 +125,14 @@ pub fn mint_position_valid(
     ..
   } = pool_datum_typed
 
-  expect Some(Input { output: Output { datum: global_settings_datum, .. }, .. }) =
-    list.at(reference_inputs, 1)
+  expect Some(Input {
+    output: Output {
+      value: global_settings_value,
+      datum: global_settings_datum,
+      ..
+    },
+    ..
+  }) = list.at(reference_inputs, 1)
 
   expect InlineDatum(global_settings_datum) = global_settings_datum
   expect global_settings_datum_typed: SettingsDatum = global_settings_datum
@@ -127,6 +143,9 @@ pub fn mint_position_valid(
     max_strike_holder_leverage_factor,
     ..
   } = global_settings_datum_typed
+
+  expect
+    assets.quantity_of(global_settings_value, auth_policy_id, auth_asset_name) == 1
 
   expect current_usd_price == entered_at_usd_price
 

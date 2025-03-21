@@ -4,8 +4,8 @@ use cardano/address.{Address, Script}
 use cardano/assets.{Value, match, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{
-  long_lp_name, position_asset_name, short_lp_name, strike_asset_name,
-  strike_policy_id,
+  burn_address, long_lp_name, position_asset_name, short_lp_name,
+  strike_asset_name, strike_policy_id,
 }
 use math.{calculate_assets_get_back, calculate_lp_assets_sent}
 use types.{
@@ -20,7 +20,6 @@ pub fn valid_orders(
   own_validator: ScriptHash,
   pool_utxo_value: Value,
   pool_datum: PoolDatum,
-  burn_address: ScriptHash,
 ) -> ExpectedPoolOutput {
   let Transaction { inputs, outputs, .. } = transaction
   let (script_inputs, script_input_count) =
@@ -77,7 +76,6 @@ pub fn valid_orders(
               expected_pool_output_value,
               expected_pool_output_datum,
               expected_mint,
-              burn_address,
             )
 
           (
@@ -112,7 +110,6 @@ pub fn validate_individual_order(
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
-  burn_address: ScriptHash,
 ) -> ExpectedPoolOutput {
   expect InlineDatum(input_datum) = input.datum
 
@@ -144,7 +141,6 @@ pub fn validate_individual_order(
         pool_output_value,
         pool_output_datum,
         expected_mint,
-        burn_address,
       )
     ProvideLiquidityOrder(..) ->
       provide_liquidity_valid(
@@ -324,7 +320,6 @@ pub fn liquidate_position(
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
-  expected_burn_address: ScriptHash,
 ) -> ExpectedPoolOutput {
   expect LiquidatePositionOrder { position_hash, underlying_asset_amount, side } =
     input_datum_typed.action
@@ -336,8 +331,8 @@ pub fn liquidate_position(
 
   expect
     if contains_strike_collateral {
-      expect Script(burn_address) = output.address.payment_credential
-      expect expected_burn_address == burn_address
+      expect Script(to_burn_address) = output.address.payment_credential
+      expect to_burn_address == burn_address
 
       let expected_assets_locked =
         assets.from_asset(

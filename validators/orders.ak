@@ -1,18 +1,18 @@
 use aiken/collection/dict
 use aiken/collection/list
 use cardano/address.{Credential, Script}
-use cardano/assets.{PolicyId, match}
+use cardano/assets.{AssetName, PolicyId, match}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
 use orders_validations.{valid_orders}
-use types.{OrderDatum, PoolDatum, ScriptHash, UTxOIndexer}
+use types.{OrderDatum, PoolDatum, UTxOIndexer}
 use utils.{is_withdrawal}
 
 pub type OrdersWithdrawRedeemer {
   indexer: UTxOIndexer,
   pool_utxo_index: (Int, Int),
-  batcher_index: Int,
+  batcher_license_utxo_index: Int,
 }
 
 pub type OrdersRedeemer {
@@ -20,7 +20,7 @@ pub type OrdersRedeemer {
   ClosePendingOpenOrders
 }
 
-validator orders(batcher_license: PolicyId, burn_address: ScriptHash) {
+validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
   spend(
     _datum: Option<OrderDatum>,
     redeemer: OrdersRedeemer,
@@ -52,6 +52,14 @@ validator orders(batcher_license: PolicyId, burn_address: ScriptHash) {
 
     expect Some(output_pool_utxo) = list.at(outputs, output_pool_utxo_index)
 
+    // Pool UTxO contains valid nft policy and asset name
+    expect
+      assets.quantity_of(
+        input_pool_utxo.output.value,
+        pool_nft_policy_id,
+        pool_nft_asset_name,
+      ) == 1
+
     // UTxO is sent back to the pool
     expect input_pool_utxo.output.address == output_pool_utxo.address
 
@@ -64,7 +72,6 @@ validator orders(batcher_license: PolicyId, burn_address: ScriptHash) {
         own_validator,
         input_pool_utxo.output.value,
         input_pool_datum_typed,
-        burn_address,
       )
 
     expect match(output_pool_utxo.value, expected_pool_output.value, >=)
@@ -76,9 +83,11 @@ validator orders(batcher_license: PolicyId, burn_address: ScriptHash) {
 
     expect expected_pool_output.mint == mint
 
+    let PoolDatum { batcher_license, .. } = output_pool_datum_typed
+
     // Make sure the batcher license is in the inputs
     expect Some(Input { output: Output { value: batcher_value, .. }, .. }) =
-      list.at(inputs, redeemer.batcher_index)
+      list.at(inputs, redeemer.batcher_license_utxo_index)
 
     expect [Pair(_tn, amount)] =
       batcher_value
