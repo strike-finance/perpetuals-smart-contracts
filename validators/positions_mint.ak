@@ -8,8 +8,8 @@ use constants.{
 }
 use math.{calculate_hourly_usd_borrow_fee}
 use types.{
-  Long, OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum, ScriptHash,
-  SettingsDatum, Short,
+  OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum, ScriptHash,
+  SettingsDatum,
 }
 use utils.{get_lower_bound}
 
@@ -28,8 +28,10 @@ pub type PositionMintRedeemer {
 // Can create limit orders and send to orders script once the limit order price is reached
 validator positions_mint(
   orders_script_hash: ScriptHash,
-  auth_policy_id: PolicyId,
-  auth_asset_name: AssetName,
+  pool_nft_policy_id: PolicyId,
+  pool_nft_asset_name: AssetName,
+  settings_nft_policy_id: PolicyId,
+  settings_nft_asset_name: AssetName,
 ) {
   spend(
     datum: Option<PositionDatum>,
@@ -52,8 +54,10 @@ validator positions_mint(
           orders_script_hash: orders_script_hash,
           current_usd_price: current_usd_price,
           policy_id: policy_id,
-          auth_policy_id: auth_policy_id,
-          auth_asset_name: auth_asset_name,
+          pool_nft_policy_id: pool_nft_policy_id,
+          pool_nft_asset_name: pool_nft_asset_name,
+          settings_nft_policy_id: settings_nft_policy_id,
+          settings_nft_asset_name: settings_nft_asset_name,
         )
       OpenLimitPosition(current_usd_price) ->
         mint_position_valid(
@@ -61,8 +65,10 @@ validator positions_mint(
           orders_script_hash: orders_script_hash,
           current_usd_price: current_usd_price,
           policy_id: policy_id,
-          auth_policy_id: auth_policy_id,
-          auth_asset_name: auth_asset_name,
+          pool_nft_policy_id: pool_nft_policy_id,
+          pool_nft_asset_name: pool_nft_asset_name,
+          settings_nft_policy_id: settings_nft_policy_id,
+          settings_nft_asset_name: settings_nft_asset_name,
         )
       // Batcher might close/liquidate multiple positions at once
       ClosePosition(burn_amount) ->
@@ -82,8 +88,10 @@ pub fn mint_position_valid(
   orders_script_hash: ScriptHash,
   current_usd_price: Int,
   policy_id: PolicyId,
-  auth_policy_id: PolicyId,
-  auth_asset_name: AssetName,
+  pool_nft_policy_id: PolicyId,
+  pool_nft_asset_name: AssetName,
+  settings_nft_policy_id: PolicyId,
+  settings_nft_asset_name: AssetName,
 ) {
   let Transaction { mint, reference_inputs, .. } = transaction
 
@@ -116,12 +124,13 @@ pub fn mint_position_valid(
   expect InlineDatum(pool_datum) = pool_datum
   expect pool_datum_typed: PoolDatum = pool_datum
 
+  expect
+    assets.quantity_of(pool_value, pool_nft_policy_id, pool_nft_asset_name) == 1
+
   let PoolDatum {
     underlying_asset,
-    long_total_asset_amount,
-    short_total_asset_amount,
-    long_available_asset_amount,
-    short_available_asset_amount,
+    total_asset_amount,
+    available_asset_amount,
     ..
   } = pool_datum_typed
 
@@ -145,7 +154,11 @@ pub fn mint_position_valid(
   } = global_settings_datum_typed
 
   expect
-    assets.quantity_of(global_settings_value, auth_policy_id, auth_asset_name) == 1
+    assets.quantity_of(
+      global_settings_value,
+      settings_nft_policy_id,
+      settings_nft_asset_name,
+    ) == 1
 
   expect current_usd_price == entered_at_usd_price
 
@@ -200,10 +213,7 @@ pub fn mint_position_valid(
     )
 
   let underlying_asset_lended_amount =
-    when side is {
-      Long -> long_total_asset_amount - long_available_asset_amount
-      Short -> short_total_asset_amount - short_available_asset_amount
-    }
+    total_asset_amount - available_asset_amount
 
   let estimated_hourly_usd_borrow_fee: Int =
     calculate_hourly_usd_borrow_fee(

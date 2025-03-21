@@ -22,11 +22,11 @@ validator protocol_auth(seed: OutputReference) {
 
     expect
       token_name == string.to_bytearray(@"PROTOCOL_MANAGER_NFT") && amount == 1
+
     expect
-      token_name1 == string.to_bytearray(@"PROTOCOL_SETTINGS_NFT") && amount1 == 1
-    expect
-      token_name2 == string.to_bytearray(@"PROTOCOL_POOL_NFT") && amount2 == 1
-    True
+      token_name1 == string.to_bytearray(@"PROTOCOL_POOL_NFT") && amount1 == 1
+
+    token_name2 == string.to_bytearray(@"PROTOCOL_SETTINGS_NFT") && amount2 == 1
   }
 
   else(_) {

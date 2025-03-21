@@ -4,12 +4,11 @@ use cardano/address.{Address, Script}
 use cardano/assets.{Value, match, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{
-  burn_address, long_lp_name, position_asset_name, short_lp_name,
-  strike_asset_name, strike_policy_id,
+  burn_address, position_asset_name, strike_asset_name, strike_policy_id,
 }
 use math.{calculate_assets_get_back, calculate_lp_assets_sent}
 use types.{
-  Asset, ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder, Long,
+  Asset, ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder,
   OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder,
   WithdrawLiquidityOrder,
 }
@@ -228,36 +227,19 @@ pub fn open_position(
 
   expect output_script_hash == position_hash
 
-  if side == Long {
-    ExpectedPoolOutput {
-      value: pool_output_value
-        |> assets.add(
-            pool_output_datum.underlying_asset.policy_id,
-            pool_output_datum.underlying_asset.asset_name,
-            -lended_amount,
-          ),
-      datum: PoolDatum {
-        ..pool_output_datum,
-        long_total_asset_amount: pool_output_datum.long_total_asset_amount - lended_amount,
-        long_available_asset_amount: pool_output_datum.long_available_asset_amount - lended_amount,
-      },
-      mint: expected_mint,
-    }
-  } else {
-    ExpectedPoolOutput {
-      value: pool_output_value
-        |> assets.add(
-            pool_output_datum.underlying_asset.policy_id,
-            pool_output_datum.underlying_asset.asset_name,
-            -lended_amount,
-          ),
-      datum: PoolDatum {
-        ..pool_output_datum,
-        short_total_asset_amount: pool_output_datum.short_total_asset_amount - lended_amount,
-        short_available_asset_amount: pool_output_datum.short_available_asset_amount - lended_amount,
-      },
-      mint: expected_mint,
-    }
+  ExpectedPoolOutput {
+    value: pool_output_value
+      |> assets.add(
+          pool_output_datum.underlying_asset.policy_id,
+          pool_output_datum.underlying_asset.asset_name,
+          -lended_amount,
+        ),
+    datum: PoolDatum {
+      ..pool_output_datum,
+      total_asset_amount: pool_output_datum.total_asset_amount + lended_amount,
+      available_asset_amount: pool_output_datum.available_asset_amount + lended_amount,
+    },
+    mint: expected_mint,
   }
 }
 
@@ -268,8 +250,7 @@ pub fn close_position(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect ClosePositionOrder { position_hash, underlying_asset_amount, side } =
-    datum.action
+  expect ClosePositionOrder { position_hash } = datum.action
 
   let PoolDatum { underlying_asset, .. } = pool_output_datum
 
@@ -282,34 +263,19 @@ pub fn close_position(
       underlying_asset.asset_name,
     )
 
-  if side == Long {
-    ExpectedPoolOutput {
-      value: pool_output_value
-        |> assets.add(
-            underlying_asset.policy_id,
-            underlying_asset.asset_name,
-            return_pool_asset_amount,
-          ),
-      datum: PoolDatum {
-        ..pool_output_datum,
-        long_total_asset_amount: pool_output_datum.long_total_asset_amount + underlying_asset_amount,
-      },
-      mint,
-    }
-  } else {
-    ExpectedPoolOutput {
-      value: pool_output_value
-        |> assets.add(
-            underlying_asset.policy_id,
-            underlying_asset.asset_name,
-            -return_pool_asset_amount,
-          ),
-      datum: PoolDatum {
-        ..pool_output_datum,
-        short_total_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_amount,
-      },
-      mint,
-    }
+  ExpectedPoolOutput {
+    value: pool_output_value
+      |> assets.add(
+          underlying_asset.policy_id,
+          underlying_asset.asset_name,
+          return_pool_asset_amount,
+        ),
+    datum: PoolDatum {
+      ..pool_output_datum,
+      total_asset_amount: pool_output_datum.total_asset_amount + return_pool_asset_amount,
+      available_asset_amount: pool_output_datum.available_asset_amount + return_pool_asset_amount,
+    },
+    mint,
   }
 }
 
@@ -321,8 +287,7 @@ pub fn liquidate_position(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect LiquidatePositionOrder { position_hash, underlying_asset_amount, side } =
-    input_datum_typed.action
+  expect LiquidatePositionOrder { position_hash } = input_datum_typed.action
 
   let strike_asset_amount: Int =
     quantity_of(input.value, strike_policy_id, strike_asset_name)
@@ -349,7 +314,7 @@ pub fn liquidate_position(
   let updated_mint =
     assets.add(expected_mint, position_hash, position_asset_name, -1)
 
-  let collateral_asset_amount: Int =
+  let asset_amount_returned: Int =
     quantity_of(
       input.value,
       pool_output_datum.underlying_asset.policy_id,
@@ -361,29 +326,17 @@ pub fn liquidate_position(
       pool_output_value,
       pool_output_datum.underlying_asset.policy_id,
       pool_output_datum.underlying_asset.asset_name,
-      collateral_asset_amount,
+      asset_amount_returned,
     )
 
-  if side == Long {
-    ExpectedPoolOutput {
-      value: updated_value,
-      datum: PoolDatum {
-        ..pool_output_datum,
-        long_total_asset_amount: pool_output_datum.long_total_asset_amount + underlying_asset_amount,
-        long_available_asset_amount: pool_output_datum.long_available_asset_amount + underlying_asset_amount,
-      },
-      mint: updated_mint,
-    }
-  } else {
-    ExpectedPoolOutput {
-      value: updated_value,
-      datum: PoolDatum {
-        ..pool_output_datum,
-        short_total_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_amount,
-        short_available_asset_amount: pool_output_datum.short_total_asset_amount + underlying_asset_amount,
-      },
-      mint: updated_mint,
-    }
+  ExpectedPoolOutput {
+    value: updated_value,
+    datum: PoolDatum {
+      ..pool_output_datum,
+      total_asset_amount: pool_output_datum.total_asset_amount + asset_amount_returned,
+      available_asset_amount: pool_output_datum.available_asset_amount + asset_amount_returned,
+    },
+    mint: updated_mint,
   }
 }
 
@@ -395,52 +348,35 @@ fn provide_liquidity_valid(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect ProvideLiquidityOrder {
-    owner_pkh,
-    owner_stake_key,
-    long_liquidity_amount,
-    short_liquidity_amount,
-  } = input_datum_typed.action
+  expect ProvideLiquidityOrder { owner_pkh, owner_stake_key } =
+    input_datum_typed.action
 
   let PoolDatum {
     underlying_asset,
-    long_total_asset_amount,
-    long_total_lp_minted,
-    short_total_asset_amount,
-    short_total_lp_minted,
-    lp_policy_id,
+    total_lp_minted,
+    lp_asset,
+    total_asset_amount,
     ..
   } = pool_output_datum
 
-  expect
+  let liquidity_amount =
     quantity_of(
       input.value,
       underlying_asset.policy_id,
       underlying_asset.asset_name,
-    ) >= long_liquidity_amount + short_liquidity_amount
-
-  let (expected_long_lp_token_sent, expected_short_lp_token_sent) =
-    (
-      calculate_lp_assets_sent(
-        long_total_asset_amount,
-        long_total_lp_minted,
-        long_liquidity_amount,
-      ),
-      calculate_lp_assets_sent(
-        short_total_asset_amount,
-        short_total_lp_minted,
-        short_liquidity_amount,
-      ),
     )
 
-  let (long_lp_token_sent, short_lp_token_sent) =
-    (
-      quantity_of(output.value, lp_policy_id, long_lp_name),
-      quantity_of(output.value, lp_policy_id, short_lp_name),
+  let expected_lp_token_sent =
+    calculate_lp_assets_sent(
+      total_asset_amount,
+      total_lp_minted,
+      liquidity_amount,
     )
 
-  expect
-    long_lp_token_sent <= expected_long_lp_token_sent && short_lp_token_sent <= expected_short_lp_token_sent
+  let lp_tokens_sent =
+    quantity_of(output.value, lp_asset.policy_id, lp_asset.asset_name)
+
+  expect lp_tokens_sent <= expected_lp_token_sent
 
   let owner_address =
     when owner_stake_key is {
@@ -456,10 +392,8 @@ fn provide_liquidity_valid(
     value: pool_output_value,
     datum: PoolDatum {
       ..pool_output_datum,
-      long_total_lp_minted: long_total_lp_minted + long_lp_token_sent,
-      long_available_asset_amount: long_total_asset_amount + long_liquidity_amount,
-      short_total_lp_minted: short_total_lp_minted + short_lp_token_sent,
-      short_available_asset_amount: short_total_asset_amount + short_liquidity_amount,
+      total_lp_minted: pool_output_datum.total_lp_minted + expected_lp_token_sent,
+      available_asset_amount: pool_output_datum.available_asset_amount + liquidity_amount,
     },
     mint: expected_mint,
   }
@@ -477,33 +411,21 @@ fn withdraw_liquidy_valid(
     input_datum_typed.action
 
   let PoolDatum {
-    long_total_asset_amount,
-    long_total_lp_minted,
-    short_total_asset_amount,
-    short_total_lp_minted,
-    lp_policy_id,
     underlying_asset,
+    total_lp_minted,
+    lp_asset,
+    total_asset_amount,
     ..
   } = pool_output_datum
 
-  let (long_lp_deposited, short_lp_deposited) =
-    (
-      quantity_of(input.value, lp_policy_id, long_lp_name),
-      quantity_of(input.value, lp_policy_id, short_lp_name),
-    )
+  let lp_tokens_deposited =
+    quantity_of(input.value, lp_asset.policy_id, lp_asset.asset_name)
 
-  let (expected_long_assets_sent, expected_short_assets_sent) =
-    (
-      calculate_assets_get_back(
-        long_total_asset_amount,
-        long_total_lp_minted,
-        long_lp_deposited,
-      ),
-      calculate_assets_get_back(
-        short_total_asset_amount,
-        short_total_lp_minted,
-        short_lp_deposited,
-      ),
+  let expected_assets_sent =
+    calculate_assets_get_back(
+      total_asset_amount,
+      total_lp_minted,
+      lp_tokens_deposited,
     )
 
   let assets_sent =
@@ -513,7 +435,7 @@ fn withdraw_liquidy_valid(
       underlying_asset.asset_name,
     )
 
-  expect assets_sent <= expected_long_assets_sent + expected_short_assets_sent
+  expect assets_sent <= expected_assets_sent
 
   let owner_address =
     when owner_stake_key is {
@@ -529,10 +451,8 @@ fn withdraw_liquidy_valid(
     value: pool_output_value,
     datum: PoolDatum {
       ..pool_output_datum,
-      long_total_lp_minted: long_total_lp_minted - long_lp_deposited,
-      long_available_asset_amount: long_total_asset_amount - expected_long_assets_sent,
-      short_total_lp_minted: short_total_lp_minted - short_lp_deposited,
-      short_available_asset_amount: short_total_asset_amount - expected_short_assets_sent,
+      total_lp_minted: pool_output_datum.total_lp_minted - lp_tokens_deposited,
+      available_asset_amount: pool_output_datum.available_asset_amount - assets_sent,
     },
     mint: expected_mint,
   }

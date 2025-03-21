@@ -128,11 +128,7 @@ pub fn close_position_valid(
   // Create expected order datum (same for all close types)
   let expected_order_datum =
     OrderDatum {
-      action: ClosePositionOrder {
-        position_hash: datum.position_hash,
-        underlying_asset_amount: collateral_asset_amount - send_asset_amount,
-        side: datum.side,
-      },
+      action: ClosePositionOrder { position_hash: datum.position_hash },
     }
   let expected_order_datum_data: Data = expected_order_datum
 
@@ -192,27 +188,17 @@ pub fn liquidate_close_valid(
 
   expect Some(input_from_script) = list.head(all_validators_inputs)
 
-  let collateral_amount =
-    quantity_of(
-      input_from_script.output.value,
-      collateral_asset.policy_id,
-      collateral_asset.asset_name,
-    )
-
   let expected_order_datum =
-    OrderDatum {
-      action: LiquidatePositionOrder {
-        position_hash,
-        underlying_asset_amount: collateral_amount,
-        side,
-      },
-    }
+    OrderDatum { action: LiquidatePositionOrder { position_hash } }
 
   let expected_order_datum_data: Data = expected_order_datum
 
   expect expected_order_datum_data == orders_datum
 
   let current_time: POSIXTime = get_lower_bound(transaction.validity_range)
+
+  expect
+    match(input_from_script.output.value, output_to_orders_validator.value, >=)
 
   let collateral_asset_amount =
     quantity_of(

@@ -41,29 +41,19 @@ pub type OrderAction {
   ClosePositionOrder {
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
-    // The amount of underlying asset gained/loss for liquidity providers
-    underlying_asset_amount: Int,
-    // Long or short position close
-    side: PositionSide,
   }
   LiquidatePositionOrder {
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
-    // The amount of underlying asset gained/loss for liquidity providers
-    underlying_asset_amount: Int,
-    // Long or short position close
-    side: PositionSide,
   }
+
   ProvideLiquidityOrder {
     // Owner of the liquidity, to send the lp tokens
     owner_pkh: AddressHash,
     // Stake key if present 
     owner_stake_key: Option<AddressHash>,
-    // Amount of liquidity to provide for the long side
-    long_liquidity_amount: Int,
-    // Amount of liquidity to provide for the short side
-    short_liquidity_amount: Int,
   }
+
   WithdrawLiquidityOrder {
     // Owner of the liquidity, to send the lp tokens
     owner_pkh: AddressHash,
@@ -114,20 +104,14 @@ pub type CloseType {
 pub type PoolDatum {
   // The underlying asset that the pool is trading on
   underlying_asset: Asset,
-  // Token For Lp, the asset name determines if the lp is for a long or short pool
-  lp_policy_id: PolicyId,
-  // Total amount of underlying asset that belongs to long liquidity providers
-  long_total_asset_amount: Int,
-  // Total amount of underlying asset that belongs to short liquidity providers
-  short_total_asset_amount: Int,
-  // Amount of long assets currently available for traders 
-  long_available_asset_amount: Int,
-  // Amount of short assets currently available for traders
-  short_available_asset_amount: Int,
-  // Total amount of lp tokens minted for long liquidity providers
-  long_total_lp_minted: Int,
-  // Total amount of lp tokens minted for short liquidity providers
-  short_total_lp_minted: Int,
+  // Token For Lp
+  lp_asset: Asset,
+  // Total amount of underlying asset that belongs to liquidity providers
+  total_asset_amount: Int,
+  // Amount of assets currently available for traders
+  available_asset_amount: Int,
+  // Total amount of lp tokens minted for liquidity providers
+  total_lp_minted: Int,
   // Batcher license
   batcher_license: PolicyId,
 }
