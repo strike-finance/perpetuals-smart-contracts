@@ -13,6 +13,7 @@ use types.{
   WithdrawLiquidityOrder,
 }
 
+// Make distinction when closing position, if profit add to pool, if loss remove from pool
 pub fn valid_orders(
   indices: List<(Int, Int)>,
   transaction: Transaction,
@@ -170,21 +171,24 @@ pub fn open_position(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect OpenPositionOrder{position_datum: PositionDatum {
-    owner_pkh,
-    leverage_factor,
-    position_hash,
-    entered_at_usd_price,
-    entered_position_time,
-    maintain_margin_amount,
-    hourly_usd_borrow_fee,
-    stop_loss_usd_price,
-    take_profit_usd_price,
-    collateral_asset,
-    side,
-    collateral_asset_amount,
-    position_asset_amount,
-  }} = input_datum_typed.action
+  expect OpenPositionOrder {
+    position_datum: PositionDatum {
+      owner_pkh,
+      leverage_factor,
+      position_hash,
+      entered_at_usd_price,
+      entered_position_time,
+      maintain_margin_amount,
+      hourly_usd_borrow_fee,
+      stop_loss_usd_price,
+      take_profit_usd_price,
+      collateral_asset,
+      side,
+      collateral_asset_amount,
+      position_asset_amount,
+    },
+    ..
+  } = input_datum_typed.action
 
   let expected_output_datum =
     PositionDatum {

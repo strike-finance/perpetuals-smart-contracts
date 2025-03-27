@@ -5,8 +5,7 @@ use cardano/transaction.{
 }
 use constants.{strike_asset_name, strike_policy_id}
 use math.{
-  calculate_accumulative_interest_fee, calculate_rebalance_asset_sent_to_pool,
-  calculate_return, reach_liquidation_price,
+  calculate_accumulative_interest_fee, calculate_return, reach_liquidation_price,
 }
 use types.{
   ClosePositionOrder, CloseSendAmount, CloseType, LiquidatePositionOrder, Long,
@@ -20,8 +19,6 @@ pub type ManagePositionRedeemer {
   AddCollateral
   PositionUpdate { stop_loss: Int, take_profit: Int }
   LiquidateClose { current_usd_price: Int }
-  RebalancePosition
-  IncreasePositionFromProfit
 }
 
 validator manage_positions(orders_script_hash: ScriptHash) {
@@ -50,8 +47,6 @@ validator manage_positions(orders_script_hash: ScriptHash) {
       AddCollateral -> add_collateral_valid(transaction, datum)
       PositionUpdate(stop_loss, take_profit) ->
         update_position_valid(transaction, datum, stop_loss, take_profit)
-      RebalancePosition -> rebalance_position_valid(transaction, datum)
-      IncreasePositionFromProfit -> increase_position_from_profit_valid()
     }
   }
 
@@ -302,74 +297,4 @@ pub fn update_position_valid(
   let expected_output_datum_data: Data = expected_output_datum
 
   expected_output_datum_data == output_datum
-}
-
-// 10% of borrowed funds are to be sent back to the pool,
-// The rest is sent back to the manage positions script with datums updated correctly
-pub fn rebalance_position_valid(
-  transaction: Transaction,
-  maybe_datum: Option<PositionDatum>,
-) -> Bool {
-  expect Some(datum) = maybe_datum
-
-  let PositionDatum { position_asset_amount, .. } = datum
-
-  let all_validators_inputs: List<Input> =
-    get_all_validators_inputs(transaction)
-
-  expect list.length(all_validators_inputs) == 1
-
-  expect Some(input_from_script) = list.head(all_validators_inputs)
-
-  let outputs_back_to_positions_validator: List<Output> =
-    get_address_outputs(transaction, input_from_script.output.address)
-
-  expect Some(output_to_positions_validator) =
-    list.head(outputs_back_to_positions_validator)
-
-  expect InlineDatum(output_datum) = output_to_positions_validator.datum
-
-  let expected_borrowed_returned =
-    calculate_rebalance_asset_sent_to_pool(position_asset_amount)
-
-  let expected_value_back_to_positions =
-    output_to_positions_validator.value
-      |> assets.add(
-          datum.collateral_asset.policy_id,
-          datum.collateral_asset.asset_name,
-          expected_borrowed_returned,
-        )
-
-  expect
-    match(
-      expected_value_back_to_positions,
-      output_to_positions_validator.value,
-      >=,
-    )
-
-  let outputs_to_orders_validator =
-    find_script_outputs(transaction.outputs, orders_script_hash)
-  expect Some(output_to_orders_validator) =
-    list.head(outputs_to_orders_validator)
-
-  expect
-    quantity_of(
-      output_to_orders_validator.value,
-      datum.collateral_asset.policy_id,
-      datum.collateral_asset.asset_name,
-    ) >= expected_borrowed_returned
-
-  let expected_output_datum =
-    PositionDatum {
-      ..datum,
-      position_asset_amount: datum.position_asset_amount - expected_borrowed_returned,
-    }
-
-  let expected_output_datum_data: Data = expected_output_datum
-
-  expected_output_datum_data == output_datum
-}
-
-pub fn increase_position_from_profit_valid() -> Bool {
-  True
 }

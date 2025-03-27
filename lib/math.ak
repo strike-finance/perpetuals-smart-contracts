@@ -145,12 +145,16 @@ pub fn calculate_lp_assets_sent(
   total_lp_minted_amount: Int,
   deposit_asset_amount: Int,
 ) -> Int {
-  let deposit_asset_amount_multiplier = deposit_asset_amount * 10_000
+  if total_asset_amount == 0 {
+    deposit_asset_amount
+  } else {
+    let deposit_asset_amount_multiplier = deposit_asset_amount * 10_000
 
-  let total_liquidity_ratio =
-    deposit_asset_amount_multiplier / total_asset_amount
+    let total_liquidity_ratio =
+      deposit_asset_amount_multiplier / total_asset_amount
 
-  total_liquidity_ratio * total_lp_minted_amount / 10_000
+    total_liquidity_ratio * total_lp_minted_amount / 10_000
+  }
 }
 
 // The ratio of the asset they get back and total asset amount is the same as the ratio of the lp they deposit and total lp minted

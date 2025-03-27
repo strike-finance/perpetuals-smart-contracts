@@ -8,7 +8,7 @@ pub const long_lp_name: ByteArray = #""
 pub const short_lp_name: ByteArray = #""
 
 pub const position_asset_name: AssetName =
-  #"00000000000000000000000000000000000000000000000000000000"
+  #"535452494b455f504552505f504f534954494f4e"
 
 pub const burn_address: ScriptHash =
   #"00000000000000000000000000000000000000000000000000000000"

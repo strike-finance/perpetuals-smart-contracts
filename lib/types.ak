@@ -24,9 +24,6 @@ pub type PositionSide {
   Short
 }
 
-pub type UTxOIndexer =
-  List<(Int, Int)>
-
 pub type CloseSendAmount {
   // asset amount sent to trader
   send_asset_amount: Int,
@@ -36,8 +33,16 @@ pub type CloseSendAmount {
   strike_collateral_amount: Int,
 }
 
+pub type OpenPositionType {
+  MarketOrder
+  LimitOrder
+}
+
 pub type OrderAction {
-  OpenPositionOrder { position_datum: PositionDatum }
+  OpenPositionOrder {
+    position_datum: PositionDatum,
+    open_position_type: OpenPositionType,
+  }
   ClosePositionOrder {
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
@@ -46,14 +51,12 @@ pub type OrderAction {
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
   }
-
   ProvideLiquidityOrder {
     // Owner of the liquidity, to send the lp tokens
     owner_pkh: AddressHash,
     // Stake key if present 
     owner_stake_key: Option<AddressHash>,
   }
-
   WithdrawLiquidityOrder {
     // Owner of the liquidity, to send the lp tokens
     owner_pkh: AddressHash,

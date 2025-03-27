@@ -1,7 +1,7 @@
 use aiken/collection/list
 use cardano/assets.{AssetName, PolicyId, Value, flatten, match, quantity_of}
 use cardano/transaction.{
-  InlineDatum, Input, Output, OutputReference, Transaction, find_script_outputs,
+  InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use constants.{
   batcher_fee, position_asset_name, strike_asset_name, strike_policy_id,
@@ -19,13 +19,10 @@ pub type LimitOrderRedeemer {
 }
 
 pub type PositionMintRedeemer {
-  OpenPosition { current_usd_price: Int }
-  OpenLimitPosition { current_usd_price: Int }
+  OpenPosition { current_usd_price: Int, pool_index: Int, setting_index: Int }
   ClosePosition { burn_amount: Int }
 }
 
-// Create positions and send to orders script
-// Can create limit orders and send to orders script once the limit order price is reached
 validator position_mint(
   orders_script_hash: ScriptHash,
   pool_nft_policy_id: PolicyId,
@@ -33,22 +30,13 @@ validator position_mint(
   settings_nft_policy_id: PolicyId,
   settings_nft_asset_name: AssetName,
 ) {
-  spend(
-    datum: Option<PositionDatum>,
-    redeemer: LimitOrderRedeemer,
-    _own_ref: OutputReference,
-    transaction: Transaction,
-  ) {
-    todo
-  }
-
   mint(
     redeemer: PositionMintRedeemer,
     policy_id: PolicyId,
     transaction: Transaction,
   ) {
     when redeemer is {
-      OpenPosition(current_usd_price) ->
+      OpenPosition(current_usd_price, pool_index, setting_index) ->
         mint_position_valid(
           transaction: transaction,
           orders_script_hash: orders_script_hash,
@@ -58,17 +46,8 @@ validator position_mint(
           pool_nft_asset_name: pool_nft_asset_name,
           settings_nft_policy_id: settings_nft_policy_id,
           settings_nft_asset_name: settings_nft_asset_name,
-        )
-      OpenLimitPosition(current_usd_price) ->
-        mint_position_valid(
-          transaction: transaction,
-          orders_script_hash: orders_script_hash,
-          current_usd_price: current_usd_price,
-          policy_id: policy_id,
-          pool_nft_policy_id: pool_nft_policy_id,
-          pool_nft_asset_name: pool_nft_asset_name,
-          settings_nft_policy_id: settings_nft_policy_id,
-          settings_nft_asset_name: settings_nft_asset_name,
+          pool_index: pool_index,
+          setting_index: setting_index,
         )
       // Batcher might close/liquidate multiple positions at once
       ClosePosition(burn_amount) ->
@@ -92,6 +71,8 @@ pub fn mint_position_valid(
   pool_nft_asset_name: AssetName,
   settings_nft_policy_id: PolicyId,
   settings_nft_asset_name: AssetName,
+  pool_index: Int,
+  setting_index: Int,
 ) {
   let Transaction { mint, reference_inputs, .. } = transaction
 
@@ -101,25 +82,25 @@ pub fn mint_position_valid(
   expect list.length(outputs_to_orders_address) == 1
 
   expect Some(output_to_orders_validator) = list.head(outputs_to_orders_address)
-
   expect InlineDatum(orders_datum) = output_to_orders_validator.datum
-
   expect orders_datum_typed: OrderDatum = orders_datum
 
-  expect OpenPositionOrder{position_datum: PositionDatum {
-    entered_position_time,
-    entered_at_usd_price,
-    position_asset_amount,
-    hourly_usd_borrow_fee,
-    collateral_asset,
-    side,
+  expect OpenPositionOrder {
+    position_datum: PositionDatum {
+      entered_position_time,
+      entered_at_usd_price,
+      position_asset_amount,
+      hourly_usd_borrow_fee,
+      collateral_asset,
+      ..
+    },
     ..
-  }} = orders_datum_typed.action
+  } = orders_datum_typed.action
 
   expect Some(Input {
     output: Output { value: pool_value, datum: pool_datum, .. },
     ..
-  }) = list.head(reference_inputs)
+  }) = list.at(reference_inputs, pool_index)
 
   expect InlineDatum(pool_datum) = pool_datum
   expect pool_datum_typed: PoolDatum = pool_datum
@@ -133,7 +114,6 @@ pub fn mint_position_valid(
     available_asset_amount,
     ..
   } = pool_datum_typed
-
   expect Some(Input {
     output: Output {
       value: global_settings_value,
@@ -141,8 +121,7 @@ pub fn mint_position_valid(
       ..
     },
     ..
-  }) = list.at(reference_inputs, 1)
-
+  }) = list.at(reference_inputs, setting_index)
   expect InlineDatum(global_settings_datum) = global_settings_datum
   expect global_settings_datum_typed: SettingsDatum = global_settings_datum
 
@@ -159,9 +138,7 @@ pub fn mint_position_valid(
       settings_nft_policy_id,
       settings_nft_asset_name,
     ) == 1
-
   expect current_usd_price == entered_at_usd_price
-
   expect [(policy_id, position_asset_name, 1)] == flatten(mint)
 
   let collateral_asset_amount =
@@ -170,7 +147,6 @@ pub fn mint_position_valid(
       collateral_asset.policy_id,
       collateral_asset.asset_name,
     )
-
   let strike_asset_amount =
     quantity_of(
       output_to_orders_validator.value,
@@ -189,7 +165,6 @@ pub fn mint_position_valid(
             collateral_asset_amount - batcher_fee,
           )
         |> assets.add(strike_policy_id, strike_asset_name, strike_asset_amount)
-
     expect match(output_to_orders_validator.value, expected_assets_locked, >=)
   } else {
     let expected_assets_locked: Value =
@@ -201,7 +176,6 @@ pub fn mint_position_valid(
             collateral_asset_amount,
           )
         |> assets.add(strike_policy_id, strike_asset_name, strike_asset_amount)
-
     expect match(output_to_orders_validator.value, expected_assets_locked, >=)
   }
 
@@ -225,7 +199,6 @@ pub fn mint_position_valid(
     )
 
   expect hourly_usd_borrow_fee >= estimated_hourly_usd_borrow_fee
-
   expect get_lower_bound(transaction.validity_range) >= entered_position_time
 
   let contains_strike_collateral: Bool =
@@ -234,7 +207,6 @@ pub fn mint_position_valid(
       strike_policy_id,
       strike_asset_name,
     ) > 0
-
   // Make sure the amount of position_asset_amount is less than the collateral asset amount * leverage factor
   // for strike holders, they have a different leverage factor
   if contains_strike_collateral {

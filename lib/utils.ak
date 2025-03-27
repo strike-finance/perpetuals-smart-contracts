@@ -143,3 +143,9 @@ pub fn divide(numerator: Int, denominator: Int) -> Int {
   rational.ceil(divided)
 }
 
+pub fn get_validators_inputs(transaction: Transaction) -> List<Input> {
+  list.filter(
+    transaction.inputs,
+    fn(input) { is_script_credential(input.output.address.payment_credential) },
+  )
+}
