@@ -1,5 +1,5 @@
 use aiken/math/rational
-use types.{CloseSendAmount, Long, POSIXTime, PositionSide}
+use types.{Long, POSIXTime, PositionSide}
 
 //TODO: CLEANER
 // the loss is their inital position value minus the current position value  
@@ -103,39 +103,6 @@ pub fn calculate_hourly_usd_borrow_fee(
   let current_position_usd_value = position_asset_amount * current_usd_price
 
   utilization_percentage * interest_rate * current_position_usd_value / 100 / 10_000
-}
-
-// TODO:CLEANER
-pub fn calculate_return(
-  position_amount: Int,
-  collateral_asset_amount: Int,
-  entered_at_usd_price: Int,
-  current_usd_price: Int,
-  strike_collateral_amount: Int,
-  side: PositionSide,
-  accumulative_interest_fee: Int,
-) -> CloseSendAmount {
-  let position_usd_value =
-    calculate_position_usd_value_based_on_side(
-      side,
-      position_amount,
-      current_usd_price,
-      entered_at_usd_price,
-      accumulative_interest_fee,
-    )
-
-  let collateral_value: Int = collateral_asset_amount * current_usd_price
-
-  let send_asset_amount =
-    ( collateral_value + position_usd_value ) / current_usd_price
-
-  let return_pool_asset_amount = position_usd_value / current_usd_price * -1
-
-  CloseSendAmount {
-    send_asset_amount,
-    return_pool_asset_amount,
-    strike_collateral_amount,
-  }
 }
 
 // The lp = shares of the pool that the user has deposited

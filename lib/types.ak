@@ -24,33 +24,40 @@ pub type PositionSide {
   Short
 }
 
-pub type CloseSendAmount {
-  // asset amount sent to trader
-  send_asset_amount: Int,
-  // asset amount sent or taken from pool
-  return_pool_asset_amount: Int,
-  // strike collateral sent to trader
-  strike_collateral_amount: Int,
-}
-
 pub type OpenPositionType {
   MarketOrder
   LimitOrder
 }
 
 pub type OrderAction {
+  // When opening position, all borrowed assets are taken from pool and sent to position UTxO
   OpenPositionOrder {
     position_datum: PositionDatum,
     open_position_type: OpenPositionType,
   }
+  // Regular close position, where users personally closed their position and all funds are returned to pool. 
+  // When they closed it they already consumed what they needed. All that's left is for the pool
   ClosePositionOrder {
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
+  }
+  // Position closed by the protocol bot due to take profit, stop loss, or during pending state.
+  // Since assets were previously in position UTxO or non-existent, we calculate and distribute
+  // the appropriate amounts to the user in this transaction. Difference between this and close position 
+  // order is that the user has not taken any fund and we need to send it to user
+  AutomatedClosePositionOrder {
+    // asset amount sent to trader
+    send_asset_amount: Int,
+    // asset amount sent or taken from pool
+    return_pool_asset_amount: Int,
+    // strike collateral sent to trader
+    strike_collateral_amount: Int,
   }
   LiquidatePositionOrder {
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
   }
+
   ProvideLiquidityOrder {
     // Owner of the liquidity, to send the lp tokens
     owner_pkh: AddressHash,

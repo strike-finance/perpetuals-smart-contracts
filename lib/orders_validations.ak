@@ -3,14 +3,12 @@ use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script}
 use cardano/assets.{Value, match, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
-use constants.{
-  burn_address, position_asset_name, strike_asset_name, strike_policy_id,
-}
+use constants.{position_asset_name}
 use math.{calculate_assets_get_back, calculate_lp_assets_sent}
 use types.{
-  Asset, ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder,
-  OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder,
-  WithdrawLiquidityOrder,
+  Asset, AutomatedClosePositionOrder, ClosePositionOrder, ExpectedPoolOutput,
+  LiquidatePositionOrder, OpenPositionOrder, OrderDatum, PoolDatum,
+  PositionDatum, ProvideLiquidityOrder, WithdrawLiquidityOrder,
 }
 
 // Make distinction when closing position, if profit add to pool, if loss remove from pool
@@ -133,11 +131,17 @@ pub fn validate_individual_order(
         pool_output_datum,
         expected_mint,
       )
+    AutomatedClosePositionOrder(..) ->
+      close_position(
+        input,
+        input_datum_typed,
+        pool_output_value,
+        pool_output_datum,
+        expected_mint,
+      )
     LiquidatePositionOrder(..) ->
       liquidate_position(
         input,
-        input_datum_typed,
-        output,
         pool_output_value,
         pool_output_datum,
         expected_mint,
@@ -285,39 +289,10 @@ pub fn close_position(
 
 pub fn liquidate_position(
   input: Output,
-  input_datum_typed: OrderDatum,
-  output: Output,
   pool_output_value: Value,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect LiquidatePositionOrder { position_hash } = input_datum_typed.action
-
-  let strike_asset_amount: Int =
-    quantity_of(input.value, strike_policy_id, strike_asset_name)
-
-  let contains_strike_collateral = strike_asset_amount > 0
-
-  expect
-    if contains_strike_collateral {
-      expect Script(to_burn_address) = output.address.payment_credential
-      expect to_burn_address == burn_address
-
-      let expected_assets_locked =
-        assets.from_asset(
-          strike_policy_id,
-          strike_asset_name,
-          strike_asset_amount,
-        )
-
-      match(output.value, expected_assets_locked, >=)
-    } else {
-      True
-    }
-
-  let updated_mint =
-    assets.add(expected_mint, position_hash, position_asset_name, -1)
-
   let asset_amount_returned: Int =
     quantity_of(
       input.value,
@@ -340,7 +315,7 @@ pub fn liquidate_position(
       total_asset_amount: pool_output_datum.total_asset_amount + asset_amount_returned,
       available_asset_amount: pool_output_datum.available_asset_amount + asset_amount_returned,
     },
-    mint: updated_mint,
+    mint: expected_mint,
   }
 }
 

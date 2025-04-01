@@ -7,8 +7,8 @@ use cardano/transaction.{
 }
 use constants.{position_asset_name}
 use orders_validations.{valid_orders}
-use types.{OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum}
-use utils.{get_validators_inputs, is_withdrawal}
+use types.{MarketOrder, OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum}
+use utils.{get_lower_bound, get_validators_inputs, is_withdrawal}
 
 pub type OrdersWithdrawRedeemer {
   indexer: List<(Int, Int)>,
@@ -17,8 +17,12 @@ pub type OrdersWithdrawRedeemer {
 }
 
 pub type OrdersRedeemer {
+  // Process all orders which includes providing and withdrawing liquidity
   ProcessOrders
-  CloseLimitOrder
+  // Users placed limit order, can cancel anytime. Cancel open orders that has been sitting idle and havent been picked up by batcher
+  CancelLimitOrder
+  // A regular that has been placed, but havent been processed by batcher, and user wants to close it
+  CloseOrderWhilePending
 }
 
 validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
@@ -30,21 +34,44 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
   ) {
     when redeemer is {
       ProcessOrders -> is_withdrawal(transaction, own_ref)
-      CloseLimitOrder -> {
-        let Transaction { mint, extra_signatories, .. } = transaction
+      CancelLimitOrder -> {
+        let Transaction { mint, extra_signatories, validity_range, .. } =
+          transaction
 
         expect Some(datum) = maybe_datum
 
         expect OpenPositionOrder {
-          position_datum: PositionDatum { owner_pkh, position_hash, .. },
-          ..
+          position_datum: PositionDatum {
+            owner_pkh,
+            position_hash,
+            entered_position_time,
+            ..
+          },
+          open_position_type,
         } = datum.action
 
         expect list.length(get_validators_inputs(transaction)) == 1
 
         expect list.has(extra_signatories, owner_pkh)
 
-        [(position_hash, position_asset_name, -1)] == assets.flatten(mint)
+        expect
+          [(position_hash, position_asset_name, -1)] == assets.flatten(mint)
+
+        // If markey order, can only be cancelled if it has been sitting idle and batcher havent picked it up
+        if open_position_type == MarketOrder {
+          let time_sub = get_lower_bound(validity_range) - entered_position_time
+          // 3 minutes
+          time_sub > 180_000
+        } else {
+          True
+        }
+      }
+
+      CloseOrderWhilePending -> {
+        let Transaction { mint, extra_signatories, .. } = transaction
+
+        expect Some(datum) = maybe_datum
+        True
       }
     }
   }

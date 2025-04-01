@@ -3,14 +3,14 @@ use cardano/assets.{match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction, find_script_outputs,
 }
-use constants.{strike_asset_name, strike_policy_id}
 use math.{
-  calculate_accumulative_interest_fee, calculate_return, reach_liquidation_price,
+  calculate_accumulative_interest_fee,
+  calculate_position_usd_value_based_on_side, reach_liquidation_price,
 }
 use types.{
-  ClosePositionOrder, CloseSendAmount, CloseType, LiquidatePositionOrder, Long,
-  OrderDatum, POSIXTime, PositionDatum, ScriptHash, StopLossClose,
-  TakeProfitClose, TraderClose,
+  ClosePositionOrder, CloseType, LiquidatePositionOrder, Long, OrderDatum,
+  POSIXTime, PositionDatum, ScriptHash, StopLossClose, TakeProfitClose,
+  TraderClose,
 }
 use utils.{get_address_outputs, get_all_validators_inputs, get_lower_bound}
 
@@ -84,12 +84,6 @@ pub fn close_position_valid(
   expect InlineDatum(orders_datum) = output_to_orders_validator.datum
 
   let current_time = get_lower_bound(transaction.validity_range)
-  let strike_collateral_asset_amount =
-    quantity_of(
-      input_from_script.output.value,
-      strike_policy_id,
-      strike_asset_name,
-    )
 
   let accumulative_interest_fee =
     calculate_accumulative_interest_fee(
@@ -98,17 +92,19 @@ pub fn close_position_valid(
       datum.hourly_usd_borrow_fee,
     )
 
-  // Calculate return amount (same for all close types)
-  let CloseSendAmount { send_asset_amount, .. } =
-    calculate_return(
-      position_asset_amount,
-      collateral_asset_amount,
-      entered_at_usd_price,
-      current_usd_price,
-      strike_collateral_asset_amount,
+  let position_usd_value =
+    calculate_position_usd_value_based_on_side(
       side,
+      position_asset_amount,
+      current_usd_price,
+      entered_at_usd_price,
       accumulative_interest_fee,
     )
+
+  let collateral_value: Int = collateral_asset_amount * entered_at_usd_price
+
+  let send_asset_amount =
+    ( collateral_value + position_usd_value ) / current_usd_price
 
   let expected_assets_sent =
     input_from_script.output.value
