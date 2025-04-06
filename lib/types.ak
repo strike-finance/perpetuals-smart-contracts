@@ -40,6 +40,8 @@ pub type OrderAction {
   ClosePositionOrder {
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
+    // Profit or loss incurred by the trader and reflected in the pool
+    profit_loss: Int,
   }
   // Position closed by the protocol bot due to take profit, stop loss, or during pending state.
   // Since assets were previously in position UTxO or non-existent, we calculate and distribute
@@ -54,21 +56,26 @@ pub type OrderAction {
     strike_collateral_amount: Int,
   }
   LiquidatePositionOrder {
-    // The script hash for the positions script that holds all the positions of the trader
-    position_hash: ScriptHash,
+    // Profit by this trade to the pool
+    profit: Int,
+    // The collateral asset that was used
+    collateral_policy_id: PolicyId,
   }
-
   ProvideLiquidityOrder {
     // Owner of the liquidity, to send the lp tokens
     owner_pkh: AddressHash,
     // Stake key if present 
     owner_stake_key: Option<AddressHash>,
+    // The policy id of the asset that is being added to the pool
+    liquidity_asset: Asset,
   }
   WithdrawLiquidityOrder {
     // Owner of the liquidity, to send the lp tokens
     owner_pkh: AddressHash,
     // Stake key if present 
     owner_stake_key: Option<AddressHash>,
+    // The policy id of the asset that is being removed from the pool
+    liquidity_asset: Asset,
   }
 }
 
@@ -116,12 +123,12 @@ pub type PoolDatum {
   underlying_asset: Asset,
   // Token For Lp
   lp_asset: Asset,
-  // Total amount of underlying asset that belongs to liquidity providers
-  total_asset_amount: Int,
-  // Amount of assets currently available for traders
-  available_asset_amount: Int,
-  // Total amount of lp tokens minted for liquidity providers
-  total_lp_minted: Int,
+  // Supported assets of the pool, with the total amount of assets that has been added to the pool
+  liquidity_total_asset_amount: Pairs<PolicyId, Int>,
+  // Supported assets of the pool, with the total gains and losses
+  liquidity_total_gains_losses: Pairs<PolicyId, Int>,
+  // Supported assets of the pool, with the total lp minted
+  liquidity_total_lp_minted: Pairs<PolicyId, Int>,
   // Batcher license
   batcher_license: PolicyId,
 }

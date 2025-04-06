@@ -1,14 +1,21 @@
 use aiken/collection/dict
 use aiken/collection/list
 use cardano/address.{Credential, Script}
-use cardano/assets.{AssetName, PolicyId, match}
+use cardano/assets.{AssetName, PolicyId, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
-use constants.{position_asset_name}
+use constants.{position_asset_name, strike_asset_name, strike_policy_id}
+use math.{calculate_position_usd_value_based_on_side}
 use orders_validations.{valid_orders}
-use types.{MarketOrder, OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum}
-use utils.{get_lower_bound, get_validators_inputs, is_withdrawal}
+use types.{
+  AutomatedClosePositionOrder, MarketOrder, OpenPositionOrder, OrderDatum,
+  PoolDatum, PositionDatum,
+}
+use utils.{
+  get_address_outputs, get_all_validators_inputs, get_lower_bound,
+  get_validators_inputs, is_withdrawal,
+}
 
 pub type OrdersWithdrawRedeemer {
   indexer: List<(Int, Int)>,
@@ -22,7 +29,7 @@ pub type OrdersRedeemer {
   // Users placed limit order, can cancel anytime. Cancel open orders that has been sitting idle and havent been picked up by batcher
   CancelLimitOrder
   // A regular that has been placed, but havent been processed by batcher, and user wants to close it
-  CloseOrderWhilePending
+  CloseOrderWhilePending(Int)
 }
 
 validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
@@ -67,11 +74,98 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
         }
       }
 
-      CloseOrderWhilePending -> {
+      // User can close the position even if it has not been picked up by batcher
+      CloseOrderWhilePending(current_usd_price) -> {
         let Transaction { mint, extra_signatories, .. } = transaction
 
         expect Some(datum) = maybe_datum
-        True
+
+        expect OpenPositionOrder {
+          position_datum: PositionDatum {
+            side,
+            position_asset_amount,
+            entered_at_usd_price,
+            owner_pkh,
+            position_hash,
+            collateral_asset,
+            collateral_asset_amount,
+            ..
+          },
+          ..
+        } = datum.action
+
+        expect list.has(extra_signatories, owner_pkh)
+
+        expect
+          [(position_hash, position_asset_name, -1)] == assets.flatten(mint)
+
+        let position_usd_value =
+          calculate_position_usd_value_based_on_side(
+            side,
+            position_asset_amount,
+            current_usd_price,
+            entered_at_usd_price,
+            0,
+          )
+
+        let collateral_value: Int =
+          collateral_asset_amount * entered_at_usd_price
+
+        let send_asset_amount =
+          ( collateral_value + position_usd_value ) / current_usd_price
+
+        let all_validators_inputs: List<Input> =
+          get_all_validators_inputs(transaction)
+        expect list.length(all_validators_inputs) == 1
+
+        expect Some(input_from_script) = list.head(all_validators_inputs)
+
+        let outputs_back_to_positions_validator: List<Output> =
+          get_address_outputs(transaction, input_from_script.output.address)
+
+        expect Some(output_to_positions_validator) =
+          list.head(outputs_back_to_positions_validator)
+
+        let strike_collateral_amount =
+          quantity_of(
+            input_from_script.output.value,
+            strike_policy_id,
+            strike_asset_name,
+          )
+
+        expect
+          quantity_of(
+            output_to_positions_validator.value,
+            collateral_asset.policy_id,
+            collateral_asset.asset_name,
+          ) == collateral_asset_amount
+
+        expect
+          quantity_of(
+            output_to_positions_validator.value,
+            strike_policy_id,
+            strike_asset_name,
+          ) == strike_collateral_amount
+
+        let return_pool_asset_amount =
+          when send_asset_amount > collateral_asset_amount is {
+            True -> 0
+            False -> send_asset_amount - collateral_asset_amount
+          }
+
+        let expected_order_datum =
+          OrderDatum {
+            action: AutomatedClosePositionOrder {
+              send_asset_amount,
+              return_pool_asset_amount,
+              strike_collateral_amount,
+            },
+          }
+
+        expect InlineDatum(output_datum) = output_to_positions_validator.datum
+        let expected_order_datum_data: Data = expected_order_datum
+
+        expected_order_datum_data == output_datum
       }
     }
   }

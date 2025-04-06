@@ -116,10 +116,15 @@ pub fn close_position_valid(
 
   expect match(expected_assets_sent, output_to_orders_validator.value, >=)
 
+  let profit_loss = position_usd_value - collateral_value
+
   // Create expected order datum (same for all close types)
   let expected_order_datum =
     OrderDatum {
-      action: ClosePositionOrder { position_hash: datum.position_hash },
+      action: ClosePositionOrder {
+        position_hash: datum.position_hash,
+        profit_loss: -profit_loss,
+      },
     }
   let expected_order_datum_data: Data = expected_order_datum
 
@@ -161,9 +166,9 @@ pub fn liquidate_close_valid(
     entered_at_usd_price,
     entered_position_time,
     side,
-    position_hash,
     hourly_usd_borrow_fee,
     maintain_margin_amount,
+    leverage_factor,
     collateral_asset,
     ..
   } = datum
@@ -179,8 +184,15 @@ pub fn liquidate_close_valid(
 
   expect Some(input_from_script) = list.head(all_validators_inputs)
 
+  let collateral_asset_gained = position_asset_amount / leverage_factor
+
   let expected_order_datum =
-    OrderDatum { action: LiquidatePositionOrder { position_hash } }
+    OrderDatum {
+      action: LiquidatePositionOrder {
+        profit: collateral_asset_gained,
+        collateral_policy_id: collateral_asset.policy_id,
+      },
+    }
 
   let expected_order_datum_data: Data = expected_order_datum
 

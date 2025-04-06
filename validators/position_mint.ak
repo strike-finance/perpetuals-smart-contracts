@@ -1,4 +1,5 @@
 use aiken/collection/list
+use aiken/collection/pairs
 use cardano/assets.{AssetName, PolicyId, Value, flatten, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
@@ -108,12 +109,16 @@ pub fn mint_position_valid(
   expect
     assets.quantity_of(pool_value, pool_nft_policy_id, pool_nft_asset_name) == 1
 
-  let PoolDatum {
-    underlying_asset,
-    total_asset_amount,
-    available_asset_amount,
-    ..
-  } = pool_datum_typed
+  let PoolDatum { underlying_asset, liquidity_total_asset_amount, .. } =
+    pool_datum_typed
+
+  let available_asset_amount =
+    quantity_of(
+      pool_value,
+      underlying_asset.policy_id,
+      underlying_asset.asset_name,
+    )
+
   expect Some(Input {
     output: Output {
       value: global_settings_value,
@@ -185,6 +190,9 @@ pub fn mint_position_valid(
       underlying_asset.policy_id,
       underlying_asset.asset_name,
     )
+
+  expect Some(total_asset_amount) =
+    pairs.get_first(liquidity_total_asset_amount, underlying_asset.policy_id)
 
   let underlying_asset_lended_amount =
     total_asset_amount - available_asset_amount
