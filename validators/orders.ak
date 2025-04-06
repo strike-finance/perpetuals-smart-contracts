@@ -162,6 +162,8 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
               strike_collateral_amount,
               owner_pkh,
               owner_stake_key,
+              send_asset: collateral_asset,
+              pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
             },
           }
 

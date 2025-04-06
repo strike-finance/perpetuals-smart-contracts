@@ -160,6 +160,8 @@ pub fn close_position_valid(
             strike_collateral_amount,
             owner_pkh: datum.owner_pkh,
             owner_stake_key: datum.owner_stake_key,
+            send_asset: collateral_asset,
+            pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
           },
         }
       let expected_order_datum_data: Data = expected_order_datum

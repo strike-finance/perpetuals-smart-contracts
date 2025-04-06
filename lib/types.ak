@@ -41,7 +41,7 @@ pub type OrderAction {
     // The script hash for the positions script that holds all the positions of the trader
     position_hash: ScriptHash,
     // Profit or loss incurred by the trader and reflected in the pool
-    profit_loss: Int,
+    pool_asset_profit_loss: Int,
   }
   // Position closed by the protocol bot due to take profit, stop loss, or during pending state.
   // Since assets were previously in position UTxO or non-existent, we calculate and distribute
@@ -58,6 +58,10 @@ pub type OrderAction {
     owner_pkh: AddressHash,
     // Stake key if present 
     owner_stake_key: Option<AddressHash>,
+    // The collateral asset that was used
+    send_asset: Asset,
+    // The profit or loss incurred by the trader and reflected in the pool
+    pool_asset_profit_loss: Int,
   }
   LiquidatePositionOrder {
     // Profit by this trade to the pool

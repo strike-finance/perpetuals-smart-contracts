@@ -3,7 +3,7 @@ use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script}
 use cardano/assets.{Value, match, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
-use constants.{position_asset_name}
+use constants.{position_asset_name, strike_asset_name, strike_policy_id}
 use math.{calculate_assets_get_back, calculate_lp_assets_sent}
 use types.{
   Asset, AutomatedClosePositionOrder, ClosePositionOrder, ExpectedPoolOutput,
@@ -132,9 +132,9 @@ pub fn validate_individual_order(
         expected_mint,
       )
     AutomatedClosePositionOrder(..) ->
-      close_position(
-        input,
+      automated_close_position(
         input_datum_typed,
+        output,
         pool_output_value,
         pool_output_datum,
         expected_mint,
@@ -257,7 +257,8 @@ pub fn close_position(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect ClosePositionOrder { position_hash, profit_loss } = datum.action
+  expect ClosePositionOrder { position_hash, pool_asset_profit_loss } =
+    datum.action
 
   let PoolDatum { underlying_asset, liquidity_total_gains_losses, .. } =
     pool_output_datum
@@ -280,9 +281,60 @@ pub fn close_position(
         ),
     datum: PoolDatum {
       ..pool_output_datum,
-      liquidity_total_gains_losses: liquidity_total_gains_losses + profit_loss,
+      liquidity_total_gains_losses: liquidity_total_gains_losses + pool_asset_profit_loss,
     },
     mint,
+  }
+}
+
+pub fn automated_close_position(
+  datum: OrderDatum,
+  output: Output,
+  pool_output_value: Value,
+  pool_output_datum: PoolDatum,
+  expected_mint: Value,
+) -> ExpectedPoolOutput {
+  expect AutomatedClosePositionOrder {
+    owner_pkh,
+    owner_stake_key,
+    send_asset_amount,
+    send_asset,
+    return_pool_asset_amount,
+    pool_asset_profit_loss,
+    strike_collateral_amount,
+  } = datum.action
+
+  let PoolDatum { underlying_asset, liquidity_total_gains_losses, .. } =
+    pool_output_datum
+
+  let owner_address =
+    when owner_stake_key is {
+      Some(key) ->
+        address.from_verification_key(owner_pkh)
+          |> address.with_delegation_key(key)
+      None -> address.from_verification_key(owner_pkh)
+    }
+
+  expect output.address == owner_address
+
+  expect
+    quantity_of(output.value, send_asset.policy_id, send_asset.asset_name) == send_asset_amount
+
+  expect
+    quantity_of(output.value, strike_policy_id, strike_asset_name) == strike_collateral_amount
+
+  ExpectedPoolOutput {
+    value: pool_output_value
+      |> assets.add(
+          underlying_asset.policy_id,
+          underlying_asset.asset_name,
+          return_pool_asset_amount,
+        ),
+    datum: PoolDatum {
+      ..pool_output_datum,
+      liquidity_total_gains_losses: liquidity_total_gains_losses + pool_asset_profit_loss,
+    },
+    mint: expected_mint,
   }
 }
 
