@@ -1,4 +1,5 @@
 use aiken/collection/list
+use cardano/address
 use cardano/assets.{match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction, find_script_outputs,
@@ -9,13 +10,13 @@ use math.{
   calculate_position_usd_value_based_on_side, reach_liquidation_price,
 }
 use types.{
-  AutomatedClosePositionOrder, CloseType, LiquidatePositionOrder, Long,
-  OrderDatum, POSIXTime, PositionDatum, ScriptHash, StopLossClose, TraderClose,
+  ClosePositionOrder, CloseType, LiquidatePositionOrder, Long, OrderDatum,
+  POSIXTime, PositionDatum, ScriptHash, StopLossClose, TraderClose,
 }
 use utils.{get_address_outputs, get_all_validators_inputs, get_lower_bound}
 
 pub type ManagePositionRedeemer {
-  Close { close_price: Int, close_type: CloseType }
+  Close { close_price: Int, close_type: CloseType, output_to_user_index: Int }
   AddCollateral
   PositionUpdate { stop_loss: Int, take_profit: Int }
   LiquidateClose { current_usd_price: Int }
@@ -29,13 +30,14 @@ validator manage_positions(orders_script_hash: ScriptHash) {
     transaction: Transaction,
   ) {
     when redeemer is {
-      Close(current_usd_price, close_type) ->
+      Close(current_usd_price, close_type, output_to_user_index) ->
         close_position_valid(
           transaction,
           datum,
           current_usd_price,
           orders_script_hash,
           close_type,
+          output_to_user_index,
         )
       LiquidateClose(current_usd_price) ->
         liquidate_close_valid(
@@ -61,6 +63,7 @@ pub fn close_position_valid(
   current_usd_price: Int,
   orders_script_hash: ScriptHash,
   close_type: CloseType,
+  output_to_user_index: Int,
 ) -> Bool {
   let Transaction { mint, extra_signatories, .. } = transaction
 
@@ -73,6 +76,8 @@ pub fn close_position_valid(
     position_asset_amount,
     collateral_asset,
     position_hash,
+    owner_pkh,
+    owner_stake_key,
     ..
   } = datum
 
@@ -118,6 +123,16 @@ pub fn close_position_valid(
       strike_asset_name,
     )
 
+  let expected_order_datum =
+    OrderDatum {
+      action: ClosePositionOrder {
+        pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
+      },
+    }
+  let expected_order_datum_data: Data = expected_order_datum
+
+  expect expected_order_datum_data == orders_datum
+
   // Validate based on close type
   when close_type is {
     // TraderClose: only owner can close
@@ -152,27 +167,26 @@ pub fn close_position_valid(
         }
       }
 
-      let expected_order_datum =
-        OrderDatum {
-          action: AutomatedClosePositionOrder {
-            send_asset_amount,
-            return_pool_asset_amount: position_asset_amount - send_asset_amount,
-            strike_collateral_amount,
-            owner_pkh: datum.owner_pkh,
-            owner_stake_key: datum.owner_stake_key,
-            send_asset: collateral_asset,
-            pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
-          },
+      expect Some(output) = list.at(transaction.outputs, output_to_user_index)
+
+      let owner_address =
+        when owner_stake_key is {
+          Some(key) ->
+            address.from_verification_key(owner_pkh)
+              |> address.with_delegation_key(key)
+          None -> address.from_verification_key(owner_pkh)
         }
-      let expected_order_datum_data: Data = expected_order_datum
 
-      expect expected_order_datum_data == orders_datum
+      expect output.address == owner_address
 
-      quantity_of(
-        output_to_orders_validator.value,
-        strike_policy_id,
-        strike_asset_name,
-      ) == position_asset_amount
+      expect
+        quantity_of(
+          output.value,
+          collateral_asset.policy_id,
+          collateral_asset.asset_name,
+        ) == send_asset_amount
+
+      quantity_of(output.value, strike_policy_id, strike_asset_name) == strike_collateral_amount
     }
   }
 }

@@ -38,8 +38,6 @@ pub type OrderAction {
   // Regular close position, where users personally closed their position and all funds are returned to pool. 
   // When they closed it they already consumed what they needed. All that's left is for the pool
   ClosePositionOrder {
-    // The script hash for the positions script that holds all the positions of the trader
-    position_hash: ScriptHash,
     // Profit or loss incurred by the trader and reflected in the pool
     pool_asset_profit_loss: Int,
   }

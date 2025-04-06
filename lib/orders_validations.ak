@@ -3,7 +3,7 @@ use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script}
 use cardano/assets.{Value, match, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
-use constants.{position_asset_name, strike_asset_name, strike_policy_id}
+use constants.{strike_asset_name, strike_policy_id}
 use math.{calculate_assets_get_back, calculate_lp_assets_sent}
 use types.{
   Asset, AutomatedClosePositionOrder, ClosePositionOrder, ExpectedPoolOutput,
@@ -257,13 +257,10 @@ pub fn close_position(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect ClosePositionOrder { position_hash, pool_asset_profit_loss } =
-    datum.action
+  expect ClosePositionOrder { pool_asset_profit_loss } = datum.action
 
   let PoolDatum { underlying_asset, liquidity_total_gains_losses, .. } =
     pool_output_datum
-
-  let mint = assets.add(expected_mint, position_hash, position_asset_name, -1)
 
   let return_pool_asset_amount =
     quantity_of(
@@ -283,7 +280,7 @@ pub fn close_position(
       ..pool_output_datum,
       liquidity_total_gains_losses: liquidity_total_gains_losses + pool_asset_profit_loss,
     },
-    mint,
+    mint: expected_mint,
   }
 }
 
