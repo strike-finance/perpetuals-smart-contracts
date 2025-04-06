@@ -1,7 +1,5 @@
 use aiken/collection/list
-use aiken/collection/pairs
 use aiken/crypto.{ScriptHash}
-use aiken/primitive/bytearray
 use cardano/address.{Address, Script}
 use cardano/assets.{Value, match, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
@@ -193,6 +191,7 @@ pub fn open_position(
       side,
       collateral_asset_amount,
       position_asset_amount,
+      owner_stake_key,
     },
     ..
   } = input_datum_typed.action
@@ -212,6 +211,7 @@ pub fn open_position(
       side,
       collateral_asset_amount,
       position_asset_amount,
+      owner_stake_key,
     }
 
   expect InlineDatum(output_datum) = output.datum
@@ -271,14 +271,6 @@ pub fn close_position(
       underlying_asset.asset_name,
     )
 
-  let updated_profit_loss_amount =
-    liquidity_total_gains_losses
-      |> pairs.repsert_by_ascending_key(
-          underlying_asset.policy_id,
-          return_pool_asset_amount + profit_loss,
-          compare: bytearray.compare,
-        )
-
   ExpectedPoolOutput {
     value: pool_output_value
       |> assets.add(
@@ -288,7 +280,7 @@ pub fn close_position(
         ),
     datum: PoolDatum {
       ..pool_output_datum,
-      liquidity_total_gains_losses: updated_profit_loss_amount,
+      liquidity_total_gains_losses: liquidity_total_gains_losses + profit_loss,
     },
     mint,
   }
@@ -301,7 +293,7 @@ pub fn liquidate_position(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect LiquidatePositionOrder { profit, collateral_policy_id } = datum.action
+  expect LiquidatePositionOrder { profit } = datum.action
 
   let PoolDatum { liquidity_total_gains_losses, .. } = pool_output_datum
 
@@ -320,19 +312,11 @@ pub fn liquidate_position(
       asset_amount_returned,
     )
 
-  let updated_profit_loss_amount =
-    liquidity_total_gains_losses
-      |> pairs.repsert_by_ascending_key(
-          collateral_policy_id,
-          profit,
-          compare: bytearray.compare,
-        )
-
   ExpectedPoolOutput {
     value: updated_value,
     datum: PoolDatum {
       ..pool_output_datum,
-      liquidity_total_gains_losses: updated_profit_loss_amount,
+      liquidity_total_gains_losses: liquidity_total_gains_losses + profit,
     },
     mint: expected_mint,
   }
@@ -356,12 +340,6 @@ fn provide_liquidity_valid(
     ..
   } = pool_output_datum
 
-  expect Some(total_asset_amount) =
-    pairs.get_first(liquidity_total_asset_amount, liquidity_asset.policy_id)
-
-  expect Some(total_lp_minted) =
-    pairs.get_first(liquidity_total_lp_minted, liquidity_asset.policy_id)
-
   let liquidity_amount =
     quantity_of(
       input.value,
@@ -371,29 +349,13 @@ fn provide_liquidity_valid(
 
   let expected_lp_token_sent =
     calculate_lp_assets_sent(
-      total_asset_amount,
-      total_lp_minted,
+      liquidity_total_asset_amount,
+      liquidity_total_lp_minted,
       liquidity_amount,
     )
 
   let lp_tokens_sent =
     quantity_of(output.value, lp_asset.policy_id, lp_asset.asset_name)
-
-  let updated_total_lp_minted =
-    liquidity_total_lp_minted
-      |> pairs.repsert_by_ascending_key(
-          liquidity_asset.policy_id,
-          lp_tokens_sent,
-          bytearray.compare,
-        )
-
-  let updated_total_asset_amount =
-    liquidity_total_asset_amount
-      |> pairs.repsert_by_ascending_key(
-          liquidity_asset.policy_id,
-          liquidity_amount,
-          bytearray.compare,
-        )
 
   expect lp_tokens_sent <= expected_lp_token_sent
 
@@ -411,8 +373,8 @@ fn provide_liquidity_valid(
     value: pool_output_value,
     datum: PoolDatum {
       ..pool_output_datum,
-      liquidity_total_lp_minted: updated_total_lp_minted,
-      liquidity_total_asset_amount: updated_total_asset_amount,
+      liquidity_total_lp_minted: liquidity_total_lp_minted + lp_tokens_sent,
+      liquidity_total_asset_amount: liquidity_total_asset_amount + liquidity_amount,
     },
     mint: expected_mint,
   }
@@ -426,7 +388,7 @@ fn withdraw_liquidy_valid(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect WithdrawLiquidityOrder { owner_pkh, owner_stake_key, liquidity_asset } =
+  expect WithdrawLiquidityOrder { owner_pkh, owner_stake_key } =
     input_datum_typed.action
 
   let PoolDatum {
@@ -440,16 +402,10 @@ fn withdraw_liquidy_valid(
   let lp_tokens_deposited =
     quantity_of(input.value, lp_asset.policy_id, lp_asset.asset_name)
 
-  expect Some(total_asset_amount) =
-    pairs.get_first(liquidity_total_asset_amount, liquidity_asset.policy_id)
-
-  expect Some(total_lp_minted) =
-    pairs.get_first(liquidity_total_lp_minted, liquidity_asset.policy_id)
-
   let expected_assets_sent =
     calculate_assets_get_back(
-      total_asset_amount,
-      total_lp_minted,
+      liquidity_total_asset_amount,
+      liquidity_total_lp_minted,
       lp_tokens_deposited,
     )
 
@@ -472,28 +428,12 @@ fn withdraw_liquidy_valid(
 
   expect owner_address == output.address
 
-  let updated_liquidity_total_lp_minted =
-    pool_output_datum.liquidity_total_lp_minted
-      |> pairs.repsert_by_ascending_key(
-          liquidity_asset.policy_id,
-          -lp_tokens_deposited,
-          bytearray.compare,
-        )
-
-  let updated_liquidity_total_asset_amount =
-    pool_output_datum.liquidity_total_asset_amount
-      |> pairs.repsert_by_ascending_key(
-          liquidity_asset.policy_id,
-          -assets_sent,
-          bytearray.compare,
-        )
-
   ExpectedPoolOutput {
     value: pool_output_value,
     datum: PoolDatum {
       ..pool_output_datum,
-      liquidity_total_lp_minted: updated_liquidity_total_lp_minted,
-      liquidity_total_asset_amount: updated_liquidity_total_asset_amount,
+      liquidity_total_lp_minted: liquidity_total_lp_minted - lp_tokens_deposited,
+      liquidity_total_asset_amount: liquidity_total_asset_amount - assets_sent,
     },
     mint: expected_mint,
   }

@@ -1,5 +1,4 @@
 use aiken/collection/list
-use aiken/collection/pairs
 use cardano/assets.{AssetName, PolicyId, Value, flatten, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
@@ -191,11 +190,8 @@ pub fn mint_position_valid(
       underlying_asset.asset_name,
     )
 
-  expect Some(total_asset_amount) =
-    pairs.get_first(liquidity_total_asset_amount, underlying_asset.policy_id)
-
   let underlying_asset_lended_amount =
-    total_asset_amount - available_asset_amount
+    liquidity_total_asset_amount - available_asset_amount
 
   let estimated_hourly_usd_borrow_fee: Int =
     calculate_hourly_usd_borrow_fee(

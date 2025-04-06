@@ -54,12 +54,14 @@ pub type OrderAction {
     return_pool_asset_amount: Int,
     // strike collateral sent to trader
     strike_collateral_amount: Int,
+    // Owner of the liquidity, to send the lp tokens
+    owner_pkh: AddressHash,
+    // Stake key if present 
+    owner_stake_key: Option<AddressHash>,
   }
   LiquidatePositionOrder {
     // Profit by this trade to the pool
     profit: Int,
-    // The collateral asset that was used
-    collateral_policy_id: PolicyId,
   }
   ProvideLiquidityOrder {
     // Owner of the liquidity, to send the lp tokens
@@ -74,14 +76,14 @@ pub type OrderAction {
     owner_pkh: AddressHash,
     // Stake key if present 
     owner_stake_key: Option<AddressHash>,
-    // The policy id of the asset that is being removed from the pool
-    liquidity_asset: Asset,
   }
 }
 
 pub type PositionDatum {
   // Owner of the order
   owner_pkh: AddressHash,
+  // Stake key if present 
+  owner_stake_key: Option<AddressHash>,
   // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
   leverage_factor: Int,
   // The time the order was submitted
@@ -124,11 +126,11 @@ pub type PoolDatum {
   // Token For Lp
   lp_asset: Asset,
   // Supported assets of the pool, with the total amount of assets that has been added to the pool
-  liquidity_total_asset_amount: Pairs<PolicyId, Int>,
+  liquidity_total_asset_amount: Int,
   // Supported assets of the pool, with the total gains and losses
-  liquidity_total_gains_losses: Pairs<PolicyId, Int>,
+  liquidity_total_gains_losses: Int,
   // Supported assets of the pool, with the total lp minted
-  liquidity_total_lp_minted: Pairs<PolicyId, Int>,
+  liquidity_total_lp_minted: Int,
   // Batcher license
   batcher_license: PolicyId,
 }

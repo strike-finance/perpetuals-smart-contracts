@@ -3,14 +3,14 @@ use cardano/assets.{match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction, find_script_outputs,
 }
+use constants.{position_asset_name, strike_asset_name, strike_policy_id}
 use math.{
   calculate_accumulative_interest_fee,
   calculate_position_usd_value_based_on_side, reach_liquidation_price,
 }
 use types.{
-  ClosePositionOrder, CloseType, LiquidatePositionOrder, Long, OrderDatum,
-  POSIXTime, PositionDatum, ScriptHash, StopLossClose, TakeProfitClose,
-  TraderClose,
+  AutomatedClosePositionOrder, CloseType, LiquidatePositionOrder, Long,
+  OrderDatum, POSIXTime, PositionDatum, ScriptHash, StopLossClose, TraderClose,
 }
 use utils.{get_address_outputs, get_all_validators_inputs, get_lower_bound}
 
@@ -62,6 +62,8 @@ pub fn close_position_valid(
   orders_script_hash: ScriptHash,
   close_type: CloseType,
 ) -> Bool {
+  let Transaction { mint, extra_signatories, .. } = transaction
+
   expect Some(datum) = maybe_datum
 
   let PositionDatum {
@@ -69,13 +71,14 @@ pub fn close_position_valid(
     side,
     collateral_asset_amount,
     position_asset_amount,
+    collateral_asset,
+    position_hash,
     ..
   } = datum
 
   // Validate basic transaction structure
   let all_validators_inputs = get_all_validators_inputs(transaction)
   expect list.length(all_validators_inputs) == 1
-  expect Some(input_from_script) = list.head(all_validators_inputs)
 
   let outputs_to_orders_validator =
     find_script_outputs(transaction.outputs, orders_script_hash)
@@ -84,6 +87,8 @@ pub fn close_position_valid(
   expect InlineDatum(orders_datum) = output_to_orders_validator.datum
 
   let current_time = get_lower_bound(transaction.validity_range)
+
+  expect [(position_hash, position_asset_name, -1)] == assets.flatten(mint)
 
   let accumulative_interest_fee =
     calculate_accumulative_interest_fee(
@@ -106,50 +111,67 @@ pub fn close_position_valid(
   let send_asset_amount =
     ( collateral_value + position_usd_value ) / current_usd_price
 
-  let expected_assets_sent =
-    input_from_script.output.value
-      |> assets.add(
-          datum.collateral_asset.policy_id,
-          datum.collateral_asset.asset_name,
-          -send_asset_amount,
-        )
-
-  expect match(expected_assets_sent, output_to_orders_validator.value, >=)
-
-  let profit_loss = position_usd_value - collateral_value
-
-  // Create expected order datum (same for all close types)
-  let expected_order_datum =
-    OrderDatum {
-      action: ClosePositionOrder {
-        position_hash: datum.position_hash,
-        profit_loss: -profit_loss,
-      },
-    }
-  let expected_order_datum_data: Data = expected_order_datum
-
-  expect expected_order_datum_data == orders_datum
+  let strike_collateral_amount =
+    quantity_of(
+      output_to_orders_validator.value,
+      strike_policy_id,
+      strike_asset_name,
+    )
 
   // Validate based on close type
   when close_type is {
     // TraderClose: only owner can close
-    TraderClose -> list.has(transaction.extra_signatories, datum.owner_pkh)
+    TraderClose -> {
+      expect list.has(extra_signatories, datum.owner_pkh)
+
+      let assets_sent_back_to_pool =
+        quantity_of(
+          output_to_orders_validator.value,
+          collateral_asset.policy_id,
+          collateral_asset.asset_name,
+        )
+
+      assets_sent_back_to_pool >= position_asset_amount - send_asset_amount
+    }
+
+    // Create expected order datum (same for all close types)
     // In a long position, a loss is when the current price is less than the inital price, so 
     // a stop loss is reached when the price is below or equal to the stop_loss_usd_price
-    StopLossClose ->
-      if datum.side == Long {
-        current_usd_price <= datum.stop_loss_usd_price
+    _ -> {
+      if close_type == StopLossClose {
+        if datum.side == Long {
+          expect current_usd_price <= datum.stop_loss_usd_price
+        } else {
+          expect current_usd_price >= datum.stop_loss_usd_price
+        }
       } else {
-        current_usd_price >= datum.stop_loss_usd_price
+        if datum.side == Long {
+          expect current_usd_price >= datum.take_profit_usd_price
+        } else {
+          expect current_usd_price <= datum.take_profit_usd_price
+        }
       }
-    // In a long position, a take profit is when the current price is greater than the inital price, so 
-    // a take profit is reached when the price is above or equal to the take_profit_usd_price
-    TakeProfitClose ->
-      if datum.side == Long {
-        current_usd_price >= datum.take_profit_usd_price
-      } else {
-        current_usd_price <= datum.take_profit_usd_price
-      }
+
+      let expected_order_datum =
+        OrderDatum {
+          action: AutomatedClosePositionOrder {
+            send_asset_amount,
+            return_pool_asset_amount: position_asset_amount - send_asset_amount,
+            strike_collateral_amount,
+            owner_pkh: datum.owner_pkh,
+            owner_stake_key: datum.owner_stake_key,
+          },
+        }
+      let expected_order_datum_data: Data = expected_order_datum
+
+      expect expected_order_datum_data == orders_datum
+
+      quantity_of(
+        output_to_orders_validator.value,
+        strike_policy_id,
+        strike_asset_name,
+      ) == position_asset_amount
+    }
   }
 }
 
@@ -188,10 +210,7 @@ pub fn liquidate_close_valid(
 
   let expected_order_datum =
     OrderDatum {
-      action: LiquidatePositionOrder {
-        profit: collateral_asset_gained,
-        collateral_policy_id: collateral_asset.policy_id,
-      },
+      action: LiquidatePositionOrder { profit: collateral_asset_gained },
     }
 
   let expected_order_datum_data: Data = expected_order_datum
