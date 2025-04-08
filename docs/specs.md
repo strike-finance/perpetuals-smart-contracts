@@ -16,50 +16,49 @@
 
 There a 8 total contracts that are used.
 
-- **manage_positions.ak**: This validator handles the validation of user's positions mangement after opening a position such as updating take profit/stop loss, closing and liquidating position, and adding collateral
+- **position_mint.ak**: This is the inital validator when the user has to mint a token from when opening a position. To close a position the asset from this script must be burnt.
 
-- **position_mint.ak**: This is the inital validator when the user has to mint a token from when opening a position. To close a position the asset from this script must be burnt
+- **manage_positions.ak**: This validator handles the validation of user's positions mangement after opening a position such as updating take profit/stop loss, closing and liquidating position, and adding collateral.
 
 - **orders.ak**: This validator handles all interactions with the pool, such as borrowing assets, returning assets, providing liquidity, and withdrawing liquidity.
 
-- **liquidity_mint.ak**: This validator handles the validation of minting and burning of liquidity tokens. When you provide liquidity you get these in return and when you withdraw liquidity you need to burn these
+- **liquidity_mint.ak**: This validator handles the validation of minting and burning of liquidity tokens. When you provide liquidity you get these in return and when you withdraw liquidity you need to burn these.
 
-- **protocol_auth.ak** This is minted once. The asset minted from this script gives the righ to change the config of the settings
+- **protocol_auth.ak** This is minted once. The asset minted from this script gives the righ to change the config of the settings.
 
-- **setting.akk** Contains the settings UTxO
+- **settings.ak** Contains the settings UTxO.
 
-- **batcher_license.ak** Mints token that allow them to run order batches
+- **batcher_license.ak** Mints token that allow them to run order batches.
 
-- **pools.ak** Contains all the funds the liquidity providers deposited
+- **pools.ak** Contains all the funds the liquidity providers deposited.
 
 ## Tokens
 
-- **Positions Token**: Consitutes a valid transaction. Must be burnt when closing a transaction. Only minted once per transaction
-- **Liquidity Tokens**: Tokens liquidity provders recieve when providing liquidity. They will recieve based on their current ratio of deposted funds to total funds _ total lp tokens minted so far. When withdrawing they will recieve their current ratio of lp tokens to total lp tokens _ total funds in pool
+- **Positions Token**: Consitutes a valid transaction. Must be burnt when closing a transaction. Only minted once per transaction.
+- **Liquidity Tokens**: Tokens liquidity provders recieve when providing liquidity.
 - **Batcher License**: Only holder of this license token can batch orders.
-- **Settings NFT**: This asset can be used to update configs in settings
+- **Settings NFT**: This asset can be used to update configs in settings.
 
 ## High Level Flow For All Actions
 
 All possible actions of the contracts are here
 //TODO
 
-- **Open Position**:
-- **Close Position While Pending**:
-- **Cancel Position While Pending**:
-- **Open Limit Order**:
-- **Cancel Limit Order**:
-- **Close Position**:
-- **Add Collateral**:
-- **Update Take Profit and Stop Loss**:
-- **Take Profit**:
-- **Stop Loss**:
-- **Liquidate Collateral**:
-- **Provide Liquidity**:
-- **Withdraw Liquidity**:
-- **Update Settings**:
+- **Open Position**: Mints a token, send to orders validator. Order validator will send to the manage_positions.ak. The UTxO at the manage_positions.ak contains all the assets of this position(including borrowed funds)
+- **Close Position While Pending**: While it's at the orders validator pending to be batched, if it took the batcher long time and still haven't batched(for some reason...) the trader can close the position as if it has been batched. When they close the position the datum will be updated, the batcher will eventually pick it up, and the trader can get their assets back + profits.
+- **Cancel Position While Pending**: This is similar to close position while pending, but in this case it is cancelling the position. The trader will simply get all their assets back.
+- **Open Limit Order**: The same token is minted from the same script as opening position. Then send to the orders validator. The off-chain will simply ignore this limit order until it has been met and add it to the batcher
+- **Cancel Limit Order**: Can cancel the limit order at anytime
+- **Close Position**: When they close the position, they consume the assets that they will recieve from this position. Since when the batcher send from order validator to manage position validator all assets are in the UTxO, no additional assets are needed from the pool. Trader will simply consume from the UTxO, and send back whatever is left back to order.ak. Then the batcher will add back these assets back to the pool
+- **Update Take Profit and Stop Loss**: Consume UTxO at manage_positions.ak, send back with no assets consumed and only the datum field updated.
+- **Take Profit and Stop Loss Tx**: Off-chain will monitor for this, once price has been reach send assets to the owner and the rest back to order.ak
+- **Add Collateral**: Consume UTxO at manage_positions.ak, send back with additional collateral
+- **Liquidate Collateral**: Send all assets to order.ak
+- **Provide Liquidity**: Deposit liquidity assets into order.ak. Btacher will then mint and send lp tokens to the liquidity provider. They will recieve based on their current ratio of deposted funds to total funds \_ total lp tokens minted so far.
+- **Withdraw Liquidity**: Deposit the tokens they recieved from providing liquidity. Batcher will burn those tokens and send the underlying assets back to them.They will recieve their current ratio of lp tokens to total lp tokens \_ total funds in pool.
+- **Update Settings**: Must hold auth asset in tx. Consume from settings.ak,consume no assets, update datum, send back to script.
 
-## Positions Validator
+## position_mint.ak
 
 This is a multivalidator with a spending and minting script. When the traders opens a position, they will first mint assets from the positions validator corresponding to his total position size(inital position size \* leverage). A UTxO will be sent to the orders validator for processing. Once the processing is done, the UTxO will be sent back to the positions validator. The trader will be able to close his position, specify stop loss and take profit by interacting with the UTxO here once it has been send back from the orders validator.
 
@@ -149,7 +148,7 @@ pub type PositionMintRedeemer {
   - The bot will burn the amount of minted tokens that represents the amount that the trader will pay
   - The UTxO must be returned back to the positions validator with the minted assets, collateral, and only the `entered_position_time` and `liquidate_usd_price` datum is changed
 
-## Liquidity Validator
+## manage_positions.ak
 
 This is a multivalidator with a spending and minting script. When someone wants to provide liquidity they will first mint the liquidity assets. The liquidity assets are 1:1 of the amount of assets provided. Then it will be sent to the orders validator. The order validator will send back the assets back to the liquidity validator. The UTxO sent back will contain datum values that will be used to calculate how much fees the provider has earned.
 
@@ -228,7 +227,7 @@ _collateral_earnings_per_share_: The earnings per share for the collateral for t
 
   - Pool params can be updated only by the admin. The admin must consume the UTxO, consume no assets, return the UTxO back to the pool validator with the updated datum
 
-## Orders Validator
+## orders.ak
 
 This is a multivalidator with a spending and withdrawal script. Traders can cancel their transactions sitting here before the batcher picks it up. The batcher utilized a multi-utxo indexer to make sure the transactions are applied correctly, ie the input has the correct corressponding output.
 
@@ -332,3 +331,13 @@ A Multi-UTxO indexer is used to match the input to the output.
 - **Cancel Withdraw Liquidity Order**
 
   - Collateral assets and minted assets are sent back to the positions validator with the correct datum values
+
+## liquidity_mint.ak
+
+## protocol_auth.ak
+
+## settings.ak
+
+## batcher_license.ak
+
+## pool.ak
