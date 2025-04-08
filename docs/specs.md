@@ -60,93 +60,48 @@ All possible actions of the contracts are here
 
 ## position_mint.ak
 
-This is a multivalidator with a spending and minting script. When the traders opens a position, they will first mint assets from the positions validator corresponding to his total position size(inital position size \* leverage). A UTxO will be sent to the orders validator for processing. Once the processing is done, the UTxO will be sent back to the positions validator. The trader will be able to close his position, specify stop loss and take profit by interacting with the UTxO here once it has been send back from the orders validator.
+This is a minting policy validator that handles the minting and burning of position tokens. When traders open a position, they mint a token from this validator. To close a position, the token must be burnt. The validator ensures that all the necessary conditions are met when opening or closing a position.
 
 #### Params
 
-- orders_script_hash: The script hash of the orders validator to make sure that UTxO is sent there
-- pool_license: OutputReference: A reference to the Pool UTxO, to make sure that the max leverage have not been exceeded
-
-#### Datum
-
-- _owner_pkh_: Owner of the position
-- _entered_at_usd_price_: Price at which the position was entered
-- _underlying_asset_: The underlying asset that the perpetual contract is trading on
-- _leverage_factor_: Leverage used for the position
-- _positions_mint_asset_: Minted asset to represent the trader total position size
-- _positions_mint_asset_amount_: Total position size of the trader, i.e., the initial size of position \* leverage
-- _collateral_asset_: Stable collateral asset
-- _collateral_asset_amount_: Total stable collateral amount
-- _liquidate_usd_price_: Price at which the position will be liquidated
-- _stop_loss_usd_price_: Stop loss price where the position will be closed
-- _take_profit_usd_price_: Take profit price where the position will be closed
-- _last_pay_lend_time_: Last time the hourly lend was paid
-- _pool_license_: Reference to the pool validator
-- _side_: Side of the position
+- orders_script_hash: The script hash of the orders validator to ensure the UTxO is sent there
+- pool_nft_policy_id: The policy ID of the pool NFT
+- pool_nft_asset_name: The asset name of the pool NFT
+- settings_nft_policy_id: The policy ID of the settings NFT
+- settings_nft_asset_name: The asset name of the settings NFT
 
 #### Redeemer
 
 ```
-pub type PositionRedeemer {
-  Close
-  StopLoss
-  UpdateStopLoss
-  TakeProfit
-  UpdateTakeProfit
-  Liquidate
-  PayLend
-}
-
 pub type PositionMintRedeemer {
-  MintPosition
-  BurnPosition
+  OpenPosition { current_usd_price: Int, pool_index: Int, setting_index: Int }
+  ClosePosition { burn_amount: Int }
 }
 ```
 
 #### Actions
 
-- **Open positions**
+- **Open Position**
 
-  - When opening a short position, the trader must deposit a stable coin as collateral. When opening a long position, the trader must deposit the underlying asset as collateral.
-  - The pool ref will pull in the Pool UTxo, where it's datum sepcifies the largest leverage the trader can use.
-  - They will mint the amount of assets of their total position.
-  - A UTxO must be sent to the orders validator with the minted assets, collateral, and valid datum values.
+  - The validator mints exactly one position token and ensures it's sent to the orders validator
+  - It verifies the current USD price matches the entered price in the position datum
+  - It checks that the collateral amount meets the leverage requirements (different requirements for strike holders)
+  - It validates the hourly USD borrow fee is at least the estimated fee
+  - The transaction must include references to both the pool and settings UTxOs
+  - The pool reference is used to verify the pool's underlying asset and calculate borrow fees
+  - The settings reference is used to get the max leverage factors and interest rate
 
 - **Close Position**
 
-  - Only the owner of the position can close the positon.
-  - To close a position the trader must sent a UTxO to the orders validtor with the minted assets, collateral, and valid datum values.
+  - The validator simply checks that the correct amount of position tokens are being burned
+  - The batcher might close or liquidate multiple positions at once, so it verifies the burn amount matches what's in the mint field
 
-- **Stop Loss**
+#### Key Validations
 
-  - An off-chain bot will be monitoring all UTxOs at the script, and once the stop loss usd of the position is met, the position will be closed automatically.
-  - The bot must sent the a UTxO to the orders validator with the minted assets, collateral, and valid datum values.
-
-- **Update Stop Loss**
-
-  - Traders will be able to update their stop loss amount, only the owner of the position can update it
-  - The UTxO must be returned back to the positions validator with the minted assets, collateral, and only the `stop_loss_usd_price` datum is changed
-
-- **Take profit**
-
-  - An off-chain bot will be monitoring all UTxOs at the script, and once the take profit usd of the position is met, the position will be closed automatically
-  - The bot must sent the a UTxO to the orders validator with the minted assets, collateral, and valid datum values.
-
-- **Update Take Profit**
-
-  - Traders will be able to update their take profit amount, only the owner of the position can update it
-  - The UTxO must be returned back to the positions validator with the minted assets, collateral, and only the `take_profit_usd_price` datum is changed
-
-- **Liquidate**
-
-  - An off-chain bot will be monitoring all UTxOs at the script, and once the `liquidate_usd_price` of the position is met, the position will be closed automatically
-  - The bot must sent the a UTxO to the orders validator with the minted assets, collateral, and valid datum values.
-
-- **Pay Lend**
-
-  - An off-chain bot will and see for all positions that has a datum value of `entered_position_time` that was over 1 hour ago
-  - The bot will burn the amount of minted tokens that represents the amount that the trader will pay
-  - The UTxO must be returned back to the positions validator with the minted assets, collateral, and only the `entered_position_time` and `liquidate_usd_price` datum is changed
+- **Leverage Check**: Position holders with strike collateral can use a higher leverage factor (max_strike_holder_leverage_factor) than regular position holders (max_leverage_factor)
+- **Borrow Fee Calculation**: The hourly USD borrow fee is calculated based on the position size, lended amount, current price, pool size, and interest rate
+- **Collateral Verification**: The validator ensures the correct amount of collateral is locked, with special handling for lovelace (ADA) to account for the batcher fee
+- **Time Validation**: The transaction validity range's lower bound must be at least the entered position time
 
 ## manage_positions.ak
 
