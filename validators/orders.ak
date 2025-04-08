@@ -27,7 +27,7 @@ pub type OrdersRedeemer {
   // Process all orders which includes providing and withdrawing liquidity
   ProcessOrders
   // Users placed limit order, can cancel anytime. Cancel open orders that has been sitting idle and havent been picked up by batcher
-  CancelLimitOrder
+  CancelOrder
   // A regular that has been placed, but havent been processed by batcher, and user wants to close it
   CloseOrderWhilePending(Int)
 }
@@ -41,7 +41,7 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
   ) {
     when redeemer is {
       ProcessOrders -> is_withdrawal(transaction, own_ref)
-      CancelLimitOrder -> {
+      CancelOrder -> {
         let Transaction { mint, extra_signatories, validity_range, .. } =
           transaction
 
