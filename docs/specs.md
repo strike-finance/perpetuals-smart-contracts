@@ -8,26 +8,56 @@
 
 ## Overview
 
-- A single UTxO is used to store the liquidity and trader's potential winnings. To solve for concurrency problem, a batcher will be used. All orders will go through the orders smart contract, and the batcher will gather them and apply the nessarry validations. Trader's potential loses will also be in the single utxo.
+- Settings UTxO that keeps information such as max leverage, max borrow amount, interest rate, maintaince margin etc..
+- A pool UTxO that contains assets liquidity providers will provide and lended out to traders.
+- A position UTxO that determines the traders current position
 
 ## Architecture
 
-There a 4 total contracts that are used.
+There a 8 total contracts that are used.
 
-- **Positions Validator**: This validator handles the validation of user's positions mangement such as opening positions, closing positions, and liquidating their positions.
+- **manage_positions.ak**: This validator handles the validation of user's positions mangement after opening a position such as updating take profit/stop loss, closing and liquidating position, and adding collateral
 
-- **Liquidity Validator**: This validator handles the validations of liquidity providers such as providing liquidity and withdrawing liquidity.
+- **position_mint.ak**: This is the inital validator when the user has to mint a token from when opening a position. To close a position the asset from this script must be burnt
 
-- **Pool Validator**: This validator handles the validation of creating a pool and holds all the assets used for trading.
+- **orders.ak**: This validator handles all interactions with the pool, such as borrowing assets, returning assets, providing liquidity, and withdrawing liquidity.
 
-- **Orders Validator**: This script will be validating that the movements of assets are correct, ie when some closes a postion, they get the correct amount of assets back.
+- **liquidity_mint.ak**: This validator handles the validation of minting and burning of liquidity tokens. When you provide liquidity you get these in return and when you withdraw liquidity you need to burn these
+
+- **protocol_auth.ak** This is minted once. The asset minted from this script gives the righ to change the config of the settings
+
+- **setting.akk** Contains the settings UTxO
+
+- **batcher_license.ak** Mints token that allow them to run order batches
+
+- **pools.ak** Contains all the funds the liquidity providers deposited
 
 ## Tokens
 
-- **Positions Token**: Represents the total position value of the trader. This is 1:1 of the the total position size.
-- **Liquidity Tokens**: Represent the amount of liquidity the lp has provided. This is 1:1 of the liquidity provided.
+- **Positions Token**: Consitutes a valid transaction. Must be burnt when closing a transaction. Only minted once per transaction
+- **Liquidity Tokens**: Tokens liquidity provders recieve when providing liquidity. They will recieve based on their current ratio of deposted funds to total funds _ total lp tokens minted so far. When withdrawing they will recieve their current ratio of lp tokens to total lp tokens _ total funds in pool
 - **Batcher License**: Only holder of this license token can batch orders.
-- **Pool NFT**: This can only be minted once per asset pool. It will be in the pool UTxO to validate the pool is valid.
+- **Settings NFT**: This asset can be used to update configs in settings
+
+## High Level Flow For All Actions
+
+All possible actions of the contracts are here
+//TODO
+
+- **Open Position**:
+- **Close Position While Pending**:
+- **Cancel Position While Pending**:
+- **Open Limit Order**:
+- **Cancel Limit Order**:
+- **Close Position**:
+- **Add Collateral**:
+- **Update Take Profit and Stop Loss**:
+- **Take Profit**:
+- **Stop Loss**:
+- **Liquidate Collateral**:
+- **Provide Liquidity**:
+- **Withdraw Liquidity**:
+- **Update Settings**:
 
 ## Positions Validator
 
