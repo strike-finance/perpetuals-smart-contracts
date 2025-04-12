@@ -2,14 +2,12 @@ use aiken/collection/dict
 use aiken/collection/list
 use aiken/interval.{Finite, Interval, IntervalBound}
 use cardano/address.{from_script}
-use cardano/assets.{
-  AssetName, PolicyId, Value, flatten, from_lovelace, match, quantity_of,
-}
+use cardano/assets.{AssetName, PolicyId, flatten, from_lovelace, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, Transaction, find_script_outputs,
 }
 use constants.{
-  batcher_fee, pool_nft_asset_name, position_asset_name, settings_nft_asset_name,
+  pool_nft_asset_name, position_asset_name, settings_nft_asset_name,
   strike_asset_name, strike_policy_id,
 }
 use math.{calculate_hourly_usd_borrow_fee}
