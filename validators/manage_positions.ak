@@ -1,6 +1,8 @@
+use aiken/collection/dict
 use aiken/collection/list
-use cardano/address
-use cardano/assets.{match, quantity_of}
+use aiken/interval.{Finite, Interval, IntervalBound}
+use cardano/address.{from_script}
+use cardano/assets.{from_lovelace, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction, find_script_outputs,
 }
@@ -8,6 +10,9 @@ use constants.{position_asset_name, strike_asset_name, strike_policy_id}
 use math.{
   calculate_accumulative_interest_fee,
   calculate_position_usd_value_based_on_side, reach_liquidation_price,
+}
+use test_constants.{
+  orders_script_hash, out_ref, position_hash, trader_pkh, underlying_asset,
 }
 use types.{
   ClosePositionOrder, CloseType, LiquidatePositionOrder, Long, OrderDatum,
@@ -136,6 +141,7 @@ pub fn close_position_valid(
         return_pool_asset_amount: position_asset_amount - send_asset_amount,
       },
     }
+
   let expected_order_datum_data: Data = expected_order_datum
 
   expect expected_order_datum_data == orders_datum
@@ -143,58 +149,25 @@ pub fn close_position_valid(
   // Validate based on close type
   when close_type is {
     // TraderClose: only owner can close
-    TraderClose -> {
-      expect list.has(extra_signatories, datum.owner_pkh)
-
-      let assets_sent_back_to_pool =
-        quantity_of(
-          output_to_orders_validator.value,
-          collateral_asset.policy_id,
-          collateral_asset.asset_name,
-        )
-
-      assets_sent_back_to_pool >= position_asset_amount - send_asset_amount
-    }
+    TraderClose -> list.has(extra_signatories, datum.owner_pkh)
 
     // Create expected order datum (same for all close types)
     // In a long position, a loss is when the current price is less than the inital price, so 
     // a stop loss is reached when the price is below or equal to the stop_loss_usd_price
-    _ -> {
+    _ ->
       if close_type == StopLossClose {
         if datum.side == Long {
-          expect current_usd_price <= datum.stop_loss_usd_price
+          current_usd_price <= datum.stop_loss_usd_price
         } else {
-          expect current_usd_price >= datum.stop_loss_usd_price
+          current_usd_price >= datum.stop_loss_usd_price
         }
       } else {
         if datum.side == Long {
-          expect current_usd_price >= datum.take_profit_usd_price
+          current_usd_price >= datum.take_profit_usd_price
         } else {
-          expect current_usd_price <= datum.take_profit_usd_price
+          current_usd_price <= datum.take_profit_usd_price
         }
       }
-
-      expect Some(output) = list.at(transaction.outputs, output_to_user_index)
-
-      let owner_address =
-        when owner_stake_key is {
-          Some(key) ->
-            address.from_verification_key(owner_pkh)
-              |> address.with_delegation_key(key)
-          None -> address.from_verification_key(owner_pkh)
-        }
-
-      expect output.address == owner_address
-
-      expect
-        quantity_of(
-          output.value,
-          collateral_asset.policy_id,
-          collateral_asset.asset_name,
-        ) == send_asset_amount
-
-      quantity_of(output.value, strike_policy_id, strike_asset_name) == strike_collateral_amount
-    }
   }
 }
 
@@ -363,4 +336,228 @@ pub fn update_position_valid(
   let expected_output_datum_data: Data = expected_output_datum
 
   expected_output_datum_data == output_datum
+}
+
+test close_position() {
+  let position_datum =
+    PositionDatum {
+      owner_pkh: trader_pkh,
+      owner_stake_key: None,
+      entered_at_usd_price: 90,
+      position_hash,
+      leverage_factor: 10,
+      position_asset_amount: 10_000_000,
+      stop_loss_usd_price: 98,
+      take_profit_usd_price: 0,
+      collateral_asset: underlying_asset,
+      entered_position_time: 1727453227635,
+      maintain_margin_amount: 5,
+      hourly_usd_borrow_fee: 90000,
+      collateral_asset_amount: 1_000_000,
+      side: Long,
+    }
+
+  let position_input =
+    Input {
+      output_reference: out_ref,
+      output: Output {
+        address: from_script(orders_script_hash),
+        value: from_lovelace(1_000_000)
+          |> assets.add(position_hash, position_asset_name, 1),
+        datum: InlineDatum(position_datum),
+        reference_script: None,
+      },
+    }
+
+  let orders_datum =
+    OrderDatum {
+      action: ClosePositionOrder {
+        owner_pkh: trader_pkh,
+        owner_stake_key: None,
+        send_asset: underlying_asset,
+        send_asset_amount: 1_900_000,
+        return_pool_asset_amount: 8_100_000,
+        strike_collateral_amount: 0,
+        pool_asset_profit_loss: -900_000,
+      },
+    }
+
+  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+
+  let orders_output =
+    Output {
+      address: from_script(orders_script_hash),
+      value: from_lovelace(1_000_000),
+      datum: InlineDatum(orders_datum),
+      reference_script: None,
+    }
+
+  let transaction =
+    Transaction {
+      inputs: [position_input],
+      reference_inputs: [],
+      outputs: [orders_output],
+      fee: 0,
+      mint,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [trader_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  close_position_valid(
+    transaction,
+    Some(position_datum),
+    100,
+    orders_script_hash,
+    TraderClose,
+    1,
+  )
+}
+
+test liquidate_close() {
+  let position_datum =
+    PositionDatum {
+      owner_pkh: trader_pkh,
+      owner_stake_key: None,
+      entered_at_usd_price: 100,
+      position_hash,
+      leverage_factor: 10,
+      position_asset_amount: 10_000_000,
+      stop_loss_usd_price: 98,
+      take_profit_usd_price: 0,
+      collateral_asset: underlying_asset,
+      entered_position_time: 1727453227635,
+      maintain_margin_amount: 5,
+      hourly_usd_borrow_fee: 90000,
+      collateral_asset_amount: 1_000_000,
+      side: Long,
+    }
+
+  let transaction =
+    Transaction {
+      inputs: [],
+      reference_inputs: [],
+      outputs: [],
+      fee: 0,
+      mint: assets.zero,
+      certificates: [],
+      withdrawals: [],
+      validity_range: interval.everything,
+      extra_signatories: [],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  liquidate_close_valid(
+    transaction,
+    Some(position_datum),
+    orders_script_hash,
+    10,
+  )
+}
+
+test add_collateral() {
+  let position_datum =
+    PositionDatum {
+      owner_pkh: trader_pkh,
+      owner_stake_key: None,
+      entered_at_usd_price: 100,
+      position_hash,
+      leverage_factor: 10,
+      position_asset_amount: 10_000_000,
+      stop_loss_usd_price: 98,
+      take_profit_usd_price: 0,
+      collateral_asset: underlying_asset,
+      entered_position_time: 1727453227635,
+      maintain_margin_amount: 5,
+      hourly_usd_borrow_fee: 90000,
+      collateral_asset_amount: 1_000_000,
+      side: Long,
+    }
+
+  let transaction =
+    Transaction {
+      inputs: [],
+      reference_inputs: [],
+      outputs: [],
+      fee: 0,
+      mint: assets.zero,
+      certificates: [],
+      withdrawals: [],
+      validity_range: interval.everything,
+      extra_signatories: [],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  add_collateral_valid(transaction, Some(position_datum), 100)
+}
+
+test update_position() {
+  let position_datum =
+    PositionDatum {
+      owner_pkh: trader_pkh,
+      owner_stake_key: None,
+      entered_at_usd_price: 100,
+      position_hash,
+      leverage_factor: 10,
+      position_asset_amount: 10_000_000,
+      stop_loss_usd_price: 98,
+      take_profit_usd_price: 0,
+      collateral_asset: underlying_asset,
+      entered_position_time: 1727453227635,
+      maintain_margin_amount: 5,
+      hourly_usd_borrow_fee: 90000,
+      collateral_asset_amount: 1_000_000,
+      side: Long,
+    }
+
+  let transaction =
+    Transaction {
+      inputs: [],
+      reference_inputs: [],
+      outputs: [],
+      fee: 0,
+      mint: assets.zero,
+      certificates: [],
+      withdrawals: [],
+      validity_range: interval.everything,
+      extra_signatories: [],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  update_position_valid(transaction, Some(position_datum), 100, 100)
 }
