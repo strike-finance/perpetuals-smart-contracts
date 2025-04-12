@@ -190,7 +190,24 @@ pub fn close_position_valid(
     // Create expected order datum (same for all close types)
     // In a long position, a loss is when the current price is less than the inital price, so 
     // a stop loss is reached when the price is below or equal to the stop_loss_usd_price
-    _ ->
+    _ -> {
+      let expected_order_datum =
+        OrderDatum {
+          action: ClosePositionOrder {
+            owner_pkh,
+            owner_stake_key,
+            send_asset: collateral_asset,
+            send_asset_amount,
+            strike_collateral_amount,
+            pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
+            return_pool_asset_amount: position_asset_amount - send_asset_amount,
+          },
+        }
+
+      let expected_order_datum_data: Data = expected_order_datum
+
+      expect expected_order_datum_data == orders_datum
+
       if close_type == StopLossClose {
         if datum.side == Long {
           current_usd_price <= datum.stop_loss_usd_price
@@ -204,6 +221,7 @@ pub fn close_position_valid(
           current_usd_price <= datum.take_profit_usd_price
         }
       }
+    }
   }
 }
 
@@ -502,13 +520,46 @@ test stop_loss() {
       side: Long,
     }
 
+  let position_input =
+    Input {
+      output_reference: out_ref,
+      output: Output {
+        address: from_script(manage_position_hash),
+        value: from_lovelace(1_000_000)
+          |> assets.add(position_hash, position_asset_name, 1),
+        datum: InlineDatum(position_datum),
+        reference_script: None,
+      },
+    }
+
   let mint = assets.from_asset(position_hash, position_asset_name, -1)
+
+  let order_datum =
+    OrderDatum {
+      action: ClosePositionOrder {
+        owner_pkh: trader_pkh,
+        owner_stake_key: None,
+        send_asset: underlying_asset,
+        send_asset_amount: 10_000_000,
+        strike_collateral_amount: 1_000_000,
+        pool_asset_profit_loss: 0,
+        return_pool_asset_amount: 10_000_000,
+      },
+    }
+
+  let order_output =
+    Output {
+      address: from_script(orders_script_hash),
+      datum: InlineDatum(order_datum),
+      value: assets.zero,
+      reference_script: None,
+    }
 
   let transaction =
     Transaction {
-      inputs: [],
+      inputs: [position_input],
       reference_inputs: [],
-      outputs: [],
+      outputs: [order_output],
       fee: 0,
       mint,
       certificates: [],
