@@ -44,12 +44,12 @@ There a 8 total contracts that are used.
 All possible actions of the contracts are here
 //TODO
 
-- **Open Position**: Mints a token, send to orders validator. Order validator will send to the manage_positions.ak. The UTxO at the manage_positions.ak contains all the assets of this position(including borrowed funds)
+- **Open Position**: Mints a token, send to orders validator. Order validator will send to the manage_positions.ak. The UTxO at the manage_positions.ak contains no assets. Collateral user put up is put into pool.
 - **Close Position While Pending**: While it's at the orders validator pending to be batched, if it took the batcher long time and still haven't batched(for some reason...) the trader can close the position as if it has been batched. When they close the position the datum will be updated, the batcher will eventually pick it up, and the trader can get their assets back + profits.
 - **Cancel Position While Pending**: This is similar to close position while pending, but in this case it is cancelling the position. The trader will simply get all their assets back.
 - **Open Limit Order**: The same token is minted from the same script as opening position. Then send to the orders validator. The off-chain will simply ignore this limit order until it has been met and add it to the batcher
 - **Cancel Limit Order**: Can cancel the limit order at anytime
-- **Close Position**: When they close the position, they consume the assets that they will recieve from this position. Since when the batcher send from order validator to manage position validator all assets are in the UTxO, no additional assets are needed from the pool. Trader will simply consume from the UTxO, and send back whatever is left back to order.ak. Then the batcher will add back these assets back to the pool
+- **Close Position**: When they close the position, they consume the assets that they will recieve from this position. Trader will send a close position request to the batcher. The batcher will then send the assets to the trader.
 - **Update Take Profit and Stop Loss**: Consume UTxO at manage_positions.ak, send back with no assets consumed and only the datum field updated.
 - **Take Profit and Stop Loss Tx**: Off-chain will monitor for this, once price has been reach send assets to the owner and the rest back to order.ak
 - **Add Collateral**: Consume UTxO at manage_positions.ak, send back with additional collateral
