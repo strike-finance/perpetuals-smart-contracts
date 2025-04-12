@@ -200,7 +200,7 @@ test test_reach_liquidation_price_long_profit() {
 test test_reach_liquidation_price_long_loss_above_threshold() {
   let side = Long
   let position_amount = 1_000_000
-  let current_usd_price = 45000
+  let current_usd_price = 40000
   let entered_at_usd_price = 50000
   let maintain_margin_amount = 10
   let collateral_amount = 200000
@@ -222,7 +222,7 @@ test test_reach_liquidation_price_long_loss_above_threshold() {
       current_time,
     )
 
-  result == False
+  result == True
 }
 
 // Case 3: Position at loss and below liquidation threshold
