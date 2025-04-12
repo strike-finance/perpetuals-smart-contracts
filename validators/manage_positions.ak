@@ -17,7 +17,7 @@ use utils.{get_address_outputs, get_all_validators_inputs, get_lower_bound}
 
 pub type ManagePositionRedeemer {
   Close { close_price: Int, close_type: CloseType, output_to_user_index: Int }
-  AddCollateral
+  AddCollateral { collateral_asset_amount: Int }
   PositionUpdate { stop_loss: Int, take_profit: Int }
   LiquidateClose { current_usd_price: Int }
 }
@@ -46,7 +46,8 @@ validator manage_positions(orders_script_hash: ScriptHash) {
           orders_script_hash,
           current_usd_price,
         )
-      AddCollateral -> add_collateral_valid(transaction, datum)
+      AddCollateral(collateral_asset_amount) ->
+        add_collateral_valid(transaction, datum, collateral_asset_amount)
       PositionUpdate(stop_loss, take_profit) ->
         update_position_valid(transaction, datum, stop_loss, take_profit)
     }
@@ -270,8 +271,11 @@ pub fn liquidate_close_valid(
 pub fn add_collateral_valid(
   transaction: Transaction,
   maybe_datum: Option<PositionDatum>,
+  add_collateral_asset_amount: Int,
 ) -> Bool {
   expect Some(datum) = maybe_datum
+
+  let PositionDatum { collateral_asset, collateral_asset_amount, .. } = datum
 
   let all_validators_inputs: List<Input> =
     get_all_validators_inputs(transaction)
@@ -287,17 +291,30 @@ pub fn add_collateral_valid(
 
   expect InlineDatum(output_datum) = output_to_positions_validator.datum
 
-  expect
-    match(
-      output_to_positions_validator.value,
+  let input_collateral_asset_amount =
+    quantity_of(
       input_from_script.output.value,
-      >=,
+      collateral_asset.policy_id,
+      collateral_asset.asset_name,
     )
 
-  let input_datum_data: Data = datum
-  let output_datum_data: Data = output_datum
+  expect
+    quantity_of(
+      output_to_positions_validator.value,
+      collateral_asset.policy_id,
+      collateral_asset.asset_name,
+    ) == input_collateral_asset_amount + collateral_asset_amount
 
-  expect input_datum_data == output_datum_data
+  let updated_datum =
+    PositionDatum {
+      ..datum,
+      collateral_asset_amount: collateral_asset_amount + add_collateral_asset_amount,
+    }
+
+  let output_datum_data: Data = output_datum
+  let expected_datum_data: Data = updated_datum
+
+  expect output_datum_data == expected_datum_data
 
   list.has(transaction.extra_signatories, datum.owner_pkh)
 }

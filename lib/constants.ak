@@ -24,8 +24,9 @@ pub const strike_policy_id: PolicyId =
 pub const strike_asset_name: AssetName =
   #"00000000000000000000000000000000000000000000000000000000"
 
-pub const settings_nft_tn = string.to_bytearray(@"PROTOCOL_SETTINGS_NFT")
+pub const settings_nft_asset_name =
+  string.to_bytearray(@"PROTOCOL_SETTINGS_NFT")
 
-pub const manager_nft_tn = string.to_bytearray(@"PROTOCOL_MANAGER_NFT")
+pub const manager_nft_asset_name = string.to_bytearray(@"PROTOCOL_MANAGER_NFT")
 
-pub const pool_nft_tn = string.to_bytearray(@"PROTOCOL_POOL_NFT")
+pub const pool_nft_asset_name = string.to_bytearray(@"PROTOCOL_POOL_NFT")

@@ -6,7 +6,7 @@ use cardano/assets.{AssetName, PolicyId}
 use cardano/transaction.{
   InlineDatum, Input, NoDatum, Output, OutputReference, Transaction,
 }
-use constants.{manager_nft_tn}
+use constants.{manager_nft_asset_name}
 use test_constants.{protocol_nft_policy_id}
 use types.{SettingsDatum}
 
@@ -54,7 +54,7 @@ test protocol_settings__spend() {
       output: Output {
         address: from_script(#"11"),
         value: assets.zero
-          |> assets.add(protocol_nft_policy_id, manager_nft_tn, 1),
+          |> assets.add(protocol_nft_policy_id, manager_nft_asset_name, 1),
         datum: InlineDatum(psetting_datum),
         reference_script: None,
       },
@@ -70,7 +70,7 @@ test protocol_settings__spend() {
       output: Output {
         address: from_script(#""),
         value: assets.from_lovelace(2_000_000)
-          |> assets.add(protocol_nft_policy_id, manager_nft_tn, 1),
+          |> assets.add(protocol_nft_policy_id, manager_nft_asset_name, 1),
         datum: NoDatum,
         reference_script: None,
       },
@@ -97,7 +97,7 @@ test protocol_settings__spend() {
     }
   settings.spend(
     protocol_nft_policy_id,
-    manager_nft_tn,
+    manager_nft_asset_name,
     Some(psetting_datum),
     psetting_redeemer,
     psetting_ref,
