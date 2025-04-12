@@ -1,5 +1,5 @@
 use aiken/math/rational
-use types.{Long, POSIXTime, PositionSide}
+use types.{Long, POSIXTime, PositionSide, Short}
 
 //TODO: CLEANER
 // the loss is their inital position value minus the current position value  
@@ -144,4 +144,321 @@ pub fn calculate_assets_get_back(
 // 100 to get 1 percent
 pub fn calculate_rebalance_asset_sent_to_pool(position_asset_amount: Int) -> Int {
   position_asset_amount * 10 / 100
+}
+
+// Inital Position:
+// - Amount: 3.4 ADA (3_400_000 lovelace)
+// - Entry Price: $0.58678 per ADA
+// - Initial Position Value: $1.995052
+// Utilization Factor: 50_000_000 / 1_500_000_000 = 3.3333333333333335%
+// Hourly Borrow Fee: $1.995052 * 3.3333333333333335% * 20% = $0.01328704632
+test test_calculate_hourly_usd_borrow_fee() {
+  let hourly_usd_borrow_fee =
+    calculate_hourly_usd_borrow_fee(
+      position_asset_amount: 3_400_000,
+      underlying_asset_lended_amount: 50_000_000,
+      current_usd_price: 58678,
+      pool_underlying_asset_amount: 1_500_000_000,
+      interest_rate: 20,
+    )
+
+  hourly_usd_borrow_fee == 1328704632
+}
+
+// Test for reach_liquidation_price
+// Case 1: Position in profit (should not be liquidated)
+// Long position with price going up
+test test_reach_liquidation_price_long_profit() {
+  let side = Long
+  let position_amount = 1_000_000
+  let current_usd_price = 60000
+  let entered_at_usd_price = 50000
+  let maintain_margin_amount = 10
+  let collateral_amount = 500000
+  let entered_position_time = 1000000
+  let hourly_borrow_fee = 100000
+  let current_time = 2000000
+
+  let result =
+    reach_liquidation_price(
+      side,
+      position_amount,
+      current_usd_price,
+      entered_at_usd_price,
+      maintain_margin_amount,
+      collateral_amount,
+      entered_position_time,
+      hourly_borrow_fee,
+      current_time,
+    )
+
+  result == False
+}
+
+// Case 2: Position at loss but above liquidation threshold
+// Long position with price going down but still above margin requirements
+test test_reach_liquidation_price_long_loss_above_threshold() {
+  let side = Long
+  let position_amount = 1_000_000
+  let current_usd_price = 45000
+  let entered_at_usd_price = 50000
+  let maintain_margin_amount = 10
+  let collateral_amount = 200000
+  // High collateral
+  let entered_position_time = 1000000
+  let hourly_borrow_fee = 100000
+  let current_time = 2000000
+
+  let result =
+    reach_liquidation_price(
+      side,
+      position_amount,
+      current_usd_price,
+      entered_at_usd_price,
+      maintain_margin_amount,
+      collateral_amount,
+      entered_position_time,
+      hourly_borrow_fee,
+      current_time,
+    )
+
+  result == False
+}
+
+// Case 3: Position at loss and below liquidation threshold
+// Long position with price going down significantly
+test test_reach_liquidation_price_long_liquidation() {
+  let side = Long
+  let position_amount = 1_000_000
+  let current_usd_price = 40000
+  let entered_at_usd_price = 50000
+  let maintain_margin_amount = 10
+  let collateral_amount = 50000
+  // Low collateral
+  let entered_position_time = 1000000
+  let hourly_borrow_fee = 100000
+  let current_time = 2000000
+
+  let result =
+    reach_liquidation_price(
+      side,
+      position_amount,
+      current_usd_price,
+      entered_at_usd_price,
+      maintain_margin_amount,
+      collateral_amount,
+      entered_position_time,
+      hourly_borrow_fee,
+      current_time,
+    )
+
+  result == True
+}
+
+// Test for calculate_position_usd_value_based_on_side
+// Case 1: Long position with profit
+test test_calculate_position_usd_value_long_profit() {
+  let side = Long
+  let position_amount = 1_000_000
+  let current_usd_price = 60000
+  let entered_at_usd_price = 50000
+  let accumulative_interest_fee = 1000000
+
+  // Current value: 1_000_000 * 60000 = 60_000_000_000
+  // Initial value: 1_000_000 * 50000 = 50_000_000_000
+  // Profit = 60_000_000_000 - 50_000_000_000 - 1000000 = 9_999_000_000
+  let result =
+    calculate_position_usd_value_based_on_side(
+      side,
+      position_amount,
+      current_usd_price,
+      entered_at_usd_price,
+      accumulative_interest_fee,
+    )
+
+  result == 9_999_000_000
+}
+
+// Case 2: Long position with loss
+test test_calculate_position_usd_value_long_loss() {
+  let side = Long
+  let position_amount = 1_000_000
+  let current_usd_price = 40000
+  let entered_at_usd_price = 50000
+  let accumulative_interest_fee = 1000000
+
+  // Current value: 1_000_000 * 40000 = 40_000_000_000
+  // Initial value: 1_000_000 * 50000 = 50_000_000_000
+  // Loss = 40_000_000_000 - 50_000_000_000 - 1000000 = -10_001_000_000
+  let result =
+    calculate_position_usd_value_based_on_side(
+      side,
+      position_amount,
+      current_usd_price,
+      entered_at_usd_price,
+      accumulative_interest_fee,
+    )
+
+  result == -10_001_000_000
+}
+
+// Case 3: Short position with profit
+test test_calculate_position_usd_value_short_profit() {
+  // Using PositionSide.Short from types
+  let position_amount = 1_000_000
+  let current_usd_price = 40000
+  let entered_at_usd_price = 50000
+  let accumulative_interest_fee = 1000000
+
+  // Initial value: 1_000_000 * 50000 = 50_000_000_000
+  // Current value: 1_000_000 * 40000 = 40_000_000_000
+  // Profit = 50_000_000_000 - 40_000_000_000 - 1000000 = 9_999_000_000
+  let result =
+    calculate_position_usd_value_based_on_side(
+      Short,
+      position_amount,
+      current_usd_price,
+      entered_at_usd_price,
+      accumulative_interest_fee,
+    )
+
+  result == 9_999_000_000
+}
+
+// Case 4: Short position with loss
+test test_calculate_position_usd_value_short_loss() {
+  // Using PositionSide.Short from types
+  let position_amount = 1_000_000
+  let current_usd_price = 60000
+  let entered_at_usd_price = 50000
+  let accumulative_interest_fee = 1000000
+
+  // Initial value: 1_000_000 * 50000 = 50_000_000_000
+  // Current value: 1_000_000 * 60000 = 60_000_000_000
+  // Loss = 50_000_000_000 - 60_000_000_000 - 1000000 = -10_001_000_000
+  let result =
+    calculate_position_usd_value_based_on_side(
+      Short,
+      position_amount,
+      current_usd_price,
+      entered_at_usd_price,
+      accumulative_interest_fee,
+    )
+
+  result == -10_001_000_000
+}
+
+// Test for calculate_accumulative_interest_fee
+// Case 1: Exactly 1 hour has passed
+test test_calculate_accumulative_interest_fee_1_hour() {
+  let current_time = 4_600_000
+  // 1 hour + initial time
+  let entered_position_time = 1_000_000
+  let hourly_borrow_usd_fee = 1000000
+
+  // Time difference: 3_600_000 (1 hour in milliseconds)
+  // Hours passed: 1
+  // Interest fee: 1 * 1000000 = 1000000
+  let result =
+    calculate_accumulative_interest_fee(
+      current_time,
+      entered_position_time,
+      hourly_borrow_usd_fee,
+    )
+
+  result == 1000000
+}
+
+// Case 2: Less than 1 hour has passed
+test test_calculate_accumulative_interest_fee_less_than_1_hour() {
+  let current_time = 3_000_000
+  // Less than 1 hour
+  let entered_position_time = 1_000_000
+  let hourly_borrow_usd_fee = 1000000
+
+  // Time difference: 2_000_000 (less than 1 hour)
+  // Hours passed: 0
+  // Interest fee: 0 * 1000000 = 0
+  let result =
+    calculate_accumulative_interest_fee(
+      current_time,
+      entered_position_time,
+      hourly_borrow_usd_fee,
+    )
+
+  result == 0
+}
+
+// Case 3: Multiple hours have passed
+test test_calculate_accumulative_interest_fee_multiple_hours() {
+  let current_time = 12_800_000
+  // 3 hours + initial time
+  let entered_position_time = 1_000_000
+  let hourly_borrow_usd_fee = 1000000
+
+  // Time difference: 11_800_000
+  // Hours passed: 3 (floor of 11_800_000 / 3_600_000)
+  // Interest fee: 3 * 1000000 = 3000000
+  let result =
+    calculate_accumulative_interest_fee(
+      current_time,
+      entered_position_time,
+      hourly_borrow_usd_fee,
+    )
+
+  result == 3000000
+}
+
+// Test for calculate_lp_assets_sent
+// Case 1: Empty pool (first deposit)
+test test_calculate_lp_assets_sent_empty_pool() {
+  let total_asset_amount = 0
+  let total_lp_minted_amount = 0
+  let deposit_asset_amount = 1000000
+
+  // When pool is empty, LP tokens received equals deposit amount
+  let result =
+    calculate_lp_assets_sent(
+      total_asset_amount,
+      total_lp_minted_amount,
+      deposit_asset_amount,
+    )
+
+  result == 1000000
+}
+
+// Case 2: Non-empty pool with deposit
+test test_calculate_lp_assets_sent_existing_pool() {
+  let total_asset_amount = 5000000
+  let total_lp_minted_amount = 5000000
+  let deposit_asset_amount = 1000000
+
+  // Deposit ratio: (1000000 * 10000) / 5000000 = 2000
+  // LP sent: 2000 * 5000000 / 10000 = 1000000
+  let result =
+    calculate_lp_assets_sent(
+      total_asset_amount,
+      total_lp_minted_amount,
+      deposit_asset_amount,
+    )
+
+  result == 1000000
+}
+
+// Case 3: Large pool values
+test test_calculate_lp_assets_sent_large_values() {
+  let total_asset_amount = 100_000_000
+  let total_lp_minted_amount = 80_000_000
+  let deposit_asset_amount = 10_000_000
+
+  // Deposit ratio: (10_000_000 * 10000) / 100_000_000 = 1000
+  // LP sent: 1000 * 80_000_000 / 10000 = 8_000_000
+  let result =
+    calculate_lp_assets_sent(
+      total_asset_amount,
+      total_lp_minted_amount,
+      deposit_asset_amount,
+    )
+
+  result == 8_000_000
 }

@@ -186,8 +186,6 @@ pub fn open_position(
     ..
   } = input_datum_typed.action
 
-  let PoolDatum { total_lended_amount, .. } = pool_output_datum
-
   let expected_output_datum =
     PositionDatum {
       owner_pkh,
@@ -227,10 +225,7 @@ pub fn open_position(
           pool_output_datum.underlying_asset.asset_name,
           -lended_amount,
         ),
-    datum: PoolDatum {
-      ..pool_output_datum,
-      total_lended_amount: total_lended_amount + lended_amount,
-    },
+    datum: pool_output_datum,
     mint: expected_mint,
   }
 }
