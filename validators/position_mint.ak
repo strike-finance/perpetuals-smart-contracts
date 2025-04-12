@@ -3,9 +3,7 @@ use aiken/collection/list
 use aiken/interval.{Finite, Interval, IntervalBound}
 use cardano/address.{from_script}
 use cardano/assets.{AssetName, PolicyId, flatten, from_lovelace, quantity_of}
-use cardano/transaction.{
-  InlineDatum, Input, Output, Transaction, find_script_outputs,
-}
+use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{
   pool_nft_asset_name, position_asset_name, settings_nft_asset_name,
   strike_asset_name, strike_policy_id,
@@ -27,7 +25,12 @@ pub type LimitOrderRedeemer {
 }
 
 pub type PositionMintRedeemer {
-  OpenPosition { current_usd_price: Int, pool_index: Int, setting_index: Int }
+  OpenPosition {
+    current_usd_price: Int,
+    output_to_order_index: Int,
+    pool_index: Int,
+    setting_index: Int,
+  }
   ClosePosition { burn_amount: Int }
 }
 
@@ -44,16 +47,16 @@ validator position_mint(
     transaction: Transaction,
   ) {
     when redeemer is {
-      OpenPosition(current_usd_price, pool_index, setting_index) -> {
-        let Transaction { mint, reference_inputs, .. } = transaction
-
-        let outputs_to_orders_address: List<Output> =
-          find_script_outputs(transaction.outputs, orders_script_hash)
-
-        expect list.length(outputs_to_orders_address) == 1
+      OpenPosition(
+        current_usd_price,
+        output_to_order_index,
+        pool_index,
+        setting_index,
+      ) -> {
+        let Transaction { mint, reference_inputs, outputs, .. } = transaction
 
         expect Some(output_to_orders_validator) =
-          list.head(outputs_to_orders_address)
+          list.at(outputs, output_to_order_index)
         expect InlineDatum(orders_datum) = output_to_orders_validator.datum
         expect orders_datum_typed: OrderDatum = orders_datum
 
@@ -78,13 +81,6 @@ validator position_mint(
         expect InlineDatum(pool_datum) = pool_datum
         expect pool_datum_typed: PoolDatum = pool_datum
 
-        expect
-          assets.quantity_of(
-            pool_value,
-            pool_nft_policy_id,
-            pool_nft_asset_name,
-          ) == 1
-
         let PoolDatum { underlying_asset, total_lended_amount, .. } =
           pool_datum_typed
 
@@ -106,6 +102,16 @@ validator position_mint(
           max_strike_holder_leverage_factor,
           ..
         } = global_settings_datum_typed
+
+        expect
+          from_script(orders_script_hash) == output_to_orders_validator.address
+
+        expect
+          assets.quantity_of(
+            pool_value,
+            pool_nft_policy_id,
+            pool_nft_asset_name,
+          ) == 1
 
         expect
           assets.quantity_of(
@@ -298,7 +304,12 @@ test enter_position_mint() {
     }
 
   let redeemer =
-    OpenPosition { current_usd_price: 100, pool_index: 0, setting_index: 1 }
+    OpenPosition {
+      current_usd_price: 100,
+      output_to_order_index: 0,
+      pool_index: 0,
+      setting_index: 1,
+    }
 
   position_mint.mint(
     orders_script_hash,

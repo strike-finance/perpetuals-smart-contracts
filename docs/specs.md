@@ -239,11 +239,6 @@ pub type OrderAction {
   }
   // Regular close position, where users personally closed their position and all funds are returned to pool
   ClosePositionOrder {
-    // Profit or loss incurred by the trader and reflected in the pool
-    pool_asset_profit_loss: Int,
-  }
-  // Position closed by the protocol bot due to take profit, stop loss, or during pending state
-  AutomatedClosePositionOrder {
     send_asset_amount: Int,
     return_pool_asset_amount: Int,
     strike_collateral_amount: Int,
@@ -347,8 +342,7 @@ A Multi-UTxO indexer is used to match the input to the output.
   - The batcher license must be present in the transaction so we know that the batcher initiated the transaction
   - **Order Validation Types**:
     - **Open Position Order**: The validator ensures the output script hash matches the position hash from the datum. It verifies the borrowed assets are properly moved from the pool and sent to the position UTxO. The pool value is updated to reflect the deduction of the lended amount.
-    - **Close Position Order**: The validator verifies that the pool asset profit or loss value is correctly applied to the pool. The pool datum's total gains/losses field is updated according to whether there was a profit or loss on the position.
-    - **Automated Close Position Order**: The validator checks that assets are correctly sent to the owner and the pool. It verifies the owner's address receives the proper send_asset_amount and strike_collateral_amount. The pool receives (or gives) the return_pool_asset_amount. The pool datum's total gains/losses field is updated to reflect the pool_asset_profit_loss.
+    - **Close Position Order**: The validator verifies that the pool asset profit or loss value is correctly applied to the pool. The pool datum's total gains/losses field is updated according to whether there was a profit or loss on the position. Sends the expected assets to the user
     - **Liquidate Position Order**: The validator verifies the asset amount returned to the pool from the liquidation. The pool datum's total gains/losses field is updated with the profit incurred from the liquidation.
     - **Provide Liquidity Order**: The validator ensures liquidity is added correctly to the pool. It checks that the LP tokens sent to the owner are proportionate to the liquidity provided. The pool datum's total LP minted and total asset amount fields are increased accordingly.
     - **Withdraw Liquidity Order**: The validator verifies that assets are correctly withdrawn from the pool based on the LP tokens deposited. The pool datum's total LP minted and total asset amount fields are decreased to reflect the withdrawal.
@@ -373,7 +367,7 @@ seed: OutputReference - The transaction output reference used as a seed to ensur
 
 - Mints three essential protocol tokens:
   - `PROTOCOL_MANAGER_NFT`: Used to authenticate protocol management operations
-  - `PROTOCOL_POOL_NFT`: Used to identify and authenticate pool operations 
+  - `PROTOCOL_POOL_NFT`: Used to identify and authenticate pool operations
   - `PROTOCOL_SETTINGS_NFT`: Used to identify and authenticate settings operations
 
 #### Validation Logic:

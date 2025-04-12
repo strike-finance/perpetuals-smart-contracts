@@ -4,7 +4,7 @@ use aiken/interval.{Finite, Interval, IntervalBound}
 use cardano/address.{from_script}
 use cardano/assets.{from_lovelace, match, quantity_of}
 use cardano/transaction.{
-  InlineDatum, Input, Output, OutputReference, Transaction, find_script_outputs,
+  InlineDatum, Input, Output, OutputReference, Transaction,
 }
 use constants.{position_asset_name, strike_asset_name, strike_policy_id}
 use math.{
@@ -12,19 +12,20 @@ use math.{
   calculate_position_usd_value_based_on_side, reach_liquidation_price,
 }
 use test_constants.{
-  orders_script_hash, out_ref, position_hash, trader_pkh, underlying_asset,
+  manage_position_hash, orders_script_hash, out_ref, position_hash, trader_pkh,
+  underlying_asset,
 }
 use types.{
-  ClosePositionOrder, CloseType, LiquidatePositionOrder, Long, OrderDatum,
-  POSIXTime, PositionDatum, ScriptHash, StopLossClose, TraderClose,
+  ClosePositionOrder, CloseType, LiquidateClose, LiquidatePositionOrder, Long,
+  OrderDatum, PositionDatum, ScriptHash, StopLossClose, TakeProfitClose,
+  TraderClose,
 }
-use utils.{get_address_outputs, get_all_validators_inputs, get_lower_bound}
+use utils.{get_address_outputs, get_all_validators_inputs, get_upper_bound}
 
 pub type ManagePositionRedeemer {
-  Close { close_price: Int, close_type: CloseType, output_to_user_index: Int }
+  Close { close_price: Int, close_type: CloseType, output_to_order_index: Int }
   AddCollateral { collateral_asset_amount: Int }
   PositionUpdate { stop_loss: Int, take_profit: Int }
-  LiquidateClose { current_usd_price: Int }
 }
 
 validator manage_positions(orders_script_hash: ScriptHash) {
@@ -35,21 +36,14 @@ validator manage_positions(orders_script_hash: ScriptHash) {
     transaction: Transaction,
   ) {
     when redeemer is {
-      Close(current_usd_price, close_type, output_to_user_index) ->
+      Close(current_usd_price, close_type, output_to_order_index) ->
         close_position_valid(
           transaction,
           datum,
           current_usd_price,
           orders_script_hash,
           close_type,
-          output_to_user_index,
-        )
-      LiquidateClose(current_usd_price) ->
-        liquidate_close_valid(
-          transaction,
-          datum,
-          orders_script_hash,
-          current_usd_price,
+          output_to_order_index,
         )
       AddCollateral(collateral_asset_amount) ->
         add_collateral_valid(transaction, datum, collateral_asset_amount)
@@ -69,9 +63,9 @@ pub fn close_position_valid(
   current_usd_price: Int,
   orders_script_hash: ScriptHash,
   close_type: CloseType,
-  output_to_user_index: Int,
+  output_to_order_index: Int,
 ) -> Bool {
-  let Transaction { mint, extra_signatories, .. } = transaction
+  let Transaction { mint, extra_signatories, outputs, .. } = transaction
 
   expect Some(datum) = maybe_datum
 
@@ -84,20 +78,24 @@ pub fn close_position_valid(
     position_hash,
     owner_pkh,
     owner_stake_key,
+    maintain_margin_amount,
+    entered_position_time,
+    hourly_usd_borrow_fee,
     ..
   } = datum
 
   // Validate basic transaction structure
   let all_validators_inputs = get_all_validators_inputs(transaction)
+  expect Some(input_from_script) = list.head(all_validators_inputs)
   expect list.length(all_validators_inputs) == 1
 
-  let outputs_to_orders_validator =
-    find_script_outputs(transaction.outputs, orders_script_hash)
   expect Some(output_to_orders_validator) =
-    list.head(outputs_to_orders_validator)
+    list.at(outputs, output_to_order_index)
   expect InlineDatum(orders_datum) = output_to_orders_validator.datum
 
-  let current_time = get_lower_bound(transaction.validity_range)
+  expect from_script(orders_script_hash) == output_to_orders_validator.address
+
+  let current_time = get_upper_bound(transaction.validity_range)
 
   expect [(position_hash, position_asset_name, -1)] == assets.flatten(mint)
 
@@ -129,27 +127,65 @@ pub fn close_position_valid(
       strike_asset_name,
     )
 
-  let expected_order_datum =
-    OrderDatum {
-      action: ClosePositionOrder {
-        owner_pkh,
-        owner_stake_key,
-        send_asset: collateral_asset,
-        send_asset_amount,
-        strike_collateral_amount,
-        pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
-        return_pool_asset_amount: position_asset_amount - send_asset_amount,
-      },
-    }
-
-  let expected_order_datum_data: Data = expected_order_datum
-
-  expect expected_order_datum_data == orders_datum
+  // Make sure no assets are consumed, user might have added additional collateral, in that case the collateral is in
+  // the utxo  
+  expect
+    quantity_of(
+      input_from_script.output.value,
+      collateral_asset.policy_id,
+      collateral_asset.asset_name,
+    ) == quantity_of(
+      output_to_orders_validator.value,
+      collateral_asset.policy_id,
+      collateral_asset.asset_name,
+    )
 
   // Validate based on close type
   when close_type is {
     // TraderClose: only owner can close
-    TraderClose -> list.has(extra_signatories, datum.owner_pkh)
+    TraderClose -> {
+      expect list.has(extra_signatories, datum.owner_pkh)
+
+      let expected_order_datum =
+        OrderDatum {
+          action: ClosePositionOrder {
+            owner_pkh,
+            owner_stake_key,
+            send_asset: collateral_asset,
+            send_asset_amount,
+            strike_collateral_amount,
+            pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
+            return_pool_asset_amount: position_asset_amount - send_asset_amount,
+          },
+        }
+
+      let expected_order_datum_data: Data = expected_order_datum
+
+      expected_order_datum_data == orders_datum
+    }
+
+    LiquidateClose -> {
+      let expected_order_datum =
+        OrderDatum {
+          action: LiquidatePositionOrder { profit: collateral_asset_amount },
+        }
+
+      let expected_order_datum_data: Data = expected_order_datum
+
+      expect expected_order_datum_data == orders_datum
+
+      reach_liquidation_price(
+        side,
+        position_asset_amount,
+        current_usd_price,
+        entered_at_usd_price,
+        maintain_margin_amount,
+        collateral_asset_amount,
+        entered_position_time,
+        hourly_usd_borrow_fee,
+        current_time,
+      )
+    }
 
     // Create expected order datum (same for all close types)
     // In a long position, a loss is when the current price is less than the inital price, so 
@@ -169,73 +205,6 @@ pub fn close_position_valid(
         }
       }
   }
-}
-
-pub fn liquidate_close_valid(
-  transaction: Transaction,
-  maybe_datum: Option<PositionDatum>,
-  orders_script_hash: ScriptHash,
-  current_usd_price: Int,
-) -> Bool {
-  expect Some(datum) = maybe_datum
-
-  let PositionDatum {
-    position_asset_amount,
-    entered_at_usd_price,
-    entered_position_time,
-    side,
-    hourly_usd_borrow_fee,
-    maintain_margin_amount,
-    leverage_factor,
-    collateral_asset,
-    ..
-  } = datum
-
-  let all_validators_inputs = get_all_validators_inputs(transaction)
-  expect list.length(all_validators_inputs) == 1
-
-  let outputs_to_orders_validator =
-    find_script_outputs(transaction.outputs, orders_script_hash)
-  expect Some(output_to_orders_validator) =
-    list.head(outputs_to_orders_validator)
-  expect InlineDatum(orders_datum) = output_to_orders_validator.datum
-
-  expect Some(input_from_script) = list.head(all_validators_inputs)
-
-  let collateral_asset_gained = position_asset_amount / leverage_factor
-
-  let expected_order_datum =
-    OrderDatum {
-      action: LiquidatePositionOrder { profit: collateral_asset_gained },
-    }
-
-  let expected_order_datum_data: Data = expected_order_datum
-
-  expect expected_order_datum_data == orders_datum
-
-  let current_time: POSIXTime = get_lower_bound(transaction.validity_range)
-
-  expect
-    match(input_from_script.output.value, output_to_orders_validator.value, >=)
-
-  let collateral_asset_amount =
-    quantity_of(
-      input_from_script.output.value,
-      collateral_asset.policy_id,
-      collateral_asset.asset_name,
-    )
-
-  reach_liquidation_price(
-    side,
-    position_asset_amount,
-    current_usd_price,
-    entered_at_usd_price,
-    maintain_margin_amount,
-    collateral_asset_amount,
-    entered_position_time,
-    hourly_usd_borrow_fee,
-    current_time,
-  )
 }
 
 // Only add asset amount is changed
@@ -361,7 +330,7 @@ test close_position() {
     Input {
       output_reference: out_ref,
       output: Output {
-        address: from_script(orders_script_hash),
+        address: from_script(manage_position_hash),
         value: from_lovelace(1_000_000)
           |> assets.add(position_hash, position_asset_name, 1),
         datum: InlineDatum(position_datum),
@@ -427,11 +396,94 @@ test close_position() {
     100,
     orders_script_hash,
     TraderClose,
-    1,
+    0,
   )
 }
 
 test liquidate_close() {
+  let position_datum =
+    PositionDatum {
+      owner_pkh: trader_pkh,
+      owner_stake_key: None,
+      entered_at_usd_price: 60_000,
+      position_hash,
+      leverage_factor: 10,
+      position_asset_amount: 10_000_000,
+      stop_loss_usd_price: 98,
+      take_profit_usd_price: 0,
+      collateral_asset: underlying_asset,
+      entered_position_time: 1727453227635,
+      maintain_margin_amount: 5,
+      hourly_usd_borrow_fee: 90000,
+      collateral_asset_amount: 1_000_000,
+      side: Long,
+    }
+
+  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+
+  let position_input =
+    Input {
+      output_reference: out_ref,
+      output: Output {
+        address: from_script(manage_position_hash),
+        value: from_lovelace(1_000_000)
+          |> assets.add(position_hash, position_asset_name, 1),
+        datum: InlineDatum(position_datum),
+        reference_script: None,
+      },
+    }
+
+  let output_datum =
+    OrderDatum { action: LiquidatePositionOrder { profit: 1_000_000 } }
+
+  let order_output =
+    Output {
+      address: from_script(orders_script_hash),
+      value: from_lovelace(1_000_000),
+      datum: InlineDatum(output_datum),
+      reference_script: None,
+    }
+
+  let transaction =
+    Transaction {
+      inputs: [position_input],
+      reference_inputs: [],
+      outputs: [order_output],
+      fee: 0,
+      mint,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  close_position_valid(
+    transaction,
+    Some(position_datum),
+    20_000,
+    orders_script_hash,
+    LiquidateClose,
+    0,
+  )
+}
+
+test stop_loss() {
   let position_datum =
     PositionDatum {
       owner_pkh: trader_pkh,
@@ -442,6 +494,57 @@ test liquidate_close() {
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
       take_profit_usd_price: 0,
+      collateral_asset: underlying_asset,
+      entered_position_time: 1727453227635,
+      maintain_margin_amount: 5,
+      hourly_usd_borrow_fee: 90000,
+      collateral_asset_amount: 1_000_000,
+      side: Long,
+    }
+
+  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+
+  let transaction =
+    Transaction {
+      inputs: [],
+      reference_inputs: [],
+      outputs: [],
+      fee: 0,
+      mint,
+      certificates: [],
+      withdrawals: [],
+      validity_range: interval.everything,
+      extra_signatories: [],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  close_position_valid(
+    transaction,
+    Some(position_datum),
+    98,
+    orders_script_hash,
+    StopLossClose,
+    0,
+  )
+}
+
+test take_profit() {
+  let position_datum =
+    PositionDatum {
+      owner_pkh: trader_pkh,
+      owner_stake_key: None,
+      entered_at_usd_price: 100,
+      position_hash,
+      leverage_factor: 10,
+      position_asset_amount: 10_000_000,
+      stop_loss_usd_price: 98,
+      take_profit_usd_price: 102,
       collateral_asset: underlying_asset,
       entered_position_time: 1727453227635,
       maintain_margin_amount: 5,
@@ -470,11 +573,13 @@ test liquidate_close() {
       treasury_donation: None,
     }
 
-  liquidate_close_valid(
+  close_position_valid(
     transaction,
     Some(position_datum),
+    102,
     orders_script_hash,
-    10,
+    TakeProfitClose,
+    0,
   )
 }
 

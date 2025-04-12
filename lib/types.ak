@@ -113,6 +113,7 @@ pub type CloseType {
   TraderClose
   StopLossClose
   TakeProfitClose
+  LiquidateClose
 }
 
 pub type PoolDatum {
