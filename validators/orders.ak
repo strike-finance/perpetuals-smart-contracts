@@ -9,8 +9,8 @@ use constants.{position_asset_name, strike_asset_name, strike_policy_id}
 use math.{calculate_position_usd_value_based_on_side}
 use orders_validations.{valid_orders}
 use types.{
-  AutomatedClosePositionOrder, MarketOrder, OpenPositionOrder, OrderDatum,
-  PoolDatum, PositionDatum,
+  ClosePositionOrder, MarketOrder, OpenPositionOrder, OrderDatum, PoolDatum,
+  PositionDatum,
 }
 use utils.{
   get_address_outputs, get_all_validators_inputs, get_lower_bound,
@@ -156,14 +156,14 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
 
         let expected_order_datum =
           OrderDatum {
-            action: AutomatedClosePositionOrder {
-              send_asset_amount,
-              return_pool_asset_amount,
-              strike_collateral_amount,
+            action: ClosePositionOrder {
               owner_pkh,
               owner_stake_key,
               send_asset: collateral_asset,
+              send_asset_amount,
+              strike_collateral_amount,
               pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
+              return_pool_asset_amount,
             },
           }
 

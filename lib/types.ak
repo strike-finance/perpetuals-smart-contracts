@@ -38,29 +38,22 @@ pub type OrderAction {
   // Regular close position, where users personally closed their position and all funds are returned to pool. 
   // When they closed it they already consumed what they needed. All that's left is for the pool
   ClosePositionOrder {
-    // Profit or loss incurred by the trader and reflected in the pool
-    pool_asset_profit_loss: Int,
-  }
-  // Position closed by the protocol bot due to take profit, stop loss, or during pending state.
-  // Since assets were previously in position UTxO or non-existent, we calculate and distribute
-  // the appropriate amounts to the user in this transaction. Difference between this and close position 
-  // order is that the user has not taken any fund and we need to send it to user
-  AutomatedClosePositionOrder {
-    // asset amount sent to trader
-    send_asset_amount: Int,
-    // asset amount sent or taken from pool
-    return_pool_asset_amount: Int,
-    // strike collateral sent to trader
-    strike_collateral_amount: Int,
     // Owner of the liquidity, to send the lp tokens
     owner_pkh: AddressHash,
     // Stake key if present 
     owner_stake_key: Option<AddressHash>,
     // The collateral asset that was used
     send_asset: Asset,
+    // asset amount sent to trader
+    send_asset_amount: Int,
+    // asset amount sent or taken from pool
+    return_pool_asset_amount: Int,
+    // strike collateral sent to trader
+    strike_collateral_amount: Int,
     // The profit or loss incurred by the trader and reflected in the pool
     pool_asset_profit_loss: Int,
   }
+  // Return assets info
   LiquidatePositionOrder {
     // Profit by this trade to the pool
     profit: Int,
@@ -133,6 +126,8 @@ pub type PoolDatum {
   liquidity_total_gains_losses: Int,
   // Supported assets of the pool, with the total lp minted
   liquidity_total_lp_minted: Int,
+  // Assets that has been lended out to traders 
+  total_lended_amount: Int,
   // Batcher license
   batcher_license: PolicyId,
 }
