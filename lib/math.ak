@@ -44,7 +44,11 @@ pub fn reach_liquidation_price(
     // The collateral value/current_position_value must be within the maintain margin amount
     let collateral_value: Int = collateral_amount * current_usd_price
 
-    let collateral_value_after_loss: Int = collateral_value - total_value_loss
+    let collateral_value_after_loss =
+      when total_value_loss > 0 is {
+        True -> collateral_value - total_value_loss
+        False -> collateral_value + total_value_loss
+      }
 
     let current_margin: Int =
       collateral_value_after_loss / current_position_value
