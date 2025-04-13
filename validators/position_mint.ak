@@ -60,6 +60,8 @@ validator position_mint(
         expect InlineDatum(orders_datum) = output_to_orders_validator.datum
         expect orders_datum_typed: OrderDatum = orders_datum
 
+        // side, stoploss, take profit no need to check, owner_pkh, owner_stake_key they can be anything 
+        // user set it to be
         expect OpenPositionOrder {
           position_datum: PositionDatum {
             entered_position_time,
@@ -68,10 +70,15 @@ validator position_mint(
             hourly_usd_borrow_fee,
             collateral_asset,
             collateral_asset_amount,
+            position_hash,
+            leverage_factor,
+            maintain_margin_amount,
             ..
           },
           ..
         } = orders_datum_typed.action
+
+        let position_maintain_margin_amount = maintain_margin_amount
 
         expect Some(Input {
           output: Output { value: pool_value, datum: pool_datum, .. },
@@ -104,12 +111,16 @@ validator position_mint(
           interest_rate,
           max_leverage_factor,
           max_strike_holder_leverage_factor,
-          ..
+          maintain_margin_amount,
         } = global_settings_datum_typed
 
         let available_asset_amount =
           liquidity_total_asset_amount - total_lended_amount
 
+        expect
+          leverage_factor == position_asset_amount / collateral_asset_amount
+        expect position_hash == policy_id
+        expect maintain_margin_amount == position_maintain_margin_amount
         expect
           available_asset_amount >= position_asset_amount - collateral_asset_amount
 
