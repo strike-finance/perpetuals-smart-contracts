@@ -204,6 +204,10 @@ pub fn close_position_valid(
           },
         }
 
+      trace @"close_type: ": send_asset_amount
+      trace @"pool_asset_profit_loss:": collateral_asset_amount - send_asset_amount
+      trace @"return_pool_asset_amount: ": position_asset_amount - send_asset_amount
+
       let expected_order_datum_data: Data = expected_order_datum
 
       expect expected_order_datum_data == orders_datum
@@ -540,10 +544,10 @@ test stop_loss() {
         owner_pkh: trader_pkh,
         owner_stake_key: None,
         send_asset: underlying_asset,
-        send_asset_amount: 10_000_000,
-        strike_collateral_amount: 1_000_000,
-        pool_asset_profit_loss: 0,
-        return_pool_asset_amount: 10_000_000,
+        send_asset_amount: 816326,
+        strike_collateral_amount: 0,
+        pool_asset_profit_loss: 183674,
+        return_pool_asset_amount: 9183674,
       },
     }
 
@@ -551,7 +555,7 @@ test stop_loss() {
     Output {
       address: from_script(orders_script_hash),
       datum: InlineDatum(order_datum),
-      value: assets.zero,
+      value: from_lovelace(1_000_000),
       reference_script: None,
     }
 
@@ -564,7 +568,16 @@ test stop_loss() {
       mint,
       certificates: [],
       withdrawals: [],
-      validity_range: interval.everything,
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
       extra_signatories: [],
       redeemers: [],
       datums: dict.empty,
