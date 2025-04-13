@@ -204,10 +204,6 @@ pub fn close_position_valid(
           },
         }
 
-      trace @"close_type: ": send_asset_amount
-      trace @"pool_asset_profit_loss:": collateral_asset_amount - send_asset_amount
-      trace @"return_pool_asset_amount: ": position_asset_amount - send_asset_amount
-
       let expected_order_datum_data: Data = expected_order_datum
 
       expect expected_order_datum_data == orders_datum
@@ -617,16 +613,60 @@ test take_profit() {
       side: Long,
     }
 
+  let position_input =
+    Input {
+      output_reference: out_ref,
+      output: Output {
+        address: from_script(manage_position_hash),
+        value: from_lovelace(1_000_000)
+          |> assets.add(position_hash, position_asset_name, 1),
+        datum: InlineDatum(position_datum),
+        reference_script: None,
+      },
+    }
+
+  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+
+  let order_datum =
+    OrderDatum {
+      action: ClosePositionOrder {
+        owner_pkh: trader_pkh,
+        owner_stake_key: None,
+        send_asset: underlying_asset,
+        send_asset_amount: 1176470,
+        strike_collateral_amount: 0,
+        pool_asset_profit_loss: -176470,
+        return_pool_asset_amount: 8823530,
+      },
+    }
+
+  let order_output =
+    Output {
+      address: from_script(orders_script_hash),
+      datum: InlineDatum(order_datum),
+      value: from_lovelace(1_000_000),
+      reference_script: None,
+    }
+
   let transaction =
     Transaction {
-      inputs: [],
+      inputs: [position_input],
       reference_inputs: [],
-      outputs: [],
+      outputs: [order_output],
       fee: 0,
-      mint: assets.zero,
+      mint,
       certificates: [],
       withdrawals: [],
-      validity_range: interval.everything,
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
       extra_signatories: [],
       redeemers: [],
       datums: dict.empty,
@@ -758,17 +798,65 @@ test update_position() {
       side: Long,
     }
 
+  let position_input =
+    Input {
+      output_reference: out_ref,
+      output: Output {
+        address: from_script(manage_position_hash),
+        value: from_lovelace(1_000_000)
+          |> assets.add(position_hash, position_asset_name, 1),
+        datum: InlineDatum(position_datum),
+        reference_script: None,
+      },
+    }
+
+  let updated_position_datum =
+    PositionDatum {
+      owner_pkh: trader_pkh,
+      owner_stake_key: None,
+      entered_at_usd_price: 100,
+      position_hash,
+      leverage_factor: 10,
+      position_asset_amount: 10_000_000,
+      stop_loss_usd_price: 100,
+      take_profit_usd_price: 100,
+      collateral_asset: underlying_asset,
+      entered_position_time: 1727453227635,
+      maintain_margin_amount: 5,
+      hourly_usd_borrow_fee: 90000,
+      collateral_asset_amount: 1_000_000,
+      side: Long,
+    }
+
+  let updated_position_output =
+    Output {
+      address: from_script(manage_position_hash),
+      value: from_lovelace(1_000_000)
+        |> assets.add(position_hash, position_asset_name, 1),
+      datum: InlineDatum(updated_position_datum),
+      reference_script: None,
+    }
+
   let transaction =
     Transaction {
-      inputs: [],
+      inputs: [position_input],
       reference_inputs: [],
-      outputs: [],
+      outputs: [updated_position_output],
       fee: 0,
       mint: assets.zero,
       certificates: [],
       withdrawals: [],
-      validity_range: interval.everything,
-      extra_signatories: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [trader_pkh],
       redeemers: [],
       datums: dict.empty,
       id: #"0000000000000000000000000000000000000000000000000000000000000000",
