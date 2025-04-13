@@ -152,7 +152,7 @@ pub fn calculate_rebalance_asset_sent_to_pool(position_asset_amount: Int) -> Int
 // - Initial Position Value: $1.995052
 // Utilization Factor: 50_000_000 / 1_500_000_000 = 3.3333333333333335%
 // Hourly Borrow Fee: $1.995052 * 3.3333333333333335% * 20% = $0.01328704632
-test test_calculate_hourly_usd_borrow_fee() {
+test hourly_borrow_fee() {
   let hourly_usd_borrow_fee =
     calculate_hourly_usd_borrow_fee(
       position_asset_amount: 3_400_000,
@@ -168,7 +168,7 @@ test test_calculate_hourly_usd_borrow_fee() {
 // Test for reach_liquidation_price
 // Case 1: Position in profit (should not be liquidated)
 // Long position with price going up
-test test_reach_liquidation_price_long_profit() {
+test reach_liquidation_price_long_profit() {
   let side = Long
   let position_amount = 1_000_000
   let current_usd_price = 60000
@@ -197,7 +197,7 @@ test test_reach_liquidation_price_long_profit() {
 
 // Case 2: Position at loss but above liquidation threshold
 // Long position with price going down but still above margin requirements
-test test_reach_liquidation_price_long_loss_above_threshold() {
+test reach_liquidation_price_long_loss_above_threshold() {
   let side = Long
   let position_amount = 1_000_000
   let current_usd_price = 40000
@@ -227,7 +227,7 @@ test test_reach_liquidation_price_long_loss_above_threshold() {
 
 // Case 3: Position at loss and below liquidation threshold
 // Long position with price going down significantly
-test test_reach_liquidation_price_long_liquidation() {
+test reach_liquidation_price_long_liquidation() {
   let side = Long
   let position_amount = 1_000_000
   let current_usd_price = 40000
@@ -257,7 +257,7 @@ test test_reach_liquidation_price_long_liquidation() {
 
 // Test for calculate_position_usd_value_based_on_side
 // Case 1: Long position with profit
-test test_calculate_position_usd_value_long_profit() {
+test calculate_position_usd_value_long_profit() {
   let side = Long
   let position_amount = 1_000_000
   let current_usd_price = 60000
@@ -280,7 +280,7 @@ test test_calculate_position_usd_value_long_profit() {
 }
 
 // Case 2: Long position with loss
-test test_calculate_position_usd_value_long_loss() {
+test calculate_position_usd_value_long_loss() {
   let side = Long
   let position_amount = 1_000_000
   let current_usd_price = 40000
@@ -303,7 +303,7 @@ test test_calculate_position_usd_value_long_loss() {
 }
 
 // Case 3: Short position with profit
-test test_calculate_position_usd_value_short_profit() {
+test calculate_position_usd_value_short_profit() {
   // Using PositionSide.Short from types
   let position_amount = 1_000_000
   let current_usd_price = 40000
@@ -326,7 +326,7 @@ test test_calculate_position_usd_value_short_profit() {
 }
 
 // Case 4: Short position with loss
-test test_calculate_position_usd_value_short_loss() {
+test calculate_position_usd_value_short_loss() {
   // Using PositionSide.Short from types
   let position_amount = 1_000_000
   let current_usd_price = 60000
@@ -350,7 +350,7 @@ test test_calculate_position_usd_value_short_loss() {
 
 // Test for calculate_accumulative_interest_fee
 // Case 1: Exactly 1 hour has passed
-test test_calculate_accumulative_interest_fee_1_hour() {
+test calculate_accumulative_interest_fee_1_hour() {
   let current_time = 4_600_000
   // 1 hour + initial time
   let entered_position_time = 1_000_000
@@ -370,7 +370,7 @@ test test_calculate_accumulative_interest_fee_1_hour() {
 }
 
 // Case 2: Less than 1 hour has passed
-test test_calculate_accumulative_interest_fee_less_than_1_hour() {
+test calculate_accumulative_interest_fee_less_than_1_hour() {
   let current_time = 3_000_000
   // Less than 1 hour
   let entered_position_time = 1_000_000
@@ -390,7 +390,7 @@ test test_calculate_accumulative_interest_fee_less_than_1_hour() {
 }
 
 // Case 3: Multiple hours have passed
-test test_calculate_accumulative_interest_fee_multiple_hours() {
+test calculate_accumulative_interest_fee_multiple_hours() {
   let current_time = 12_800_000
   // 3 hours + initial time
   let entered_position_time = 1_000_000
@@ -411,7 +411,7 @@ test test_calculate_accumulative_interest_fee_multiple_hours() {
 
 // Test for calculate_lp_assets_sent
 // Case 1: Empty pool (first deposit)
-test test_calculate_lp_assets_sent_empty_pool() {
+test calculate_lp_assets_sent_empty_pool() {
   let total_asset_amount = 0
   let total_lp_minted_amount = 0
   let deposit_asset_amount = 1000000
@@ -428,7 +428,7 @@ test test_calculate_lp_assets_sent_empty_pool() {
 }
 
 // Case 2: Non-empty pool with deposit
-test test_calculate_lp_assets_sent_existing_pool() {
+test calculate_lp_assets_sent_existing_pool() {
   let total_asset_amount = 5000000
   let total_lp_minted_amount = 5000000
   let deposit_asset_amount = 1000000
@@ -446,7 +446,7 @@ test test_calculate_lp_assets_sent_existing_pool() {
 }
 
 // Case 3: Large pool values
-test test_calculate_lp_assets_sent_large_values() {
+test calculate_lp_assets_sent_large_values() {
   let total_asset_amount = 100_000_000
   let total_lp_minted_amount = 80_000_000
   let deposit_asset_amount = 10_000_000
