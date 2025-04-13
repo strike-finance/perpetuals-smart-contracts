@@ -151,7 +151,7 @@ pub type PoolParams {
 }
 
 pub type ExpectedPoolOutput {
-  value: Value,
+  underlying_asset_amount: Int,
   datum: PoolDatum,
   mint: Value,
 }

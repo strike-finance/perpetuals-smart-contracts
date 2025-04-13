@@ -16,7 +16,7 @@ pub fn valid_orders(
   indices: List<(Int, Int)>,
   transaction: Transaction,
   own_validator: ScriptHash,
-  pool_utxo_value: Value,
+  underlying_asset_amount: Int,
   pool_datum: PoolDatum,
 ) -> ExpectedPoolOutput {
   let Transaction { inputs, outputs, .. } = transaction
@@ -43,19 +43,19 @@ pub fn valid_orders(
     _,
     _,
     input_index_count,
-    expected_pool_output_value,
+    expected_underlying_asset_amount,
     expected_pool_output_datum,
     expected_mint,
   ) =
     list.foldl(
       indices,
-      (-1, -1, 0, pool_utxo_value, pool_datum, zero),
+      (-1, -1, 0, underlying_asset_amount, pool_datum, zero),
       fn(curr, acc) {
         let (
           in0,
           out0,
           count,
-          expected_pool_output_value,
+          expected_underlying_asset_amount,
           expected_pool_output_datum,
           expected_mint,
         ) = acc
@@ -64,14 +64,14 @@ pub fn valid_orders(
           expect Some(in_utxo) = script_inputs |> list.at(in1)
           expect Some(out_utxo) = outputs |> list.at(out1)
           let ExpectedPoolOutput {
-            value: updated_value,
+            underlying_asset_amount: updated_underlying_asset_amount,
             datum: updated_datum,
             mint: updated_expected_mint,
           } =
             validate_individual_order(
               in_utxo,
               out_utxo,
-              expected_pool_output_value,
+              expected_underlying_asset_amount,
               expected_pool_output_datum,
               expected_mint,
             )
@@ -80,7 +80,7 @@ pub fn valid_orders(
             in1,
             out1,
             count + 1,
-            updated_value,
+            updated_underlying_asset_amount,
             updated_datum,
             updated_expected_mint,
           )
@@ -94,7 +94,7 @@ pub fn valid_orders(
 
   let expected_pool_output =
     ExpectedPoolOutput {
-      value: expected_pool_output_value,
+      underlying_asset_amount: expected_underlying_asset_amount,
       datum: expected_pool_output_datum,
       mint: expected_mint,
     }
@@ -105,7 +105,7 @@ pub fn valid_orders(
 pub fn validate_individual_order(
   input: Output,
   output: Output,
-  pool_output_value: Value,
+  underlying_asset_amount: Int,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
@@ -118,7 +118,7 @@ pub fn validate_individual_order(
       open_position(
         input_datum_typed,
         output,
-        pool_output_value,
+        underlying_asset_amount,
         pool_output_datum,
         expected_mint,
       )
@@ -126,7 +126,7 @@ pub fn validate_individual_order(
       close_position(
         input_datum_typed,
         output,
-        pool_output_value,
+        underlying_asset_amount,
         pool_output_datum,
         expected_mint,
       )
@@ -134,7 +134,7 @@ pub fn validate_individual_order(
       liquidate_position(
         input,
         input_datum_typed,
-        pool_output_value,
+        underlying_asset_amount,
         pool_output_datum,
         expected_mint,
       )
@@ -143,7 +143,7 @@ pub fn validate_individual_order(
         input,
         input_datum_typed,
         output,
-        pool_output_value,
+        underlying_asset_amount,
         pool_output_datum,
         expected_mint,
       )
@@ -152,7 +152,7 @@ pub fn validate_individual_order(
         input,
         input_datum_typed,
         output,
-        pool_output_value,
+        underlying_asset_amount,
         pool_output_datum,
         expected_mint,
       )
@@ -162,7 +162,7 @@ pub fn validate_individual_order(
 pub fn open_position(
   input_datum_typed: OrderDatum,
   output: Output,
-  pool_output_value: Value,
+  underlying_asset_amount: Int,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
@@ -219,12 +219,7 @@ pub fn open_position(
   expect output_script_hash == position_hash
 
   ExpectedPoolOutput {
-    value: pool_output_value
-      |> assets.add(
-          pool_output_datum.underlying_asset.policy_id,
-          pool_output_datum.underlying_asset.asset_name,
-          -lended_amount,
-        ),
+    underlying_asset_amount: underlying_asset_amount - lended_amount,
     datum: pool_output_datum,
     mint: expected_mint,
   }
@@ -233,7 +228,7 @@ pub fn open_position(
 pub fn close_position(
   datum: OrderDatum,
   output: Output,
-  pool_output_value: Value,
+  underlying_asset_amount: Int,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
@@ -247,8 +242,7 @@ pub fn close_position(
     return_pool_asset_amount,
   } = datum.action
 
-  let PoolDatum { underlying_asset, liquidity_total_gains_losses, .. } =
-    pool_output_datum
+  let PoolDatum { liquidity_total_gains_losses, .. } = pool_output_datum
 
   let owner_address =
     when owner_stake_key is {
@@ -267,12 +261,7 @@ pub fn close_position(
     quantity_of(output.value, strike_policy_id, strike_asset_name) == strike_collateral_amount
 
   ExpectedPoolOutput {
-    value: pool_output_value
-      |> assets.add(
-          underlying_asset.policy_id,
-          underlying_asset.asset_name,
-          return_pool_asset_amount,
-        ),
+    underlying_asset_amount: underlying_asset_amount + return_pool_asset_amount,
     datum: PoolDatum {
       ..pool_output_datum,
       liquidity_total_gains_losses: liquidity_total_gains_losses + pool_asset_profit_loss,
@@ -284,7 +273,7 @@ pub fn close_position(
 pub fn liquidate_position(
   input: Output,
   datum: OrderDatum,
-  pool_output_value: Value,
+  underlying_asset_amount: Int,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
@@ -299,16 +288,8 @@ pub fn liquidate_position(
       pool_output_datum.underlying_asset.asset_name,
     )
 
-  let updated_value =
-    assets.add(
-      pool_output_value,
-      pool_output_datum.underlying_asset.policy_id,
-      pool_output_datum.underlying_asset.asset_name,
-      asset_amount_returned,
-    )
-
   ExpectedPoolOutput {
-    value: updated_value,
+    underlying_asset_amount: underlying_asset_amount + asset_amount_returned,
     datum: PoolDatum {
       ..pool_output_datum,
       liquidity_total_gains_losses: liquidity_total_gains_losses + profit,
@@ -321,7 +302,7 @@ fn provide_liquidity_valid(
   input: Output,
   input_datum_typed: OrderDatum,
   output: Output,
-  pool_output_value: Value,
+  underlying_asset_amount: Int,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
@@ -365,7 +346,7 @@ fn provide_liquidity_valid(
   expect owner_address == output.address
 
   ExpectedPoolOutput {
-    value: pool_output_value,
+    underlying_asset_amount: underlying_asset_amount + liquidity_amount,
     datum: PoolDatum {
       ..pool_output_datum,
       liquidity_total_lp_minted: liquidity_total_lp_minted + lp_tokens_sent,
@@ -379,7 +360,7 @@ fn withdraw_liquidy_valid(
   input: Output,
   input_datum_typed: OrderDatum,
   output: Output,
-  pool_output_value: Value,
+  underlying_asset_amount: Int,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
@@ -424,7 +405,7 @@ fn withdraw_liquidy_valid(
   expect owner_address == output.address
 
   ExpectedPoolOutput {
-    value: pool_output_value,
+    underlying_asset_amount: underlying_asset_amount - assets_sent,
     datum: PoolDatum {
       ..pool_output_datum,
       liquidity_total_lp_minted: liquidity_total_lp_minted - lp_tokens_deposited,

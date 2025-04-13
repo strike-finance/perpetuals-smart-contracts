@@ -2,7 +2,7 @@ use aiken/collection/dict
 use aiken/collection/list
 use aiken/interval.{Finite, Interval, IntervalBound}
 use cardano/address.{Credential, Script, from_script}
-use cardano/assets.{AssetName, PolicyId, from_lovelace, match, quantity_of}
+use cardano/assets.{AssetName, PolicyId, from_lovelace, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
@@ -16,8 +16,8 @@ use test_constants.{
   trader_pkh, underlying_asset,
 }
 use types.{
-  ClosePositionOrder, LimitOrder, Long, MarketOrder, OpenPositionOrder,
-  OrderDatum, PoolDatum, PositionDatum,
+  ClosePositionOrder, ExpectedPoolOutput, LimitOrder, Long, MarketOrder,
+  OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum,
 }
 use utils.{
   get_address_outputs, get_all_validators_inputs, get_lower_bound,
@@ -207,23 +207,48 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
       ) == 1
     // UTxO is sent back to the pool
     expect input_pool_utxo.output.address == output_pool_utxo.address
+
+    let underlying_asset_amount =
+      quantity_of(
+        input_pool_utxo.output.value,
+        underlying_asset.policy_id,
+        underlying_asset.asset_name,
+      )
+
     // The functions checks the inputs and its corresponding outputs. Making sure of things such as liquidity providers that withdraw liquidity get their tokens
     // It also computes the expected pool output and datum. We then compare the expected pool output with the actual pool output to make sure the pool is in sync with the orders
-    let expected_pool_output =
+    let ExpectedPoolOutput {
+      underlying_asset_amount: expected_underlying_asset_amount,
+      datum: expected_pool_output_datum,
+      mint: expected_mint,
+    } =
       valid_orders(
         redeemer.indexer,
         transaction,
         own_validator,
-        input_pool_utxo.output.value,
+        underlying_asset_amount,
         input_pool_datum_typed,
       )
-    expect match(output_pool_utxo.value, expected_pool_output.value, >=)
+
+    expect
+      quantity_of(
+        output_pool_utxo.value,
+        underlying_asset.policy_id,
+        underlying_asset.asset_name,
+      ) == expected_underlying_asset_amount
+
+    expect
+      quantity_of(
+        output_pool_utxo.value,
+        pool_nft_policy_id,
+        pool_nft_asset_name,
+      ) == 1
 
     expect InlineDatum(output_pool_datum) = output_pool_utxo.datum
     expect output_pool_datum_typed: PoolDatum = output_pool_datum
-    expect expected_pool_output.datum == output_pool_datum_typed
+    expect expected_pool_output_datum == output_pool_datum_typed
 
-    expect expected_pool_output.mint == mint
+    expect expected_mint == mint
 
     let PoolDatum { batcher_license, .. } = input_pool_datum_typed
 
