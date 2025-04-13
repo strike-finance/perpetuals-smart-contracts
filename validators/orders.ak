@@ -1,16 +1,23 @@
 use aiken/collection/dict
 use aiken/collection/list
-use cardano/address.{Credential, Script}
-use cardano/assets.{AssetName, PolicyId, match, quantity_of}
+use aiken/interval.{Finite, Interval, IntervalBound}
+use cardano/address.{Credential, Script, from_script}
+use cardano/assets.{AssetName, PolicyId, from_lovelace, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
-use constants.{position_asset_name, strike_asset_name, strike_policy_id}
+use constants.{
+  pool_nft_asset_name, position_asset_name, strike_asset_name, strike_policy_id,
+}
 use math.{calculate_position_usd_value_based_on_side}
 use orders_validations.{valid_orders}
+use test_constants.{
+  manage_position_hash, out_ref, position_hash, protocol_nft_policy_id,
+  trader_pkh, underlying_asset,
+}
 use types.{
-  ClosePositionOrder, MarketOrder, OpenPositionOrder, OrderDatum, PoolDatum,
-  PositionDatum,
+  ClosePositionOrder, LimitOrder, Long, MarketOrder, OpenPositionOrder,
+  OrderDatum, PoolDatum, PositionDatum,
 }
 use utils.{
   get_address_outputs, get_all_validators_inputs, get_lower_bound,
@@ -92,7 +99,7 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
             owner_stake_key,
             ..
           },
-          ..
+          open_position_type,
         } = datum.action
 
         expect list.has(extra_signatories, owner_pkh)
@@ -148,12 +155,9 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
             strike_asset_name,
           ) == strike_collateral_amount
 
-        let return_pool_asset_amount =
-          when send_asset_amount > collateral_asset_amount is {
-            True -> 0
-            False -> send_asset_amount - collateral_asset_amount
-          }
-
+        // No assets has been borrowed from pool since this is just sitting at the orders
+        // validator. The pool asset profit loss is the same value as what will be taken away or 
+        // added to pool
         let expected_order_datum =
           OrderDatum {
             action: ClosePositionOrder {
@@ -163,14 +167,16 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
               send_asset_amount,
               strike_collateral_amount,
               pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
-              return_pool_asset_amount,
+              return_pool_asset_amount: collateral_asset_amount - send_asset_amount,
             },
           }
 
         expect InlineDatum(output_datum) = output_to_positions_validator.datum
         let expected_order_datum_data: Data = expected_order_datum
 
-        expected_order_datum_data == output_datum
+        expect expected_order_datum_data == output_datum
+
+        open_position_type != LimitOrder
       }
     }
   }
@@ -236,4 +242,179 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
   else(_) {
     fail
   }
+}
+
+test cancel_orders() {
+  let orders_datum =
+    OrderDatum {
+      action: OpenPositionOrder {
+        position_datum: PositionDatum {
+          owner_pkh: trader_pkh,
+          owner_stake_key: None,
+          entered_at_usd_price: 100,
+          position_hash,
+          leverage_factor: 10,
+          position_asset_amount: 10_000_000,
+          stop_loss_usd_price: 98,
+          take_profit_usd_price: 0,
+          collateral_asset: underlying_asset,
+          entered_position_time: 1727453227635,
+          maintain_margin_amount: 5,
+          hourly_usd_borrow_fee: 90000,
+          collateral_asset_amount: 1_000_000,
+          side: Long,
+        },
+        open_position_type: LimitOrder,
+      },
+    }
+
+  let order_input =
+    Input {
+      output_reference: out_ref,
+      output: Output {
+        address: from_script(manage_position_hash),
+        value: from_lovelace(1_000_000)
+          |> assets.add(position_hash, position_asset_name, 1),
+        datum: InlineDatum(orders_datum),
+        reference_script: None,
+      },
+    }
+
+  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+
+  let tx =
+    Transaction {
+      inputs: [order_input],
+      reference_inputs: [],
+      outputs: [],
+      fee: 0,
+      mint,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [trader_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  orders.spend(
+    protocol_nft_policy_id,
+    pool_nft_asset_name,
+    Some(orders_datum),
+    CancelOrder,
+    out_ref,
+    tx,
+  )
+}
+
+test close_order_while_pending() {
+  let orders_datum =
+    OrderDatum {
+      action: OpenPositionOrder {
+        position_datum: PositionDatum {
+          owner_pkh: trader_pkh,
+          owner_stake_key: None,
+          entered_at_usd_price: 90,
+          position_hash,
+          leverage_factor: 10,
+          position_asset_amount: 10_000_000,
+          stop_loss_usd_price: 98,
+          take_profit_usd_price: 0,
+          collateral_asset: underlying_asset,
+          entered_position_time: 1727453227635,
+          maintain_margin_amount: 5,
+          hourly_usd_borrow_fee: 90000,
+          collateral_asset_amount: 1_000_000,
+          side: Long,
+        },
+        open_position_type: MarketOrder,
+      },
+    }
+
+  let order_input =
+    Input {
+      output_reference: out_ref,
+      output: Output {
+        address: from_script(manage_position_hash),
+        value: from_lovelace(1_000_000)
+          |> assets.add(position_hash, position_asset_name, 1),
+        datum: InlineDatum(orders_datum),
+        reference_script: None,
+      },
+    }
+
+  let close_position_datum =
+    OrderDatum {
+      action: ClosePositionOrder {
+        owner_pkh: trader_pkh,
+        owner_stake_key: None,
+        send_asset: underlying_asset,
+        send_asset_amount: 1_900_000,
+        return_pool_asset_amount: -900_000,
+        strike_collateral_amount: 0,
+        pool_asset_profit_loss: -900_000,
+      },
+    }
+
+  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+
+  let output_to_positions_validator =
+    Output {
+      address: from_script(manage_position_hash),
+      value: from_lovelace(1_000_000),
+      datum: InlineDatum(close_position_datum),
+      reference_script: None,
+    }
+
+  let tx =
+    Transaction {
+      inputs: [order_input],
+      reference_inputs: [],
+      outputs: [output_to_positions_validator],
+      fee: 0,
+      mint,
+      certificates: [],
+      withdrawals: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [trader_pkh],
+      redeemers: [],
+      datums: dict.empty,
+      id: #"0000000000000000000000000000000000000000000000000000000000000000",
+      votes: [],
+      proposal_procedures: [],
+      current_treasury_amount: None,
+      treasury_donation: None,
+    }
+
+  orders.spend(
+    protocol_nft_policy_id,
+    pool_nft_asset_name,
+    Some(orders_datum),
+    CloseOrderWhilePending(100),
+    out_ref,
+    tx,
+  )
 }
