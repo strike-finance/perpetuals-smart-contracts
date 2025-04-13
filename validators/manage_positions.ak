@@ -138,87 +138,88 @@ pub fn close_position_valid(
       collateral_asset.asset_name,
     )
 
-  // Validate based on close type
-  when close_type is {
-    // TraderClose: only owner can close
-    TraderClose -> {
-      expect list.has(extra_signatories, datum.owner_pkh)
+  let reached_liquidation_price =
+    reach_liquidation_price(
+      side,
+      position_asset_amount,
+      current_usd_price,
+      entered_at_usd_price,
+      maintain_margin_amount,
+      collateral_asset_amount,
+      entered_position_time,
+      hourly_usd_borrow_fee,
+      current_time,
+    )
 
-      let expected_order_datum =
-        OrderDatum {
-          action: ClosePositionOrder {
-            owner_pkh,
-            owner_stake_key,
-            send_asset: collateral_asset,
-            send_asset_amount,
-            strike_collateral_amount,
-            pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
-            return_pool_asset_amount: position_asset_amount - send_asset_amount,
-            position_hash,
-          },
-        }
+  if reached_liquidation_price {
+    let expected_order_datum =
+      OrderDatum {
+        action: LiquidatePositionOrder { profit: collateral_asset_amount },
+      }
 
-      let expected_order_datum_data: Data = expected_order_datum
+    let expected_order_datum_data: Data = expected_order_datum
 
-      expected_order_datum_data == orders_datum
-    }
+    expected_order_datum_data == orders_datum
+  } else {
+    // Validate based on close type
+    when close_type is {
+      // TraderClose: only owner can close
+      TraderClose -> {
+        expect list.has(extra_signatories, datum.owner_pkh)
 
-    LiquidateClose -> {
-      let expected_order_datum =
-        OrderDatum {
-          action: LiquidatePositionOrder { profit: collateral_asset_amount },
-        }
+        let expected_order_datum =
+          OrderDatum {
+            action: ClosePositionOrder {
+              owner_pkh,
+              owner_stake_key,
+              send_asset: collateral_asset,
+              send_asset_amount,
+              strike_collateral_amount,
+              pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
+              return_pool_asset_amount: position_asset_amount - send_asset_amount,
+              position_hash,
+            },
+          }
 
-      let expected_order_datum_data: Data = expected_order_datum
+        let expected_order_datum_data: Data = expected_order_datum
 
-      expect expected_order_datum_data == orders_datum
+        expected_order_datum_data == orders_datum
+      }
 
-      reach_liquidation_price(
-        side,
-        position_asset_amount,
-        current_usd_price,
-        entered_at_usd_price,
-        maintain_margin_amount,
-        collateral_asset_amount,
-        entered_position_time,
-        hourly_usd_borrow_fee,
-        current_time,
-      )
-    }
+      // Create expected order datum (same for all close types)
+      // In a long position, a loss is when the current price is less than the inital price, so 
+      // a stop loss is reached when the price is below or equal to the stop_loss_usd_price
+      _ -> {
+        let expected_order_datum =
+          OrderDatum {
+            action: ClosePositionOrder {
+              owner_pkh,
+              owner_stake_key,
+              send_asset: collateral_asset,
+              send_asset_amount,
+              strike_collateral_amount,
+              pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
+              return_pool_asset_amount: position_asset_amount - send_asset_amount,
+              position_hash,
+            },
+          }
 
-    // Create expected order datum (same for all close types)
-    // In a long position, a loss is when the current price is less than the inital price, so 
-    // a stop loss is reached when the price is below or equal to the stop_loss_usd_price
-    _ -> {
-      let expected_order_datum =
-        OrderDatum {
-          action: ClosePositionOrder {
-            owner_pkh,
-            owner_stake_key,
-            send_asset: collateral_asset,
-            send_asset_amount,
-            strike_collateral_amount,
-            pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
-            return_pool_asset_amount: position_asset_amount - send_asset_amount,
-            position_hash,
-          },
-        }
+        let expected_order_datum_data: Data = expected_order_datum
 
-      let expected_order_datum_data: Data = expected_order_datum
+        expect expected_order_datum_data == orders_datum
 
-      expect expected_order_datum_data == orders_datum
-
-      if close_type == StopLossClose {
-        if datum.side == Long {
-          current_usd_price <= datum.stop_loss_usd_price
+        if close_type == StopLossClose {
+          if datum.side == Long {
+            current_usd_price <= datum.stop_loss_usd_price
+          } else {
+            current_usd_price >= datum.stop_loss_usd_price
+          }
         } else {
-          current_usd_price >= datum.stop_loss_usd_price
-        }
-      } else {
-        if datum.side == Long {
-          current_usd_price >= datum.take_profit_usd_price
-        } else {
-          current_usd_price <= datum.take_profit_usd_price
+          if datum.side == Long {
+            current_usd_price >= datum.take_profit_usd_price
+          } else {
+            current_usd_price <= datum.take_profit_usd_price
+          }
         }
       }
     }

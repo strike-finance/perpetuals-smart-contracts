@@ -10,7 +10,7 @@ use test_constants.{orders_script_hash}
 use types.{Asset, PoolDatum}
 
 // All pool validations are passed to the orders script. The orders script handles interactions with the pool UTxO. 
-validator pools(orders_stake_cred: Credential) {
+validator pool(orders_stake_cred: Credential) {
   spend(
     _datum: Option<PoolDatum>,
     _redeemer: Int,
@@ -78,5 +78,5 @@ test pool__spend() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  pools.spend(orders_stake_cred, Some(pool_datum), 0, own_ref, tx)
+  pool.spend(orders_stake_cred, Some(pool_datum), 0, own_ref, tx)
 }
