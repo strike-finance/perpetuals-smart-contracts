@@ -59,6 +59,8 @@ pub type OrderAction {
   LiquidatePositionOrder {
     // Profit by this trade to the pool
     profit: Int,
+    // Lended amount returned to pool
+    lended_amount: Int,
   }
   ProvideLiquidityOrder {
     // Owner of the liquidity, to send the lp tokens

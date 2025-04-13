@@ -154,7 +154,10 @@ pub fn close_position_valid(
   if reached_liquidation_price {
     let expected_order_datum =
       OrderDatum {
-        action: LiquidatePositionOrder { profit: collateral_asset_amount },
+        action: LiquidatePositionOrder {
+          profit: collateral_asset_amount,
+          lended_amount: position_asset_amount - collateral_asset_amount,
+        },
       }
 
     let expected_order_datum_data: Data = expected_order_datum
@@ -454,7 +457,12 @@ test liquidate_close() {
     }
 
   let output_datum =
-    OrderDatum { action: LiquidatePositionOrder { profit: 1_000_000 } }
+    OrderDatum {
+      action: LiquidatePositionOrder {
+        profit: 1_000_000,
+        lended_amount: 9_000_000,
+      },
+    }
 
   let order_output =
     Output {

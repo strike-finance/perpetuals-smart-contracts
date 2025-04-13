@@ -281,7 +281,7 @@ pub fn liquidate_position(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect LiquidatePositionOrder { profit } = datum.action
+  expect LiquidatePositionOrder { profit, lended_amount } = datum.action
 
   let PoolDatum { liquidity_total_gains_losses, .. } = pool_output_datum
 
@@ -297,6 +297,7 @@ pub fn liquidate_position(
     datum: PoolDatum {
       ..pool_output_datum,
       liquidity_total_gains_losses: liquidity_total_gains_losses + profit,
+      total_lended_amount: pool_output_datum.total_lended_amount - lended_amount,
     },
     mint: expected_mint,
   }
