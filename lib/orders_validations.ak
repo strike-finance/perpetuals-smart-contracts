@@ -243,6 +243,7 @@ pub fn close_position(
     strike_collateral_amount,
     pool_asset_profit_loss,
     return_pool_asset_amount,
+    position_hash,
   } = datum.action
 
   let PoolDatum { liquidity_total_gains_losses, .. } = pool_output_datum
@@ -269,7 +270,7 @@ pub fn close_position(
       ..pool_output_datum,
       liquidity_total_gains_losses: liquidity_total_gains_losses + pool_asset_profit_loss,
     },
-    mint: expected_mint,
+    mint: expected_mint |> assets.add(position_hash, position_asset_name, -1),
   }
 }
 

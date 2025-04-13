@@ -52,6 +52,8 @@ pub type OrderAction {
     strike_collateral_amount: Int,
     // The profit or loss incurred by the trader and reflected in the pool
     pool_asset_profit_loss: Int,
+    // The policy id of the minting position script
+    position_hash: ScriptHash,
   }
   // Return assets info
   LiquidatePositionOrder {
@@ -85,7 +87,7 @@ pub type PositionDatum {
   entered_position_time: POSIXTime,
   // The price at which the order was submitted
   entered_at_usd_price: Int,
-  // The script hash for the positions script that holds all the positions of the trader
+  // The policy id of the minting position script
   position_hash: ScriptHash,
   // Collateral asset 
   collateral_asset: Asset,

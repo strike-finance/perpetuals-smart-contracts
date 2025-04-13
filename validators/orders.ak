@@ -168,6 +168,7 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
               strike_collateral_amount,
               pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
               return_pool_asset_amount: collateral_asset_amount - send_asset_amount,
+              position_hash,
             },
           }
 
@@ -392,6 +393,7 @@ test close_order_while_pending() {
         return_pool_asset_amount: -900_000,
         strike_collateral_amount: 0,
         pool_asset_profit_loss: -900_000,
+        position_hash,
       },
     }
 

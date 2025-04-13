@@ -65,7 +65,7 @@ pub fn close_position_valid(
   close_type: CloseType,
   output_to_order_index: Int,
 ) -> Bool {
-  let Transaction { mint, extra_signatories, outputs, .. } = transaction
+  let Transaction { extra_signatories, outputs, .. } = transaction
 
   expect Some(datum) = maybe_datum
 
@@ -75,12 +75,12 @@ pub fn close_position_valid(
     collateral_asset_amount,
     position_asset_amount,
     collateral_asset,
-    position_hash,
     owner_pkh,
     owner_stake_key,
     maintain_margin_amount,
     entered_position_time,
     hourly_usd_borrow_fee,
+    position_hash,
     ..
   } = datum
 
@@ -96,8 +96,6 @@ pub fn close_position_valid(
   expect from_script(orders_script_hash) == output_to_orders_validator.address
 
   let current_time = get_upper_bound(transaction.validity_range)
-
-  expect [(position_hash, position_asset_name, -1)] == assets.flatten(mint)
 
   let accumulative_interest_fee =
     calculate_accumulative_interest_fee(
@@ -156,6 +154,7 @@ pub fn close_position_valid(
             strike_collateral_amount,
             pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
             return_pool_asset_amount: position_asset_amount - send_asset_amount,
+            position_hash,
           },
         }
 
@@ -201,6 +200,7 @@ pub fn close_position_valid(
             strike_collateral_amount,
             pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
             return_pool_asset_amount: position_asset_amount - send_asset_amount,
+            position_hash,
           },
         }
 
@@ -366,6 +366,7 @@ test close_position() {
         return_pool_asset_amount: 8_100_000,
         strike_collateral_amount: 0,
         pool_asset_profit_loss: -900_000,
+        position_hash,
       },
     }
 
@@ -544,6 +545,7 @@ test stop_loss() {
         strike_collateral_amount: 0,
         pool_asset_profit_loss: 183674,
         return_pool_asset_amount: 9183674,
+        position_hash,
       },
     }
 
@@ -637,6 +639,7 @@ test take_profit() {
         strike_collateral_amount: 0,
         pool_asset_profit_loss: -176470,
         return_pool_asset_amount: 8823530,
+        position_hash,
       },
     }
 
