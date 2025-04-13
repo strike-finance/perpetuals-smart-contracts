@@ -666,17 +666,67 @@ test add_collateral() {
       side: Long,
     }
 
+  let position_input =
+    Input {
+      output_reference: out_ref,
+      output: Output {
+        address: from_script(manage_position_hash),
+        value: from_lovelace(1_000_000)
+          |> assets.add(position_hash, position_asset_name, 1),
+        datum: InlineDatum(position_datum),
+        reference_script: None,
+      },
+    }
+
+  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+
+  let updated_position_datum =
+    PositionDatum {
+      owner_pkh: trader_pkh,
+      owner_stake_key: None,
+      entered_at_usd_price: 100,
+      position_hash,
+      leverage_factor: 10,
+      position_asset_amount: 10_000_000,
+      stop_loss_usd_price: 98,
+      take_profit_usd_price: 0,
+      collateral_asset: underlying_asset,
+      entered_position_time: 1727453227635,
+      maintain_margin_amount: 5,
+      hourly_usd_borrow_fee: 90000,
+      collateral_asset_amount: 2_000_000,
+      side: Long,
+    }
+
+  let updated_position_output =
+    Output {
+      address: from_script(manage_position_hash),
+      value: from_lovelace(2_000_000)
+        |> assets.add(position_hash, position_asset_name, 1),
+      datum: InlineDatum(updated_position_datum),
+      reference_script: None,
+    }
+
   let transaction =
     Transaction {
-      inputs: [],
+      inputs: [position_input],
       reference_inputs: [],
-      outputs: [],
+      outputs: [updated_position_output],
       fee: 0,
-      mint: assets.zero,
+      mint,
       certificates: [],
       withdrawals: [],
-      validity_range: interval.everything,
-      extra_signatories: [],
+      validity_range: Interval {
+        lower_bound: IntervalBound {
+          bound_type: Finite(1727453227635),
+          is_inclusive: False,
+        },
+        upper_bound: IntervalBound {
+          bound_type: Finite(1727456400000),
+          is_inclusive: False,
+        },
+      },
+      extra_signatories: [trader_pkh],
       redeemers: [],
       datums: dict.empty,
       id: #"0000000000000000000000000000000000000000000000000000000000000000",
@@ -686,7 +736,7 @@ test add_collateral() {
       treasury_donation: None,
     }
 
-  add_collateral_valid(transaction, Some(position_datum), 100)
+  add_collateral_valid(transaction, Some(position_datum), 1_000_000)
 }
 
 test update_position() {
