@@ -220,7 +220,10 @@ pub fn open_position(
 
   ExpectedPoolOutput {
     underlying_asset_amount: underlying_asset_amount - lended_amount,
-    datum: pool_output_datum,
+    datum: PoolDatum {
+      ..pool_output_datum,
+      total_lended_amount: pool_output_datum.total_lended_amount + lended_amount,
+    },
     mint: expected_mint,
   }
 }
