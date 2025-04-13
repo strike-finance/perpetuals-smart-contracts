@@ -81,8 +81,12 @@ validator position_mint(
         expect InlineDatum(pool_datum) = pool_datum
         expect pool_datum_typed: PoolDatum = pool_datum
 
-        let PoolDatum { underlying_asset, total_lended_amount, .. } =
-          pool_datum_typed
+        let PoolDatum {
+          underlying_asset,
+          total_lended_amount,
+          liquidity_total_asset_amount,
+          ..
+        } = pool_datum_typed
 
         expect Some(Input {
           output: Output {
@@ -102,6 +106,12 @@ validator position_mint(
           max_strike_holder_leverage_factor,
           ..
         } = global_settings_datum_typed
+
+        let available_asset_amount =
+          liquidity_total_asset_amount - total_lended_amount
+
+        expect
+          available_asset_amount >= position_asset_amount - collateral_asset_amount
 
         expect
           from_script(orders_script_hash) == output_to_orders_validator.address
