@@ -42,7 +42,7 @@ pub fn reach_liquidation_price(
   } else {
     // Calculate maintain margin has not been meet by comparing the collateral value and amount of loss
     // The collateral value/current_position_value must be within the maintain margin amount
-    let collateral_value: Int = collateral_amount * current_usd_price
+    let collateral_value: Int = collateral_amount * entered_at_usd_price
 
     let collateral_value_after_loss =
       when total_value_loss > 0 is {
