@@ -71,7 +71,6 @@ validator position_mint(
             collateral_asset,
             collateral_asset_amount,
             position_hash,
-            leverage_factor,
             maintain_margin_amount,
             ..
           },
@@ -117,8 +116,8 @@ validator position_mint(
         let available_asset_amount =
           liquidity_total_asset_amount - total_lended_amount
 
-        expect
-          leverage_factor == position_asset_amount / collateral_asset_amount
+        trace @"1"
+
         expect position_hash == policy_id
         expect maintain_margin_amount == position_maintain_margin_amount
         expect
@@ -211,7 +210,6 @@ test enter_position_mint() {
       owner_stake_key: None,
       entered_at_usd_price: 100,
       position_hash,
-      leverage_factor: 10,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
       take_profit_usd_price: 0,

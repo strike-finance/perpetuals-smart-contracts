@@ -168,7 +168,6 @@ pub fn open_position(
   expect OpenPositionOrder {
     position_datum: PositionDatum {
       owner_pkh,
-      leverage_factor,
       position_hash,
       entered_at_usd_price,
       entered_position_time,
@@ -188,7 +187,6 @@ pub fn open_position(
   let expected_output_datum =
     PositionDatum {
       owner_pkh,
-      leverage_factor,
       position_hash,
       entered_at_usd_price,
       entered_position_time,

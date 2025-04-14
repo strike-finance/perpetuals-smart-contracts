@@ -85,8 +85,6 @@ pub type PositionDatum {
   owner_pkh: AddressHash,
   // Stake key if present 
   owner_stake_key: Option<AddressHash>,
-  // The amount of leverage used for the position. 1 = 1x inital collateral value. 10 = 10x inital collateral value
-  leverage_factor: Int,
   // The time the order was submitted
   entered_position_time: POSIXTime,
   // The price at which the order was submitted
