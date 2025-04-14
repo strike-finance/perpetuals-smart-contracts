@@ -1,16 +1,16 @@
 use aiken/collection/dict
 use aiken/collection/pairs
 use aiken/interval
-use cardano/address.{Credential, Script, from_verification_key}
+use cardano/address.{Script, from_script, from_verification_key}
 use cardano/assets
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
 use test_constants.{orders_script_hash}
-use types.{Asset, PoolDatum}
+use types.{Asset, PoolDatum, ScriptHash}
 
-// All pool validations are passed to the orders script. The orders script handles interactions with the pool UTxO. 
-validator pool(orders_stake_cred: Credential) {
+// All pool validations are passed to the orders script. The orders script handles interactions with the pool UTxO.
+validator pool(orders_script_hash: ScriptHash) {
   spend(
     _datum: Option<PoolDatum>,
     _redeemer: Int,
@@ -19,7 +19,9 @@ validator pool(orders_stake_cred: Credential) {
   ) {
     let withdrawals = transaction.withdrawals
 
-    pairs.has_key(withdrawals, orders_stake_cred)
+    let orders_stake_cred_script = from_script(orders_script_hash)
+
+    pairs.has_key(withdrawals, orders_stake_cred_script.payment_credential)
   }
 
   else(_) {
@@ -29,8 +31,6 @@ validator pool(orders_stake_cred: Credential) {
 
 test pool__spend() {
   let withdrawals = [Pair(Script(orders_script_hash), 1)]
-
-  let orders_stake_cred = Script(orders_script_hash)
 
   let own_ref =
     OutputReference {
@@ -78,5 +78,5 @@ test pool__spend() {
       current_treasury_amount: None,
       treasury_donation: None,
     }
-  pool.spend(orders_stake_cred, Some(pool_datum), 0, own_ref, tx)
+  pool.spend(orders_script_hash, Some(pool_datum), 0, own_ref, tx)
 }

@@ -237,7 +237,6 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
         underlying_asset.policy_id,
         underlying_asset.asset_name,
       ) == expected_underlying_asset_amount
-
     expect
       quantity_of(
         output_pool_utxo.value,

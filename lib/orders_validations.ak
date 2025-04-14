@@ -20,21 +20,20 @@ pub fn valid_orders(
   pool_datum: PoolDatum,
 ) -> ExpectedPoolOutput {
   let Transaction { inputs, outputs, .. } = transaction
-  let (script_inputs, script_input_count) =
+  let script_input_count =
     list.foldr(
       inputs,
-      ([], 0),
-      fn(i, acc_tuple) {
+      0,
+      fn(i, count) {
         let Input { output, .. } = i
         when output.address.payment_credential is {
           Script(script) ->
             if script == own_validator {
-              let (acc, count) = acc_tuple
-              ([output, ..acc], count + 1)
+              count + 1
             } else {
-              acc_tuple
+              count
             }
-          _ -> acc_tuple
+          _ -> count
         }
       },
     )
@@ -61,7 +60,7 @@ pub fn valid_orders(
         ) = acc
         let (in1, out1) = curr
         if in1 > in0 && out1 > out0 {
-          expect Some(in_utxo) = script_inputs |> list.at(in1)
+          expect Some(in_utxo) = inputs |> list.at(in1)
           expect Some(out_utxo) = outputs |> list.at(out1)
           let ExpectedPoolOutput {
             underlying_asset_amount: updated_underlying_asset_amount,
@@ -69,7 +68,7 @@ pub fn valid_orders(
             mint: updated_expected_mint,
           } =
             validate_individual_order(
-              in_utxo,
+              in_utxo.output,
               out_utxo,
               expected_underlying_asset_amount,
               expected_pool_output_datum,
