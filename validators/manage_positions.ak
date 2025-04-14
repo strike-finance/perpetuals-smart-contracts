@@ -157,6 +157,7 @@ pub fn close_position_valid(
         action: LiquidatePositionOrder {
           profit: collateral_asset_amount,
           lended_amount: position_asset_amount - collateral_asset_amount,
+          position_hash,
         },
       }
 
@@ -461,6 +462,7 @@ test liquidate_close() {
       action: LiquidatePositionOrder {
         profit: 1_000_000,
         lended_amount: 9_000_000,
+        position_hash,
       },
     }
 

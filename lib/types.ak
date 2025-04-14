@@ -61,6 +61,8 @@ pub type OrderAction {
     profit: Int,
     // Lended amount returned to pool
     lended_amount: Int,
+    // Position hash
+    position_hash: ScriptHash,
   }
   ProvideLiquidityOrder {
     // Owner of the liquidity, to send the lp tokens
