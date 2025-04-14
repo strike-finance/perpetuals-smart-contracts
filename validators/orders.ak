@@ -2,7 +2,7 @@ use aiken/collection/dict
 use aiken/collection/list
 use aiken/interval.{Finite, Interval, IntervalBound}
 use cardano/address.{Credential, Script, from_script}
-use cardano/assets.{AssetName, PolicyId, from_lovelace, quantity_of}
+use cardano/assets.{AssetName, PolicyId, flatten, from_lovelace, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
@@ -244,27 +244,26 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
         pool_nft_asset_name,
       ) == 1
 
+    expect list.length(flatten(output_pool_utxo.value)) == 2
+
     expect InlineDatum(output_pool_datum) = output_pool_utxo.datum
     expect output_pool_datum_typed: PoolDatum = output_pool_datum
     expect expected_pool_output_datum == output_pool_datum_typed
 
-    trace @"Expected mint": expected_mint
-    trace @"Mint": mint
-
     expect expected_mint == mint
 
-    // let PoolDatum { batcher_license, .. } = input_pool_datum_typed
-    True
-    // // Make sure the batcher license is in the inputs
-    // expect Some(Input { output: Output { value: batcher_value, .. }, .. }) =
-    //   list.at(inputs, redeemer.batcher_license_utxo_index)
+    let PoolDatum { batcher_license, .. } = input_pool_datum_typed
 
-    // expect [Pair(_tn, amount)] =
-    //   batcher_value
-    //     |> assets.tokens(batcher_license)
-    //     |> dict.to_pairs()
+    // Make sure the batcher license is in the inputs
+    expect Some(Input { output: Output { value: batcher_value, .. }, .. }) =
+      list.at(inputs, redeemer.batcher_license_utxo_index)
 
-    // amount == 1
+    expect [Pair(_tn, amount)] =
+      batcher_value
+        |> assets.tokens(batcher_license)
+        |> dict.to_pairs()
+
+    amount == 1
   }
 
   else(_) {
