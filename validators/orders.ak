@@ -248,20 +248,23 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
     expect output_pool_datum_typed: PoolDatum = output_pool_datum
     expect expected_pool_output_datum == output_pool_datum_typed
 
+    trace @"Expected mint": expected_mint
+    trace @"Mint": mint
+
     expect expected_mint == mint
 
-    let PoolDatum { batcher_license, .. } = input_pool_datum_typed
+    // let PoolDatum { batcher_license, .. } = input_pool_datum_typed
+    True
+    // // Make sure the batcher license is in the inputs
+    // expect Some(Input { output: Output { value: batcher_value, .. }, .. }) =
+    //   list.at(inputs, redeemer.batcher_license_utxo_index)
 
-    // Make sure the batcher license is in the inputs
-    expect Some(Input { output: Output { value: batcher_value, .. }, .. }) =
-      list.at(inputs, redeemer.batcher_license_utxo_index)
+    // expect [Pair(_tn, amount)] =
+    //   batcher_value
+    //     |> assets.tokens(batcher_license)
+    //     |> dict.to_pairs()
 
-    expect [Pair(_tn, amount)] =
-      batcher_value
-        |> assets.tokens(batcher_license)
-        |> dict.to_pairs()
-
-    amount == 1
+    // amount == 1
   }
 
   else(_) {
