@@ -244,8 +244,6 @@ pub fn close_position(
     borrowed_amount,
   } = datum.action
 
-  let PoolDatum { liquidity_total_gains_losses, .. } = pool_output_datum
-
   let owner_address =
     when owner_stake_key is {
       Some(key) ->
@@ -263,7 +261,7 @@ pub fn close_position(
     underlying_asset_amount: underlying_asset_amount - send_asset_amount,
     datum: PoolDatum {
       ..pool_output_datum,
-      liquidity_total_gains_losses: liquidity_total_gains_losses + pool_asset_profit_loss,
+      liquidity_total_asset_amount: pool_output_datum.liquidity_total_asset_amount + pool_asset_profit_loss,
       total_lended_amount: pool_output_datum.total_lended_amount - borrowed_amount,
     },
     mint: expected_mint
@@ -281,13 +279,11 @@ pub fn liquidate_position(
   expect LiquidatePositionOrder { profit, lended_amount, position_policy_id } =
     datum.action
 
-  let PoolDatum { liquidity_total_gains_losses, .. } = pool_output_datum
-
   ExpectedPoolOutput {
     underlying_asset_amount,
     datum: PoolDatum {
       ..pool_output_datum,
-      liquidity_total_gains_losses: liquidity_total_gains_losses + profit,
+      liquidity_total_asset_amount: pool_output_datum.liquidity_total_asset_amount + profit,
       total_lended_amount: pool_output_datum.total_lended_amount - lended_amount,
     },
     mint: expected_mint

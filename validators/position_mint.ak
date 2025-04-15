@@ -215,7 +215,6 @@ test enter_position_mint() {
       underlying_asset,
       lp_asset: underlying_asset,
       liquidity_total_asset_amount: 1_000_000_000,
-      liquidity_total_gains_losses: 1_000_000_000,
       liquidity_total_lp_minted: 1_000_000_000,
       total_lended_amount: 1_000_000,
       batcher_license: protocol_nft_policy_id,

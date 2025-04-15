@@ -125,10 +125,8 @@ pub type PoolDatum {
   underlying_asset: Asset,
   // Token For Lp
   lp_asset: Asset,
-  // Supported assets of the pool, with the total amount of assets that has been added to the pool
+  // Supported assets of the pool, with the total amount of assets that has been added to the pool + profits
   liquidity_total_asset_amount: Int,
-  // Supported assets of the pool, with the total gains and losses
-  liquidity_total_gains_losses: Int,
   // Supported assets of the pool, with the total lp minted
   liquidity_total_lp_minted: Int,
   // Assets that has been lended out to traders 

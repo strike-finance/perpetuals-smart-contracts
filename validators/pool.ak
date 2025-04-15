@@ -42,7 +42,6 @@ test pool__spend() {
       underlying_asset: Asset { policy_id: "", asset_name: "" },
       lp_asset: Asset { policy_id: "", asset_name: "" },
       liquidity_total_asset_amount: 0,
-      liquidity_total_gains_losses: 0,
       liquidity_total_lp_minted: 0,
       batcher_license: "",
       total_lended_amount: 0,
