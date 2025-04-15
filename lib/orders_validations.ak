@@ -60,11 +60,6 @@ pub fn valid_orders(
         ) = acc
         let (in1, out1) = curr
 
-        trace @"in1": in1
-        trace @"in0": in0
-        trace @"out1": out1
-        trace @"out0": out0
-
         if in1 > in0 && out1 > out0 {
           expect Some(in_utxo) = inputs |> list.at(in1)
           expect Some(out_utxo) = outputs |> list.at(out1)
