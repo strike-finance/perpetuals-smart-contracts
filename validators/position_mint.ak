@@ -116,8 +116,6 @@ validator position_mint(
         let available_asset_amount =
           liquidity_total_asset_amount - total_lended_amount
 
-        trace @"1"
-
         expect position_hash == policy_id
         expect maintain_margin_amount == position_maintain_margin_amount
         expect
