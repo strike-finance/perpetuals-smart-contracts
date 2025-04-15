@@ -40,7 +40,6 @@ test protocol_settings__spend() {
     SettingsDatum {
       interest_rate: 100_000_000,
       max_leverage_factor: 100_000_000,
-      max_strike_holder_leverage_factor: 100_000_000,
       maintain_margin_amount: 100_000_000,
       max_position_usd_value: 1_000_000_000,
     }

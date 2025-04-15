@@ -6,7 +6,7 @@ use cardano/assets.{AssetName, PolicyId, flatten, from_lovelace, quantity_of}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{
   manage_positions_script_hash, pool_nft_asset_name, position_asset_name,
-  settings_nft_asset_name, strike_asset_name, strike_policy_id,
+  settings_nft_asset_name,
 }
 use math.{calculate_hourly_usd_borrow_fee}
 use test_constants.{
@@ -111,7 +111,6 @@ validator position_mint(
         let SettingsDatum {
           interest_rate,
           max_leverage_factor,
-          max_strike_holder_leverage_factor,
           maintain_margin_amount,
           max_position_usd_value,
         } = global_settings_datum_typed
@@ -176,19 +175,8 @@ validator position_mint(
         expect hourly_usd_borrow_fee >= estimated_hourly_usd_borrow_fee
         expect
           get_lower_bound(transaction.validity_range) >= entered_position_time
-        let contains_strike_collateral: Bool =
-          quantity_of(
-            output_to_orders_validator.value,
-            strike_policy_id,
-            strike_asset_name,
-          ) > 0
-        // Make sure the amount of position_asset_amount is less than the collateral asset amount * leverage factor
-        // for strike holders, they have a different leverage factor
-        if contains_strike_collateral {
-          position_asset_amount / max_strike_holder_leverage_factor <= collateral_asset_amount
-        } else {
-          position_asset_amount / max_leverage_factor <= collateral_asset_amount
-        }
+
+        position_asset_amount / max_leverage_factor <= collateral_asset_amount
       }
       // Batcher might close/liquidate multiple positions at once
       ClosePosition(burn_amount) ->
@@ -254,7 +242,6 @@ test enter_position_mint() {
     SettingsDatum {
       interest_rate: 10,
       max_leverage_factor: 10,
-      max_strike_holder_leverage_factor: 10,
       maintain_margin_amount: 5,
       max_position_usd_value: 1_000_000_000,
     }

@@ -3,7 +3,7 @@ use aiken/crypto.{ScriptHash}
 use cardano/address.{Address, Script}
 use cardano/assets.{Value, quantity_of, zero}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
-use constants.{position_asset_name, strike_asset_name, strike_policy_id}
+use constants.{position_asset_name}
 use math.{calculate_assets_get_back, calculate_lp_assets_sent}
 use types.{
   Asset, ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder,
@@ -239,7 +239,6 @@ pub fn close_position(
     owner_stake_key,
     send_asset,
     send_asset_amount,
-    strike_collateral_amount,
     pool_asset_profit_loss,
     position_policy_id,
     borrowed_amount,
@@ -259,9 +258,6 @@ pub fn close_position(
 
   expect
     quantity_of(output.value, send_asset.policy_id, send_asset.asset_name) == send_asset_amount
-
-  expect
-    quantity_of(output.value, strike_policy_id, strike_asset_name) == strike_collateral_amount
 
   ExpectedPoolOutput {
     underlying_asset_amount: underlying_asset_amount - send_asset_amount,

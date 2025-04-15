@@ -6,7 +6,7 @@ use cardano/assets.{from_lovelace, match, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
-use constants.{position_asset_name, strike_asset_name, strike_policy_id}
+use constants.{position_asset_name}
 use math.{
   calculate_accumulative_interest_fee,
   calculate_position_usd_value_based_on_side, reach_liquidation_price,
@@ -118,13 +118,6 @@ pub fn close_position_valid(
   let send_asset_amount =
     ( collateral_value + position_usd_value ) / current_usd_price
 
-  let strike_collateral_amount =
-    quantity_of(
-      output_to_orders_validator.value,
-      strike_policy_id,
-      strike_asset_name,
-    )
-
   // Make sure no assets are consumed, user might have added additional collateral, in that case the collateral is in
   // the utxo  
   expect
@@ -178,7 +171,6 @@ pub fn close_position_valid(
               owner_stake_key,
               send_asset: collateral_asset,
               send_asset_amount,
-              strike_collateral_amount,
               pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
               position_policy_id,
               borrowed_amount: position_asset_amount - collateral_asset_amount,
@@ -201,7 +193,6 @@ pub fn close_position_valid(
               owner_stake_key,
               send_asset: collateral_asset,
               send_asset_amount,
-              strike_collateral_amount,
               pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
               position_policy_id,
               borrowed_amount: position_asset_amount - collateral_asset_amount,
@@ -368,7 +359,6 @@ test close_position() {
         owner_stake_key: None,
         send_asset: underlying_asset,
         send_asset_amount: 1_900_000,
-        strike_collateral_amount: 0,
         pool_asset_profit_loss: -900_000,
         position_policy_id,
         borrowed_amount: 0,
@@ -553,7 +543,6 @@ test stop_loss() {
         owner_stake_key: None,
         send_asset: underlying_asset,
         send_asset_amount: 816326,
-        strike_collateral_amount: 0,
         pool_asset_profit_loss: 183674,
         position_policy_id,
         borrowed_amount: 0,
@@ -647,7 +636,6 @@ test take_profit() {
         owner_stake_key: None,
         send_asset: underlying_asset,
         send_asset_amount: 1176470,
-        strike_collateral_amount: 0,
         pool_asset_profit_loss: -176470,
         position_policy_id,
         borrowed_amount: 0,
