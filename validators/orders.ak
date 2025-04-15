@@ -236,8 +236,6 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
         input_pool_datum_typed,
       )
 
-    trace @"1": expected_underlying_asset_amount
-
     expect
       quantity_of(
         output_pool_utxo.value,
