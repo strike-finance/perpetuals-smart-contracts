@@ -111,16 +111,21 @@ validator position_mint(
           max_leverage_factor,
           max_strike_holder_leverage_factor,
           maintain_margin_amount,
+          max_position_usd_value,
         } = global_settings_datum_typed
 
         let available_asset_amount =
           liquidity_total_asset_amount - total_lended_amount
 
+        expect
+          available_asset_amount >= position_asset_amount - collateral_asset_amount
+
+        expect
+          position_asset_amount * current_usd_price <= max_position_usd_value
+
         expect position_hash == policy_id
 
         expect maintain_margin_amount == position_maintain_margin_amount
-        expect
-          available_asset_amount >= position_asset_amount - collateral_asset_amount
         expect
           from_script(orders_script_hash) == output_to_orders_validator.address
         expect
@@ -246,6 +251,7 @@ test enter_position_mint() {
       max_leverage_factor: 10,
       max_strike_holder_leverage_factor: 10,
       maintain_margin_amount: 5,
+      max_position_usd_value: 1_000_000_000,
     }
 
   let settings_ref_input =
