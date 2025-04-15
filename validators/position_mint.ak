@@ -117,13 +117,12 @@ validator position_mint(
           liquidity_total_asset_amount - total_lended_amount
 
         expect position_hash == policy_id
+
         expect maintain_margin_amount == position_maintain_margin_amount
         expect
           available_asset_amount >= position_asset_amount - collateral_asset_amount
-
         expect
           from_script(orders_script_hash) == output_to_orders_validator.address
-
         expect
           assets.quantity_of(
             pool_value,
@@ -139,28 +138,24 @@ validator position_mint(
           ) == 1
         expect current_usd_price == entered_at_usd_price
         expect [(policy_id, position_asset_name, 1)] == flatten(mint)
-
         expect
           quantity_of(
             output_to_orders_validator.value,
             collateral_asset.policy_id,
             collateral_asset.asset_name,
           ) == collateral_asset_amount
-
         expect
           quantity_of(
             output_to_orders_validator.value,
             policy_id,
             position_asset_name,
           ) == 1
-
         let pool_underlying_asset_amount =
           quantity_of(
             pool_value,
             underlying_asset.policy_id,
             underlying_asset.asset_name,
           )
-
         let estimated_hourly_usd_borrow_fee: Int =
           calculate_hourly_usd_borrow_fee(
             position_asset_amount,
@@ -169,11 +164,9 @@ validator position_mint(
             pool_underlying_asset_amount,
             interest_rate,
           )
-
         expect hourly_usd_borrow_fee >= estimated_hourly_usd_borrow_fee
         expect
           get_lower_bound(transaction.validity_range) >= entered_position_time
-
         let contains_strike_collateral: Bool =
           quantity_of(
             output_to_orders_validator.value,
