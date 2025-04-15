@@ -16,7 +16,7 @@
 // pub const pool_license =
 //   #"d6ffbc9038719c18a1f993c2d2bd7cd4cf33209b3ad2f75342382365"
 
-// pub const position_hash =
+// pub const position_policy_id =
 //   #"d6ffbc9038719c18a1f993c2d2bd7cd4cf33209b3ad2f75342382365"
 
 // pub const pool_asset_name = #"6c6f6e67"
@@ -73,7 +73,7 @@
 //   }
 
 // pub const positions_mint_asset =
-//   Asset { policy_id: position_hash, asset_name: trader_pkh }
+//   Asset { policy_id: position_policy_id, asset_name: trader_pkh }
 
 // pub const pool_asset =
 //   Asset { policy_id: pool_policy_id, asset_name: pool_asset_name }

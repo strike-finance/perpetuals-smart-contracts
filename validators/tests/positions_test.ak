@@ -9,7 +9,7 @@
 // use positions_validations.{calculate_return}
 // use tests/constants.{
 //   admin_pkh, batcher_fee, orders_script_hash, out_ref, pool_license,
-//   position_hash, positions_script_hash, stable_asset, stable_asset_multiplier,
+//   position_policy_id, positions_script_hash, stable_asset, stable_asset_multiplier,
 //   strike_collateral_asset, trader_pkh, underlying_asset,
 //   underlying_asset_multiplier,
 // }
@@ -25,7 +25,7 @@
 //   PositionDatum {
 //     owner_pkh: trader_pkh,
 //     entered_at_usd_price: 100,
-//     position_hash,
+//     position_policy_id,
 //     leverage_factor: 10,
 //     position_asset_amount: 10_000_000,
 //     stop_loss_usd_price: 98,
@@ -71,7 +71,7 @@
 //   }
 
 // test test_enter_long_positions_mint() {
-//   let mint = assets.from_asset(position_hash, trader_pkh, 1)
+//   let mint = assets.from_asset(position_policy_id, trader_pkh, 1)
 
 //   let orders_datum =
 //     OrderDatum {
@@ -79,7 +79,7 @@
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
 //           leverage_factor: 10,
-//           position_hash,
+//           position_policy_id,
 //           position_asset_amount: 10_000_000,
 //           maintain_margin_amount: 5,
 //           hourly_usd_borrow_fee: 1000000000,
@@ -144,7 +144,7 @@
 //       stable_asset_multiplier,
 //     }
 //   let redeemer = MintPosition(100)
-//   positions.positions.mint(params, redeemer, position_hash, tx)
+//   positions.positions.mint(params, redeemer, position_policy_id, tx)
 // }
 
 // test test_enter_short_positions_mint() {
@@ -154,7 +154,7 @@
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
 //           leverage_factor: 10,
-//           position_hash,
+//           position_policy_id,
 //           position_asset_amount: 10_000_000_000,
 //           maintain_margin_amount: 5,
 //           hourly_usd_borrow_fee: 20000000000,
@@ -165,7 +165,7 @@
 //       },
 //     }
 
-//   let mint = assets.from_asset(position_hash, trader_pkh, 1)
+//   let mint = assets.from_asset(position_policy_id, trader_pkh, 1)
 
 //   let pos_out =
 //     Output {
@@ -217,11 +217,11 @@
 //       stable_asset_multiplier,
 //     }
 //   let redeemer = MintPosition(100000)
-//   positions.positions.mint(params, redeemer, position_hash, tx)
+//   positions.positions.mint(params, redeemer, position_policy_id, tx)
 // }
 
 // test test_burn_positions_mint() {
-//   let mint = assets.from_asset(position_hash, trader_pkh, -1)
+//   let mint = assets.from_asset(position_policy_id, trader_pkh, -1)
 
 //   let tx =
 //     Transaction {
@@ -258,7 +258,7 @@
 //       stable_asset_multiplier,
 //     }
 //   let redeemer = BurnPosition(1, trader_pkh)
-//   positions.positions.mint(params, redeemer, position_hash, tx)
+//   positions.positions.mint(params, redeemer, position_policy_id, tx)
 // }
 
 // test test_close_position_signed_by_owner() {
@@ -273,7 +273,7 @@
 //       output_reference: own_ref,
 //       output: Output {
 //         address: from_script(positions_script_hash),
-//         value: assets.from_asset(position_hash, trader_pkh, 1)
+//         value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //           |> assets.add(
 //               strike_collateral_asset.policy_id,
 //               strike_collateral_asset.asset_name,
@@ -313,7 +313,7 @@
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
 //           leverage_factor: position_datum.leverage_factor,
-//           position_hash,
+//           position_policy_id,
 //           entered_at_usd_price: position_datum.entered_at_usd_price,
 //           entered_position_time: position_datum.entered_position_time,
 //           position_asset_amount: position_datum.position_asset_amount,
@@ -327,7 +327,7 @@
 //   let pos_out =
 //     Output {
 //       address: from_script(orders_script_hash),
-//       value: assets.from_asset(position_hash, trader_pkh, 1)
+//       value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //         |> assets.merge(assets.from_lovelace(batcher_fee))
 //         |> assets.add(
 //             strike_collateral_asset.policy_id,
@@ -393,7 +393,7 @@
 //       output_reference: own_ref,
 //       output: Output {
 //         address: from_script(positions_script_hash),
-//         value: assets.from_asset(position_hash, trader_pkh, 1)
+//         value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //           |> assets.add(
 //               strike_collateral_asset.policy_id,
 //               strike_collateral_asset.asset_name,
@@ -433,7 +433,7 @@
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
 //           leverage_factor: position_datum.leverage_factor,
-//           position_hash,
+//           position_policy_id,
 //           entered_at_usd_price: position_datum.entered_at_usd_price,
 //           entered_position_time: position_datum.entered_position_time,
 //           position_asset_amount: position_datum.position_asset_amount,
@@ -447,7 +447,7 @@
 //   let pos_out =
 //     Output {
 //       address: from_script(orders_script_hash),
-//       value: assets.from_asset(position_hash, trader_pkh, 1)
+//       value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //         |> assets.merge(assets.from_lovelace(batcher_fee))
 //         |> assets.add(
 //             strike_collateral_asset.policy_id,
@@ -513,7 +513,7 @@
 //       output_reference: own_ref,
 //       output: Output {
 //         address: from_script(positions_script_hash),
-//         value: assets.from_asset(position_hash, trader_pkh, 1)
+//         value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //           |> assets.add(
 //               position_datum.collateral_asset.policy_id,
 //               position_datum.collateral_asset.asset_name,
@@ -553,7 +553,7 @@
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
 //           leverage_factor: position_datum.leverage_factor,
-//           position_hash,
+//           position_policy_id,
 //           entered_at_usd_price: position_datum.entered_at_usd_price,
 //           entered_position_time: position_datum.entered_position_time,
 //           position_asset_amount: position_datum.position_asset_amount,
@@ -567,7 +567,7 @@
 //   let pos_out =
 //     Output {
 //       address: from_script(orders_script_hash),
-//       value: assets.from_asset(position_hash, trader_pkh, 1)
+//       value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //         |> assets.merge(assets.from_lovelace(batcher_fee))
 //         |> assets.add(
 //             strike_collateral_asset.policy_id,
@@ -632,7 +632,7 @@
 //     PositionDatum {
 //       owner_pkh: trader_pkh,
 //       entered_at_usd_price: 100,
-//       position_hash,
+//       position_policy_id,
 //       leverage_factor: 10,
 //       position_asset_amount: 10_000_000,
 //       stop_loss_usd_price: 98,
@@ -649,7 +649,7 @@
 //       output_reference: own_ref,
 //       output: Output {
 //         address: from_script(positions_script_hash),
-//         value: assets.from_asset(position_hash, trader_pkh, 1)
+//         value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //           |> assets.add(
 //               strike_collateral_asset.policy_id,
 //               strike_collateral_asset.asset_name,
@@ -669,7 +669,7 @@
 //     OrderDatum {
 //       action: LiquidatePositionOrder {
 //         owner_pkh: trader_pkh,
-//         position_hash,
+//         position_policy_id,
 //         side: Long,
 //         position_asset_amount: position_datum.position_asset_amount,
 //         leverage_factor: position_datum.leverage_factor,
@@ -679,7 +679,7 @@
 //   let pos_out =
 //     Output {
 //       address: from_script(orders_script_hash),
-//       value: assets.from_asset(position_hash, trader_pkh, 1)
+//       value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //         |> assets.merge(assets.from_lovelace(batcher_fee))
 //         |> assets.add(
 //             strike_collateral_asset.policy_id,
@@ -745,7 +745,7 @@
 //       output_reference: own_ref,
 //       output: Output {
 //         address: from_script(positions_script_hash),
-//         value: assets.from_asset(position_hash, trader_pkh, 1)
+//         value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //           |> assets.add(
 //               strike_collateral_asset.policy_id,
 //               strike_collateral_asset.asset_name,
@@ -765,7 +765,7 @@
 //     PositionDatum {
 //       owner_pkh: trader_pkh,
 //       entered_at_usd_price: position_datum.entered_at_usd_price,
-//       position_hash,
+//       position_policy_id,
 //       leverage_factor: position_datum.leverage_factor,
 //       position_asset_amount: position_datum.position_asset_amount,
 //       collateral_asset: underlying_asset,
@@ -780,7 +780,7 @@
 //   let pos_out =
 //     Output {
 //       address: from_script(positions_script_hash),
-//       value: assets.from_asset(position_hash, trader_pkh, 1)
+//       value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //         |> assets.add(
 //             strike_collateral_asset.policy_id,
 //             strike_collateral_asset.asset_name,
@@ -845,7 +845,7 @@
 //       output_reference: own_ref,
 //       output: Output {
 //         address: from_script(positions_script_hash),
-//         value: assets.from_asset(position_hash, trader_pkh, 1)
+//         value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //           |> assets.add(
 //               strike_collateral_asset.policy_id,
 //               strike_collateral_asset.asset_name,
@@ -864,7 +864,7 @@
 //   let new_datum =
 //     PositionDatum {
 //       owner_pkh: trader_pkh,
-//       position_hash,
+//       position_policy_id,
 //       leverage_factor: position_datum.leverage_factor,
 //       entered_at_usd_price: position_datum.entered_at_usd_price,
 //       position_asset_amount: position_datum.position_asset_amount,
@@ -880,7 +880,7 @@
 //   let pos_out =
 //     Output {
 //       address: from_script(positions_script_hash),
-//       value: assets.from_asset(position_hash, trader_pkh, 1)
+//       value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //         |> assets.add(
 //             strike_collateral_asset.policy_id,
 //             strike_collateral_asset.asset_name,

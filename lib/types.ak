@@ -53,7 +53,7 @@ pub type OrderAction {
     // The profit or loss incurred by the trader and reflected in the pool
     pool_asset_profit_loss: Int,
     // The policy id of the minting position script
-    position_hash: ScriptHash,
+    position_policy_id: PolicyId,
   }
   // Return assets info
   LiquidatePositionOrder {
@@ -61,8 +61,8 @@ pub type OrderAction {
     profit: Int,
     // Lended amount returned to pool
     lended_amount: Int,
-    // Position hash
-    position_hash: ScriptHash,
+    // Position policy id
+    position_policy_id: PolicyId,
   }
   ProvideLiquidityOrder {
     // Owner of the liquidity, to send the lp tokens
@@ -90,7 +90,9 @@ pub type PositionDatum {
   // The price at which the order was submitted
   entered_at_usd_price: Int,
   // The policy id of the minting position script
-  position_hash: ScriptHash,
+  position_policy_id: PolicyId,
+  // The position has of the manage positions script
+  manage_positions_script_hash: ScriptHash,
   // Collateral asset 
   collateral_asset: Asset,
   // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5% 

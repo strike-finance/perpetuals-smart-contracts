@@ -168,7 +168,8 @@ pub fn open_position(
   expect OpenPositionOrder {
     position_datum: PositionDatum {
       owner_pkh,
-      position_hash,
+      position_policy_id,
+      manage_positions_script_hash,
       entered_at_usd_price,
       entered_position_time,
       maintain_margin_amount,
@@ -187,7 +188,8 @@ pub fn open_position(
   let expected_output_datum =
     PositionDatum {
       owner_pkh,
-      position_hash,
+      position_policy_id,
+      manage_positions_script_hash,
       entered_at_usd_price,
       entered_position_time,
       maintain_margin_amount,
@@ -209,11 +211,11 @@ pub fn open_position(
 
   let lended_amount: Int = position_asset_amount - collateral_asset_amount
 
-  expect quantity_of(output.value, position_hash, position_asset_name) == 1
+  expect quantity_of(output.value, position_policy_id, position_asset_name) == 1
 
   expect Script(output_script_hash) = output.address.payment_credential
 
-  expect output_script_hash == position_hash
+  expect output_script_hash == manage_positions_script_hash
 
   ExpectedPoolOutput {
     underlying_asset_amount: underlying_asset_amount - lended_amount,
@@ -240,7 +242,7 @@ pub fn close_position(
     strike_collateral_amount,
     pool_asset_profit_loss,
     return_pool_asset_amount,
-    position_hash,
+    position_policy_id,
   } = datum.action
 
   let PoolDatum { liquidity_total_gains_losses, .. } = pool_output_datum
@@ -267,7 +269,8 @@ pub fn close_position(
       ..pool_output_datum,
       liquidity_total_gains_losses: liquidity_total_gains_losses + pool_asset_profit_loss,
     },
-    mint: expected_mint |> assets.add(position_hash, position_asset_name, -1),
+    mint: expected_mint
+      |> assets.add(position_policy_id, position_asset_name, -1),
   }
 }
 
@@ -278,7 +281,7 @@ pub fn liquidate_position(
   pool_output_datum: PoolDatum,
   expected_mint: Value,
 ) -> ExpectedPoolOutput {
-  expect LiquidatePositionOrder { profit, lended_amount, position_hash } =
+  expect LiquidatePositionOrder { profit, lended_amount, position_policy_id } =
     datum.action
 
   let PoolDatum { liquidity_total_gains_losses, .. } = pool_output_datum
@@ -297,7 +300,8 @@ pub fn liquidate_position(
       liquidity_total_gains_losses: liquidity_total_gains_losses + profit,
       total_lended_amount: pool_output_datum.total_lended_amount - lended_amount,
     },
-    mint: expected_mint |> assets.add(position_hash, position_asset_name, -1),
+    mint: expected_mint
+      |> assets.add(position_policy_id, position_asset_name, -1),
   }
 }
 

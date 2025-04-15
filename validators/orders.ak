@@ -12,8 +12,8 @@ use constants.{
 use math.{calculate_position_usd_value_based_on_side}
 use orders_validations.{valid_orders}
 use test_constants.{
-  manage_position_hash, out_ref, position_hash, protocol_nft_policy_id,
-  trader_pkh, underlying_asset,
+  manage_positions_script_hash, out_ref, position_policy_id,
+  protocol_nft_policy_id, trader_pkh, underlying_asset,
 }
 use types.{
   ClosePositionOrder, ExpectedPoolOutput, LimitOrder, Long, MarketOrder,
@@ -57,7 +57,7 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
         expect OpenPositionOrder {
           position_datum: PositionDatum {
             owner_pkh,
-            position_hash,
+            position_policy_id,
             entered_position_time,
             ..
           },
@@ -69,7 +69,9 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
         expect list.has(extra_signatories, owner_pkh)
 
         expect
-          [(position_hash, position_asset_name, -1)] == assets.flatten(mint)
+          [(position_policy_id, position_asset_name, -1)] == assets.flatten(
+            mint,
+          )
 
         // If markey order, can only be cancelled if it has been sitting idle and batcher havent picked it up
         if open_position_type == MarketOrder {
@@ -93,7 +95,7 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
             position_asset_amount,
             entered_at_usd_price,
             owner_pkh,
-            position_hash,
+            position_policy_id,
             collateral_asset,
             collateral_asset_amount,
             owner_stake_key,
@@ -105,7 +107,9 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
         expect list.has(extra_signatories, owner_pkh)
 
         expect
-          [(position_hash, position_asset_name, -1)] == assets.flatten(mint)
+          [(position_policy_id, position_asset_name, -1)] == assets.flatten(
+            mint,
+          )
 
         let position_usd_value =
           calculate_position_usd_value_based_on_side(
@@ -168,7 +172,7 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
               strike_collateral_amount,
               pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
               return_pool_asset_amount: collateral_asset_amount - send_asset_amount,
-              position_hash,
+              position_policy_id,
             },
           }
 
@@ -279,7 +283,8 @@ test cancel_orders() {
           owner_pkh: trader_pkh,
           owner_stake_key: None,
           entered_at_usd_price: 100,
-          position_hash,
+          position_policy_id,
+          manage_positions_script_hash,
           position_asset_amount: 10_000_000,
           stop_loss_usd_price: 98,
           take_profit_usd_price: 0,
@@ -298,15 +303,15 @@ test cancel_orders() {
     Input {
       output_reference: out_ref,
       output: Output {
-        address: from_script(manage_position_hash),
+        address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_hash, position_asset_name, 1),
+          |> assets.add(position_policy_id, position_asset_name, 1),
         datum: InlineDatum(orders_datum),
         reference_script: None,
       },
     }
 
-  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
 
   let tx =
     Transaction {
@@ -355,7 +360,8 @@ test close_order_while_pending() {
           owner_pkh: trader_pkh,
           owner_stake_key: None,
           entered_at_usd_price: 90,
-          position_hash,
+          position_policy_id,
+          manage_positions_script_hash,
           position_asset_amount: 10_000_000,
           stop_loss_usd_price: 98,
           take_profit_usd_price: 0,
@@ -374,9 +380,9 @@ test close_order_while_pending() {
     Input {
       output_reference: out_ref,
       output: Output {
-        address: from_script(manage_position_hash),
+        address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_hash, position_asset_name, 1),
+          |> assets.add(position_policy_id, position_asset_name, 1),
         datum: InlineDatum(orders_datum),
         reference_script: None,
       },
@@ -392,15 +398,15 @@ test close_order_while_pending() {
         return_pool_asset_amount: -900_000,
         strike_collateral_amount: 0,
         pool_asset_profit_loss: -900_000,
-        position_hash,
+        position_policy_id,
       },
     }
 
-  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
 
   let output_to_positions_validator =
     Output {
-      address: from_script(manage_position_hash),
+      address: from_script(manage_positions_script_hash),
       value: from_lovelace(1_000_000),
       datum: InlineDatum(close_position_datum),
       reference_script: None,

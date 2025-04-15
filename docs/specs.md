@@ -137,7 +137,7 @@ pub type PositionDatum {
   // The price at which the order was submitted
   entered_at_usd_price: Int,
   // The script hash for the positions script that holds all the positions of the trader
-  position_hash: ScriptHash,
+  position_policy_id: ScriptHash,
   // Collateral asset
   collateral_asset: Asset,
   // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5%
@@ -283,7 +283,7 @@ pub type PositionDatum {
   // The price at which the order was submitted
   entered_at_usd_price: Int,
   // The script hash for the positions script that holds all the positions of the trader
-  position_hash: ScriptHash,
+  position_policy_id: ScriptHash,
   // Collateral asset
   collateral_asset: Asset,
   // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5%
@@ -320,14 +320,14 @@ A Multi-UTxO indexer is used to match the input to the output.
   - For market orders, cancellation is only allowed if the order has been sitting idle for more than 3 minutes (180,000 milliseconds)
   - Limit orders can be cancelled at any time
   - The transaction must be signed by the position owner
-  - The position token must be burned (position_hash, position_asset_name with value -1)
+  - The position token must be burned (position_policy_id, position_asset_name with value -1)
   - Only one validator input is allowed in the transaction
 
 - **Close Order While Pending**
 
   - Allows a user to close their position even if it has not been picked up by the batcher
   - The transaction must be signed by the position owner
-  - The position token must be burned (position_hash, position_asset_name with value -1)
+  - The position token must be burned (position_policy_id, position_asset_name with value -1)
   - Calculates the position's USD value based on current price, entry price, and position side
   - Determines the amount of assets to return to the user
   - Ensures only one script input is present in the transaction

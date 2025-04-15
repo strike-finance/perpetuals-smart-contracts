@@ -24,6 +24,9 @@ pub const strike_policy_id: PolicyId =
 pub const strike_asset_name: AssetName =
   #"00000000000000000000000000000000000000000000000000000000"
 
+pub const manage_positions_script_hash: ScriptHash =
+  #"268eca9c9612bdc635bbd9435e75a279cb976000f7179c8eba853420"
+
 pub const settings_nft_asset_name =
   string.to_bytearray(@"PROTOCOL_SETTINGS_NFT")
 

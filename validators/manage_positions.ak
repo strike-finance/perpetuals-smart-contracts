@@ -12,8 +12,8 @@ use math.{
   calculate_position_usd_value_based_on_side, reach_liquidation_price,
 }
 use test_constants.{
-  manage_position_hash, orders_script_hash, out_ref, position_hash, trader_pkh,
-  underlying_asset,
+  manage_positions_script_hash, orders_script_hash, out_ref, position_policy_id,
+  trader_pkh, underlying_asset,
 }
 use types.{
   ClosePositionOrder, CloseType, LiquidateClose, LiquidatePositionOrder, Long,
@@ -80,7 +80,7 @@ pub fn close_position_valid(
     maintain_margin_amount,
     entered_position_time,
     hourly_usd_borrow_fee,
-    position_hash,
+    position_policy_id,
     ..
   } = datum
 
@@ -157,7 +157,7 @@ pub fn close_position_valid(
         action: LiquidatePositionOrder {
           profit: collateral_asset_amount,
           lended_amount: position_asset_amount - collateral_asset_amount,
-          position_hash,
+          position_policy_id,
         },
       }
 
@@ -181,7 +181,7 @@ pub fn close_position_valid(
               strike_collateral_amount,
               pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
               return_pool_asset_amount: position_asset_amount - send_asset_amount,
-              position_hash,
+              position_policy_id,
             },
           }
 
@@ -204,7 +204,7 @@ pub fn close_position_valid(
               strike_collateral_amount,
               pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
               return_pool_asset_amount: position_asset_amount - send_asset_amount,
-              position_hash,
+              position_policy_id,
             },
           }
 
@@ -336,7 +336,8 @@ test close_position() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 90,
-      position_hash,
+      position_policy_id,
+      manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
       take_profit_usd_price: 0,
@@ -352,9 +353,9 @@ test close_position() {
     Input {
       output_reference: out_ref,
       output: Output {
-        address: from_script(manage_position_hash),
+        address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_hash, position_asset_name, 1),
+          |> assets.add(position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
@@ -370,11 +371,11 @@ test close_position() {
         return_pool_asset_amount: 8_100_000,
         strike_collateral_amount: 0,
         pool_asset_profit_loss: -900_000,
-        position_hash,
+        position_policy_id,
       },
     }
 
-  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
 
   let orders_output =
     Output {
@@ -429,7 +430,8 @@ test liquidate_close() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 60_000,
-      position_hash,
+      position_policy_id,
+      manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
       take_profit_usd_price: 0,
@@ -441,15 +443,15 @@ test liquidate_close() {
       side: Long,
     }
 
-  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
 
   let position_input =
     Input {
       output_reference: out_ref,
       output: Output {
-        address: from_script(manage_position_hash),
+        address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_hash, position_asset_name, 1),
+          |> assets.add(position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
@@ -460,7 +462,7 @@ test liquidate_close() {
       action: LiquidatePositionOrder {
         profit: 1_000_000,
         lended_amount: 9_000_000,
-        position_hash,
+        position_policy_id,
       },
     }
 
@@ -517,7 +519,8 @@ test stop_loss() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_hash,
+      position_policy_id,
+      manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
       take_profit_usd_price: 0,
@@ -533,15 +536,15 @@ test stop_loss() {
     Input {
       output_reference: out_ref,
       output: Output {
-        address: from_script(manage_position_hash),
+        address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_hash, position_asset_name, 1),
+          |> assets.add(position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
     }
 
-  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
 
   let order_datum =
     OrderDatum {
@@ -553,7 +556,7 @@ test stop_loss() {
         strike_collateral_amount: 0,
         pool_asset_profit_loss: 183674,
         return_pool_asset_amount: 9183674,
-        position_hash,
+        position_policy_id,
       },
     }
 
@@ -610,7 +613,8 @@ test take_profit() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_hash,
+      position_policy_id,
+      manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
       take_profit_usd_price: 102,
@@ -626,15 +630,15 @@ test take_profit() {
     Input {
       output_reference: out_ref,
       output: Output {
-        address: from_script(manage_position_hash),
+        address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_hash, position_asset_name, 1),
+          |> assets.add(position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
     }
 
-  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
 
   let order_datum =
     OrderDatum {
@@ -646,7 +650,7 @@ test take_profit() {
         strike_collateral_amount: 0,
         pool_asset_profit_loss: -176470,
         return_pool_asset_amount: 8823530,
-        position_hash,
+        position_policy_id,
       },
     }
 
@@ -703,7 +707,8 @@ test add_collateral() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_hash,
+      position_policy_id,
+      manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
       take_profit_usd_price: 0,
@@ -719,22 +724,23 @@ test add_collateral() {
     Input {
       output_reference: out_ref,
       output: Output {
-        address: from_script(manage_position_hash),
+        address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_hash, position_asset_name, 1),
+          |> assets.add(position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
     }
 
-  let mint = assets.from_asset(position_hash, position_asset_name, -1)
+  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
 
   let updated_position_datum =
     PositionDatum {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_hash,
+      position_policy_id,
+      manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
       take_profit_usd_price: 0,
@@ -748,9 +754,9 @@ test add_collateral() {
 
   let updated_position_output =
     Output {
-      address: from_script(manage_position_hash),
+      address: from_script(manage_positions_script_hash),
       value: from_lovelace(2_000_000)
-        |> assets.add(position_hash, position_asset_name, 1),
+        |> assets.add(position_policy_id, position_asset_name, 1),
       datum: InlineDatum(updated_position_datum),
       reference_script: None,
     }
@@ -793,7 +799,8 @@ test update_position() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_hash,
+      position_policy_id,
+      manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
       take_profit_usd_price: 0,
@@ -809,9 +816,9 @@ test update_position() {
     Input {
       output_reference: out_ref,
       output: Output {
-        address: from_script(manage_position_hash),
+        address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_hash, position_asset_name, 1),
+          |> assets.add(position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
@@ -822,7 +829,8 @@ test update_position() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_hash,
+      position_policy_id,
+      manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 100,
       take_profit_usd_price: 100,
@@ -836,9 +844,9 @@ test update_position() {
 
   let updated_position_output =
     Output {
-      address: from_script(manage_position_hash),
+      address: from_script(manage_positions_script_hash),
       value: from_lovelace(1_000_000)
-        |> assets.add(position_hash, position_asset_name, 1),
+        |> assets.add(position_policy_id, position_asset_name, 1),
       datum: InlineDatum(updated_position_datum),
       reference_script: None,
     }

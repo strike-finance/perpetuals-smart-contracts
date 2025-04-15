@@ -7,7 +7,7 @@
 // use orders
 // use tests/constants.{
 //   batcher_license, burn_address, maximum_deadline_range, orders_script_hash,
-//   out_ref, pool_asset_name, pool_license, pool_script_hash, position_hash,
+//   out_ref, pool_asset_name, pool_license, pool_script_hash, position_policy_id,
 //   stable_asset, strike_collateral_asset, trader_pkh, underlying_asset,
 // }
 // use types.{
@@ -56,7 +56,7 @@
 //       action: OpenPositionOrder {
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
-//           position_hash,
+//           position_policy_id,
 //           leverage_factor: 10,
 //           position_asset_amount: 10_000_000,
 //           maintain_margin_amount: 100,
@@ -80,7 +80,7 @@
 //       },
 //     }
 
-//   let mint = assets.from_asset(position_hash, trader_pkh, -1)
+//   let mint = assets.from_asset(position_policy_id, trader_pkh, -1)
 
 //   let tx =
 //     Transaction {
@@ -138,7 +138,7 @@
 //         },
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
-//           position_hash,
+//           position_policy_id,
 //           leverage_factor: 10,
 //           hourly_usd_borrow_fee: 100,
 //           entered_at_usd_price: 100,
@@ -155,7 +155,7 @@
 //     take_profit_usd_price,
 //     position_datum: PositionDatum {
 //       owner_pkh,
-//       position_hash,
+//       position_policy_id,
 //       leverage_factor,
 //       hourly_usd_borrow_fee,
 //       entered_at_usd_price,
@@ -173,7 +173,7 @@
 //       output: Output {
 //         address: from_script(orders_script_hash),
 //         value: from_lovelace(2_000_000)
-//           |> assets.add(position_hash, trader_pkh, 1)
+//           |> assets.add(position_policy_id, trader_pkh, 1)
 //           |> assets.add(
 //               underlying_asset.policy_id,
 //               underlying_asset.asset_name,
@@ -192,7 +192,7 @@
 //   let positions_datum =
 //     PositionDatum {
 //       owner_pkh,
-//       position_hash,
+//       position_policy_id,
 //       entered_at_usd_price,
 //       leverage_factor,
 //       position_asset_amount,
@@ -207,9 +207,9 @@
 
 //   let position_output =
 //     Output {
-//       address: from_script(position_hash),
+//       address: from_script(position_policy_id),
 //       value: from_lovelace(2_000_000)
-//         |> assets.add(position_hash, trader_pkh, 1)
+//         |> assets.add(position_policy_id, trader_pkh, 1)
 //         |> assets.add(underlying_asset.policy_id, underlying_asset.asset_name, 100)
 //         |> assets.add(
 //             strike_collateral_asset.policy_id,
@@ -269,7 +269,7 @@
 //       action: OpenPositionOrder {
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
-//           position_hash,
+//           position_policy_id,
 //           leverage_factor: 10,
 //           entered_position_time: 1727453227635,
 //           entered_at_usd_price: 100,
@@ -283,7 +283,7 @@
 
 //   expect OpenPositionOrder{position_datum: PositionDatum {
 //     owner_pkh,
-//     position_hash,
+//     position_policy_id,
 //     leverage_factor,
 //     entered_position_time,
 //     entered_at_usd_price,
@@ -299,7 +299,7 @@
 //       output: Output {
 //         address: from_script(orders_script_hash),
 //         value: from_lovelace(2_000_000)
-//           |> assets.add(position_hash, trader_pkh, 1)
+//           |> assets.add(position_policy_id, trader_pkh, 1)
 //           |> assets.add(
 //               underlying_asset.policy_id,
 //               underlying_asset.asset_name,
@@ -318,7 +318,7 @@
 //   let positions_datum =
 //     PositionDatum {
 //       owner_pkh,
-//       position_hash,
+//       position_policy_id,
 //       entered_at_usd_price,
 //       leverage_factor,
 //       position_asset_amount,
@@ -333,9 +333,9 @@
 
 //   let position_output =
 //     Output {
-//       address: from_script(position_hash),
+//       address: from_script(position_policy_id),
 //       value: from_lovelace(2_000_000)
-//         |> assets.add(position_hash, trader_pkh, 1)
+//         |> assets.add(position_policy_id, trader_pkh, 1)
 //         |> assets.add(underlying_asset.policy_id, underlying_asset.asset_name, 100)
 //         |> assets.add(
 //             strike_collateral_asset.policy_id,
@@ -449,7 +449,7 @@
 //         },
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
-//           position_hash,
+//           position_policy_id,
 //           leverage_factor: 10,
 //           entered_at_usd_price: 100,
 //           entered_position_time: 100,
@@ -466,7 +466,7 @@
 //     position_datum: PositionDatum {
 //       leverage_factor,
 //       position_asset_amount,
-//       position_hash,
+//       position_policy_id,
 //       ..
 //     },
 //     ..
@@ -485,7 +485,7 @@
 //       output_reference: out_ref,
 //       output: Output {
 //         address: from_script(orders_script_hash),
-//         value: assets.from_asset(position_hash, trader_pkh, 1)
+//         value: assets.from_asset(position_policy_id, trader_pkh, 1)
 //           |> assets.add(
 //               underlying_asset.policy_id,
 //               underlying_asset.asset_name,
@@ -558,7 +558,7 @@
 //       },
 //     }
 
-//   let mint = assets.from_asset(position_hash, trader_pkh, -1)
+//   let mint = assets.from_asset(position_policy_id, trader_pkh, -1)
 
 //   let tx =
 //     Transaction {
@@ -627,7 +627,7 @@
 //         },
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
-//           position_hash,
+//           position_policy_id,
 //           leverage_factor: 10,
 //           hourly_usd_borrow_fee: 100,
 //           entered_at_usd_price: 100,
@@ -640,7 +640,7 @@
 //     }
 
 //   expect ClosePositionOrder {
-//     position_datum: PositionDatum { position_hash, .. },
+//     position_datum: PositionDatum { position_policy_id, .. },
 //     return_amount,
 //     ..
 //   } = orders_datum.action
@@ -659,7 +659,7 @@
 //       output: Output {
 //         address: from_script(orders_script_hash),
 //         value: from_lovelace(2_000_000)
-//           |> assets.add(position_hash, trader_pkh, 1)
+//           |> assets.add(position_policy_id, trader_pkh, 1)
 //           |> assets.add(
 //               stable_asset.policy_id,
 //               stable_asset.asset_name,
@@ -737,7 +737,7 @@
 //       },
 //     }
 
-//   let mint = assets.from_asset(position_hash, trader_pkh, -1)
+//   let mint = assets.from_asset(position_policy_id, trader_pkh, -1)
 
 //   let tx =
 //     Transaction {
@@ -804,7 +804,7 @@
 //         },
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
-//           position_hash,
+//           position_policy_id,
 //           leverage_factor: 10,
 //           hourly_usd_borrow_fee: 100,
 //           entered_at_usd_price: 100,
@@ -817,7 +817,7 @@
 //     }
 
 //   expect ClosePositionOrder {
-//     position_datum: PositionDatum { position_hash, .. },
+//     position_datum: PositionDatum { position_policy_id, .. },
 //     return_amount,
 //     ..
 //   } = orders_datum.action
@@ -834,7 +834,7 @@
 //       output: Output {
 //         address: from_script(orders_script_hash),
 //         value: from_lovelace(2_000_000)
-//           |> assets.add(position_hash, trader_pkh, -1)
+//           |> assets.add(position_policy_id, trader_pkh, -1)
 //           |> assets.add(
 //               pool_datum.underlying_asset.policy_id,
 //               pool_datum.underlying_asset.asset_name,
@@ -907,7 +907,7 @@
 //       },
 //     }
 
-//   let mint = assets.from_asset(position_hash, trader_pkh, -1)
+//   let mint = assets.from_asset(position_policy_id, trader_pkh, -1)
 
 //   let tx =
 //     Transaction {
@@ -976,7 +976,7 @@
 //         },
 //         position_datum: PositionDatum {
 //           owner_pkh: trader_pkh,
-//           position_hash,
+//           position_policy_id,
 //           leverage_factor: 10,
 //           hourly_usd_borrow_fee: 100,
 //           entered_at_usd_price: 100,
@@ -994,7 +994,7 @@
 //       output: Output {
 //         address: from_script(orders_script_hash),
 //         value: from_lovelace(2_000_000)
-//           |> assets.add(position_hash, trader_pkh, -1)
+//           |> assets.add(position_policy_id, trader_pkh, -1)
 //           |> assets.add(
 //               pool_datum.stable_asset.policy_id,
 //               pool_datum.stable_asset.asset_name,
@@ -1011,7 +1011,7 @@
 //     }
 
 //   expect ClosePositionOrder {
-//     position_datum: PositionDatum { position_hash, .. },
+//     position_datum: PositionDatum { position_policy_id, .. },
 //     return_amount,
 //     ..
 //   } = orders_datum.action
@@ -1080,7 +1080,7 @@
 //       },
 //     }
 
-//   let mint = assets.from_asset(position_hash, trader_pkh, -1)
+//   let mint = assets.from_asset(position_policy_id, trader_pkh, -1)
 
 //   let tx =
 //     Transaction {
@@ -1139,7 +1139,7 @@
 //     OrderDatum {
 //       action: LiquidatePositionOrder {
 //         owner_pkh: trader_pkh,
-//         position_hash,
+//         position_policy_id,
 //         side: Long,
 //         position_asset_amount: 10_000_000,
 //         leverage_factor: 10,
@@ -1147,7 +1147,7 @@
 //     }
 
 //   expect LiquidatePositionOrder {
-//     position_hash,
+//     position_policy_id,
 //     position_asset_amount,
 //     leverage_factor,
 //     ..
@@ -1228,7 +1228,7 @@
 //       },
 //     }
 
-//   let mint = assets.from_asset(position_hash, trader_pkh, -1)
+//   let mint = assets.from_asset(position_policy_id, trader_pkh, -1)
 
 //   let tx =
 //     Transaction {
@@ -1287,7 +1287,7 @@
 //     OrderDatum {
 //       action: LiquidatePositionOrder {
 //         owner_pkh: trader_pkh,
-//         position_hash,
+//         position_policy_id,
 //         side: Short,
 //         position_asset_amount: 10_000_000,
 //         leverage_factor: 10,
@@ -1295,7 +1295,7 @@
 //     }
 
 //   expect LiquidatePositionOrder {
-//     position_hash,
+//     position_policy_id,
 //     position_asset_amount,
 //     leverage_factor,
 //     ..
@@ -1307,7 +1307,7 @@
 //       output: Output {
 //         address: from_script(orders_script_hash),
 //         value: from_lovelace(2_000_000)
-//           |> assets.add(position_hash, trader_pkh, -1)
+//           |> assets.add(position_policy_id, trader_pkh, -1)
 //           |> assets.add(
 //               pool_datum.stable_asset.policy_id,
 //               pool_datum.stable_asset.asset_name,
@@ -1366,7 +1366,7 @@
 //       },
 //     }
 
-//   let mint = assets.from_asset(position_hash, trader_pkh, -1)
+//   let mint = assets.from_asset(position_policy_id, trader_pkh, -1)
 
 //   let burn_output =
 //     Output {

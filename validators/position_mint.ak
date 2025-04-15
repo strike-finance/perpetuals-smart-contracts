@@ -5,13 +5,13 @@ use cardano/address.{from_script}
 use cardano/assets.{AssetName, PolicyId, flatten, from_lovelace, quantity_of}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{
-  pool_nft_asset_name, position_asset_name, settings_nft_asset_name,
-  strike_asset_name, strike_policy_id,
+  manage_positions_script_hash, pool_nft_asset_name, position_asset_name,
+  settings_nft_asset_name, strike_asset_name, strike_policy_id,
 }
 use math.{calculate_hourly_usd_borrow_fee}
 use test_constants.{
-  orders_script_hash, out_ref, position_hash, protocol_nft_policy_id, trader_pkh,
-  underlying_asset,
+  orders_script_hash, out_ref, position_policy_id, protocol_nft_policy_id,
+  trader_pkh, underlying_asset,
 }
 use types.{
   Long, MarketOrder, OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum,
@@ -36,6 +36,7 @@ pub type PositionMintRedeemer {
 
 validator position_mint(
   orders_script_hash: ScriptHash,
+  t_manage_positions_script_hash: ScriptHash,
   pool_nft_policy_id: PolicyId,
   pool_nft_asset_name: AssetName,
   settings_nft_policy_id: PolicyId,
@@ -70,7 +71,8 @@ validator position_mint(
             hourly_usd_borrow_fee,
             collateral_asset,
             collateral_asset_amount,
-            position_hash,
+            position_policy_id,
+            manage_positions_script_hash,
             maintain_margin_amount,
             ..
           },
@@ -123,7 +125,9 @@ validator position_mint(
         expect
           position_asset_amount * current_usd_price <= max_position_usd_value
 
-        expect position_hash == policy_id
+        expect position_policy_id == policy_id
+
+        expect manage_positions_script_hash == t_manage_positions_script_hash
 
         expect maintain_margin_amount == position_maintain_margin_amount
         expect
@@ -205,7 +209,8 @@ test enter_position_mint() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_hash,
+      position_policy_id,
+      manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
       take_profit_usd_price: 0,
@@ -271,7 +276,7 @@ test enter_position_mint() {
       },
     }
 
-  let mint = assets.from_asset(position_hash, position_asset_name, 1)
+  let mint = assets.from_asset(position_policy_id, position_asset_name, 1)
 
   let orders_datum =
     OrderDatum {
@@ -285,7 +290,7 @@ test enter_position_mint() {
     Output {
       address: from_script(orders_script_hash),
       value: from_lovelace(1_000_000)
-        |> assets.add(position_hash, position_asset_name, 1),
+        |> assets.add(position_policy_id, position_asset_name, 1),
       datum: InlineDatum(orders_datum),
       reference_script: None,
     }
@@ -329,12 +334,13 @@ test enter_position_mint() {
 
   position_mint.mint(
     orders_script_hash,
+    manage_positions_script_hash,
     protocol_nft_policy_id,
     pool_nft_asset_name,
     protocol_nft_policy_id,
     settings_nft_asset_name,
     redeemer,
-    position_hash,
+    position_policy_id,
     tx,
   )
 }
