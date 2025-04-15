@@ -248,7 +248,13 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
         pool_nft_asset_name,
       ) == 1
 
-    expect list.length(flatten(output_pool_utxo.value)) == 2
+    let expected_asset_amount =
+      when underlying_asset.policy_id == "" is {
+        True -> 2
+        _ -> 3
+      }
+
+    expect list.length(flatten(output_pool_utxo.value)) == expected_asset_amount
 
     expect InlineDatum(output_pool_datum) = output_pool_utxo.datum
     expect output_pool_datum_typed: PoolDatum = output_pool_datum
