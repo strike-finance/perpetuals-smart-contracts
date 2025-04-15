@@ -46,14 +46,14 @@ pub type OrderAction {
     send_asset: Asset,
     // asset amount sent to trader
     send_asset_amount: Int,
-    // asset amount sent or taken from pool
-    return_pool_asset_amount: Int,
     // strike collateral sent to trader
     strike_collateral_amount: Int,
     // The profit or loss incurred by the trader and reflected in the pool
     pool_asset_profit_loss: Int,
     // The policy id of the minting position script
     position_policy_id: PolicyId,
+    // Amount that was borrowed from pool
+    borrowed_amount: Int,
   }
   // Return assets info
   LiquidatePositionOrder {

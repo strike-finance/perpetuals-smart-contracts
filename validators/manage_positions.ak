@@ -180,8 +180,8 @@ pub fn close_position_valid(
               send_asset_amount,
               strike_collateral_amount,
               pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
-              return_pool_asset_amount: position_asset_amount - send_asset_amount,
               position_policy_id,
+              borrowed_amount: position_asset_amount - collateral_asset_amount,
             },
           }
 
@@ -203,8 +203,8 @@ pub fn close_position_valid(
               send_asset_amount,
               strike_collateral_amount,
               pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
-              return_pool_asset_amount: position_asset_amount - send_asset_amount,
               position_policy_id,
+              borrowed_amount: position_asset_amount - collateral_asset_amount,
             },
           }
 
@@ -368,10 +368,10 @@ test close_position() {
         owner_stake_key: None,
         send_asset: underlying_asset,
         send_asset_amount: 1_900_000,
-        return_pool_asset_amount: 8_100_000,
         strike_collateral_amount: 0,
         pool_asset_profit_loss: -900_000,
         position_policy_id,
+        borrowed_amount: 0,
       },
     }
 
@@ -555,8 +555,8 @@ test stop_loss() {
         send_asset_amount: 816326,
         strike_collateral_amount: 0,
         pool_asset_profit_loss: 183674,
-        return_pool_asset_amount: 9183674,
         position_policy_id,
+        borrowed_amount: 0,
       },
     }
 
@@ -649,8 +649,8 @@ test take_profit() {
         send_asset_amount: 1176470,
         strike_collateral_amount: 0,
         pool_asset_profit_loss: -176470,
-        return_pool_asset_amount: 8823530,
         position_policy_id,
+        borrowed_amount: 0,
       },
     }
 

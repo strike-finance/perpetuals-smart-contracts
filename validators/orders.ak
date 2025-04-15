@@ -161,7 +161,8 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
 
         // No assets has been borrowed from pool since this is just sitting at the orders
         // validator. The pool asset profit loss is the same value as what will be taken away or 
-        // added to pool
+        // added to pool. Borrowed amount is technically 0 because it has not been batched yet so 
+        // we don't need to update the pool datum of the lended amount
         let expected_order_datum =
           OrderDatum {
             action: ClosePositionOrder {
@@ -171,8 +172,8 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
               send_asset_amount,
               strike_collateral_amount,
               pool_asset_profit_loss: collateral_asset_amount - send_asset_amount,
-              return_pool_asset_amount: collateral_asset_amount - send_asset_amount,
               position_policy_id,
+              borrowed_amount: 0,
             },
           }
 
@@ -234,6 +235,8 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
         underlying_asset_amount,
         input_pool_datum_typed,
       )
+
+    trace @"1": expected_underlying_asset_amount
 
     expect
       quantity_of(
@@ -395,10 +398,10 @@ test close_order_while_pending() {
         owner_stake_key: None,
         send_asset: underlying_asset,
         send_asset_amount: 1_900_000,
-        return_pool_asset_amount: -900_000,
         strike_collateral_amount: 0,
         pool_asset_profit_loss: -900_000,
         position_policy_id,
+        borrowed_amount: 0,
       },
     }
 

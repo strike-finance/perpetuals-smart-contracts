@@ -59,6 +59,12 @@ pub fn valid_orders(
           expected_mint,
         ) = acc
         let (in1, out1) = curr
+
+        trace @"in1": in1
+        trace @"in0": in0
+        trace @"out1": out1
+        trace @"out0": out0
+
         if in1 > in0 && out1 > out0 {
           expect Some(in_utxo) = inputs |> list.at(in1)
           expect Some(out_utxo) = outputs |> list.at(out1)
@@ -131,7 +137,6 @@ pub fn validate_individual_order(
       )
     LiquidatePositionOrder(..) ->
       liquidate_position(
-        input,
         input_datum_typed,
         underlying_asset_amount,
         pool_output_datum,
@@ -218,7 +223,7 @@ pub fn open_position(
   expect output_script_hash == manage_positions_script_hash
 
   ExpectedPoolOutput {
-    underlying_asset_amount: underlying_asset_amount - lended_amount,
+    underlying_asset_amount,
     datum: PoolDatum {
       ..pool_output_datum,
       total_lended_amount: pool_output_datum.total_lended_amount + lended_amount,
@@ -241,8 +246,8 @@ pub fn close_position(
     send_asset_amount,
     strike_collateral_amount,
     pool_asset_profit_loss,
-    return_pool_asset_amount,
     position_policy_id,
+    borrowed_amount,
   } = datum.action
 
   let PoolDatum { liquidity_total_gains_losses, .. } = pool_output_datum
@@ -264,18 +269,19 @@ pub fn close_position(
     quantity_of(output.value, strike_policy_id, strike_asset_name) == strike_collateral_amount
 
   ExpectedPoolOutput {
-    underlying_asset_amount: underlying_asset_amount + return_pool_asset_amount,
+    underlying_asset_amount: underlying_asset_amount - send_asset_amount,
     datum: PoolDatum {
       ..pool_output_datum,
       liquidity_total_gains_losses: liquidity_total_gains_losses + pool_asset_profit_loss,
+      total_lended_amount: pool_output_datum.total_lended_amount - borrowed_amount,
     },
     mint: expected_mint
       |> assets.add(position_policy_id, position_asset_name, -1),
   }
 }
 
+// Since all assets is already in pool, and user's position got liquidated, no assets from pool is sent
 pub fn liquidate_position(
-  input: Output,
   datum: OrderDatum,
   underlying_asset_amount: Int,
   pool_output_datum: PoolDatum,
@@ -286,15 +292,8 @@ pub fn liquidate_position(
 
   let PoolDatum { liquidity_total_gains_losses, .. } = pool_output_datum
 
-  let asset_amount_returned: Int =
-    quantity_of(
-      input.value,
-      pool_output_datum.underlying_asset.policy_id,
-      pool_output_datum.underlying_asset.asset_name,
-    )
-
   ExpectedPoolOutput {
-    underlying_asset_amount: underlying_asset_amount + asset_amount_returned,
+    underlying_asset_amount,
     datum: PoolDatum {
       ..pool_output_datum,
       liquidity_total_gains_losses: liquidity_total_gains_losses + profit,
