@@ -142,6 +142,8 @@ pub type SettingsDatum {
   max_leverage_factor: Int,
   // The max usd value of the position 
   max_position_usd_value: Int,
+  // The min usd value of the position 
+  min_position_usd_value: Int,
   // The margin required to liquidate the pool. Once the collateral falls below the maintain_margin_amount of the pool, their position gets liquidated. Example: 5 = 5%
   maintain_margin_amount: Int,
 }

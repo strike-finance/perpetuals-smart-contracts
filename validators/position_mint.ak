@@ -113,6 +113,7 @@ validator position_mint(
           max_leverage_factor,
           maintain_margin_amount,
           max_position_usd_value,
+          min_position_usd_value,
         } = global_settings_datum_typed
 
         let available_asset_amount =
@@ -123,6 +124,9 @@ validator position_mint(
 
         expect
           position_asset_amount * current_usd_price <= max_position_usd_value
+
+        expect
+          position_asset_amount * current_usd_price >= min_position_usd_value
 
         expect position_policy_id == policy_id
 
@@ -243,6 +247,7 @@ test enter_position_mint() {
       max_leverage_factor: 10,
       maintain_margin_amount: 5,
       max_position_usd_value: 1_000_000_000,
+      min_position_usd_value: 100_000_000,
     }
 
   let settings_ref_input =

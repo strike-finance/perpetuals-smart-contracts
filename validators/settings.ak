@@ -42,6 +42,7 @@ test protocol_settings__spend() {
       max_leverage_factor: 100_000_000,
       maintain_margin_amount: 100_000_000,
       max_position_usd_value: 1_000_000_000,
+      min_position_usd_value: 100_000_000,
     }
   let psetting_ref =
     OutputReference {

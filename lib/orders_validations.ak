@@ -405,6 +405,7 @@ fn withdraw_liquidy_valid(
       liquidity_total_lp_minted: liquidity_total_lp_minted - lp_tokens_deposited,
       liquidity_total_asset_amount: liquidity_total_asset_amount - assets_sent,
     },
-    mint: expected_mint,
+    mint: expected_mint
+      |> assets.add(lp_asset.policy_id, lp_asset.asset_name, -lp_tokens_deposited),
   }
 }

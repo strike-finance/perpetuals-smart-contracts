@@ -2,7 +2,7 @@ use aiken/collection/dict
 use aiken/collection/list
 use aiken/interval.{Finite, Interval, IntervalBound}
 use cardano/address.{from_script}
-use cardano/assets.{from_lovelace, match, quantity_of}
+use cardano/assets.{from_lovelace, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
@@ -25,7 +25,12 @@ use utils.{get_address_outputs, get_all_validators_inputs, get_upper_bound}
 pub type ManagePositionRedeemer {
   Close { close_price: Int, close_type: CloseType, output_to_order_index: Int }
   AddCollateral { collateral_asset_amount: Int }
-  PositionUpdate { stop_loss: Int, take_profit: Int }
+  PositionUpdate {
+    stop_loss: Int,
+    take_profit: Int,
+    output_back_to_positions_index: Int,
+    current_usd_price: Int,
+  }
 }
 
 validator manage_positions(orders_script_hash: ScriptHash) {
@@ -47,8 +52,20 @@ validator manage_positions(orders_script_hash: ScriptHash) {
         )
       AddCollateral(collateral_asset_amount) ->
         add_collateral_valid(transaction, datum, collateral_asset_amount)
-      PositionUpdate(stop_loss, take_profit) ->
-        update_position_valid(transaction, datum, stop_loss, take_profit)
+      PositionUpdate(
+        stop_loss,
+        take_profit,
+        output_back_to_positions_index,
+        current_usd_price,
+      ) ->
+        update_position_valid(
+          transaction,
+          datum,
+          stop_loss,
+          take_profit,
+          output_back_to_positions_index,
+          current_usd_price,
+        )
     }
   }
 
@@ -282,8 +299,14 @@ pub fn update_position_valid(
   maybe_datum: Option<PositionDatum>,
   new_stop_loss: Int,
   new_take_profit: Int,
+  output_back_to_positions_index: Int,
+  current_usd_price: Int,
 ) -> Bool {
   expect Some(datum) = maybe_datum
+
+  let PositionDatum { side, owner_pkh, collateral_asset, .. } = datum
+
+  let Transaction { outputs, .. } = transaction
 
   let all_validators_inputs: List<Input> =
     get_all_validators_inputs(transaction)
@@ -292,22 +315,30 @@ pub fn update_position_valid(
 
   expect Some(input_from_script) = list.head(all_validators_inputs)
 
-  let outputs_back_to_positions_validator: List<Output> =
-    get_address_outputs(transaction, input_from_script.output.address)
-
   expect Some(output_to_positions_validator) =
-    list.head(outputs_back_to_positions_validator)
+    list.at(outputs, output_back_to_positions_index)
 
   expect InlineDatum(output_datum) = output_to_positions_validator.datum
 
   expect
-    match(
+    quantity_of(
       output_to_positions_validator.value,
+      position_policy_id,
+      position_asset_name,
+    ) == 1
+
+  expect
+    quantity_of(
       input_from_script.output.value,
-      >=,
+      collateral_asset.policy_id,
+      collateral_asset.asset_name,
+    ) == quantity_of(
+      output_to_positions_validator.value,
+      collateral_asset.policy_id,
+      collateral_asset.asset_name,
     )
 
-  expect list.has(transaction.extra_signatories, datum.owner_pkh)
+  expect list.has(transaction.extra_signatories, owner_pkh)
 
   let expected_output_datum =
     PositionDatum {
@@ -318,7 +349,17 @@ pub fn update_position_valid(
 
   let expected_output_datum_data: Data = expected_output_datum
 
-  expected_output_datum_data == output_datum
+  expect expected_output_datum_data == output_datum
+
+  if side == Long {
+    ( current_usd_price >= new_stop_loss || new_stop_loss == 0 ) && (
+      current_usd_price <= new_take_profit || new_take_profit == 0
+    )
+  } else {
+    ( current_usd_price <= new_stop_loss || new_stop_loss == 0 ) && (
+      current_usd_price >= new_take_profit || new_take_profit == 0
+    )
+  }
 }
 
 test close_position() {
@@ -361,7 +402,7 @@ test close_position() {
         send_asset_amount: 1_900_000,
         pool_asset_profit_loss: -900_000,
         position_policy_id,
-        borrowed_amount: 0,
+        borrowed_amount: 9_000_000,
       },
     }
 
@@ -512,7 +553,7 @@ test stop_loss() {
       position_policy_id,
       manage_positions_script_hash,
       position_asset_amount: 10_000_000,
-      stop_loss_usd_price: 98,
+      stop_loss_usd_price: 920000,
       take_profit_usd_price: 0,
       collateral_asset: underlying_asset,
       entered_position_time: 1727453227635,
@@ -542,10 +583,10 @@ test stop_loss() {
         owner_pkh: trader_pkh,
         owner_stake_key: None,
         send_asset: underlying_asset,
-        send_asset_amount: 816326,
-        pool_asset_profit_loss: 183674,
+        send_asset_amount: 9999010,
+        pool_asset_profit_loss: -8999010,
         position_policy_id,
-        borrowed_amount: 0,
+        borrowed_amount: 9_000_000,
       },
     }
 
@@ -589,7 +630,7 @@ test stop_loss() {
   close_position_valid(
     transaction,
     Some(position_datum),
-    98,
+    910000,
     orders_script_hash,
     StopLossClose,
     0,
@@ -638,7 +679,7 @@ test take_profit() {
         send_asset_amount: 1176470,
         pool_asset_profit_loss: -176470,
         position_policy_id,
-        borrowed_amount: 0,
+        borrowed_amount: 9_000_000,
       },
     }
 
@@ -820,8 +861,8 @@ test update_position() {
       position_policy_id,
       manage_positions_script_hash,
       position_asset_amount: 10_000_000,
-      stop_loss_usd_price: 100,
-      take_profit_usd_price: 100,
+      stop_loss_usd_price: 50,
+      take_profit_usd_price: 150,
       collateral_asset: underlying_asset,
       entered_position_time: 1727453227635,
       maintain_margin_amount: 5,
@@ -868,5 +909,5 @@ test update_position() {
       treasury_donation: None,
     }
 
-  update_position_valid(transaction, Some(position_datum), 100, 100)
+  update_position_valid(transaction, Some(position_datum), 50, 150, 0, 100)
 }
