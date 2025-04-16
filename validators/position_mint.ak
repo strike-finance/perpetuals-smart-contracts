@@ -1,7 +1,7 @@
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/interval.{Finite, Interval, IntervalBound}
-use cardano/address.{from_script}
+use cardano/address.{Script, from_script}
 use cardano/assets.{AssetName, PolicyId, flatten, from_lovelace, quantity_of}
 use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{
@@ -133,8 +133,12 @@ validator position_mint(
         expect manage_positions_script_hash == t_manage_positions_script_hash
 
         expect maintain_margin_amount == position_maintain_margin_amount
-        expect
-          from_script(orders_script_hash) == output_to_orders_validator.address
+
+        expect Script(output_to_orders_script_hash) =
+          output_to_orders_validator.address.payment_credential
+
+        expect orders_script_hash == output_to_orders_script_hash
+
         expect
           assets.quantity_of(
             pool_value,
