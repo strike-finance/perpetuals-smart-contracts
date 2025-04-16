@@ -1,7 +1,7 @@
 use aiken/collection/dict
 use aiken/collection/list
 use aiken/interval.{Finite, Interval, IntervalBound}
-use cardano/address.{from_script}
+use cardano/address.{Script, from_script}
 use cardano/assets.{from_lovelace, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
@@ -20,11 +20,14 @@ use types.{
   OrderDatum, PositionDatum, ScriptHash, StopLossClose, TakeProfitClose,
   TraderClose,
 }
-use utils.{get_address_outputs, get_all_validators_inputs, get_upper_bound}
+use utils.{get_all_validators_inputs, get_upper_bound}
 
 pub type ManagePositionRedeemer {
   Close { close_price: Int, close_type: CloseType, output_to_order_index: Int }
-  AddCollateral { collateral_asset_amount: Int }
+  AddCollateral {
+    collateral_asset_amount: Int,
+    output_back_to_positions_index: Int,
+  }
   PositionUpdate {
     stop_loss: Int,
     take_profit: Int,
@@ -50,8 +53,13 @@ validator manage_positions(orders_script_hash: ScriptHash) {
           close_type,
           output_to_order_index,
         )
-      AddCollateral(collateral_asset_amount) ->
-        add_collateral_valid(transaction, datum, collateral_asset_amount)
+      AddCollateral(collateral_asset_amount, output_back_to_positions_index) ->
+        add_collateral_valid(
+          transaction,
+          datum,
+          collateral_asset_amount,
+          output_back_to_positions_index,
+        )
       PositionUpdate(
         stop_loss,
         take_profit,
@@ -110,7 +118,10 @@ pub fn close_position_valid(
     list.at(outputs, output_to_order_index)
   expect InlineDatum(orders_datum) = output_to_orders_validator.datum
 
-  expect from_script(orders_script_hash) == output_to_orders_validator.address
+  expect Script(output_to_orders_validator_hash) =
+    output_to_orders_validator.address.payment_credential
+
+  expect output_to_orders_validator_hash == orders_script_hash
 
   let current_time = get_upper_bound(transaction.validity_range)
 
@@ -245,10 +256,18 @@ pub fn add_collateral_valid(
   transaction: Transaction,
   maybe_datum: Option<PositionDatum>,
   add_collateral_asset_amount: Int,
+  output_back_to_positions_index: Int,
 ) -> Bool {
   expect Some(datum) = maybe_datum
 
-  let PositionDatum { collateral_asset, collateral_asset_amount, .. } = datum
+  let PositionDatum {
+    collateral_asset,
+    collateral_asset_amount,
+    manage_positions_script_hash,
+    ..
+  } = datum
+
+  let Transaction { outputs, .. } = transaction
 
   let all_validators_inputs: List<Input> =
     get_all_validators_inputs(transaction)
@@ -256,13 +275,15 @@ pub fn add_collateral_valid(
 
   expect Some(input_from_script) = list.head(all_validators_inputs)
 
-  let outputs_back_to_positions_validator: List<Output> =
-    get_address_outputs(transaction, input_from_script.output.address)
-
   expect Some(output_to_positions_validator) =
-    list.head(outputs_back_to_positions_validator)
+    list.at(outputs, output_back_to_positions_index)
 
   expect InlineDatum(output_datum) = output_to_positions_validator.datum
+
+  expect Script(output_script_hash) =
+    output_to_positions_validator.address.payment_credential
+
+  expect manage_positions_script_hash == output_script_hash
 
   let input_collateral_asset_amount =
     quantity_of(
@@ -304,7 +325,14 @@ pub fn update_position_valid(
 ) -> Bool {
   expect Some(datum) = maybe_datum
 
-  let PositionDatum { side, owner_pkh, collateral_asset, .. } = datum
+  let PositionDatum {
+    side,
+    owner_pkh,
+    collateral_asset,
+    manage_positions_script_hash,
+    position_policy_id,
+    ..
+  } = datum
 
   let Transaction { outputs, .. } = transaction
 
@@ -319,6 +347,11 @@ pub fn update_position_valid(
     list.at(outputs, output_back_to_positions_index)
 
   expect InlineDatum(output_datum) = output_to_positions_validator.datum
+
+  expect Script(output_script_hash) =
+    output_to_positions_validator.address.payment_credential
+
+  expect manage_positions_script_hash == output_script_hash
 
   expect
     quantity_of(
@@ -346,9 +379,7 @@ pub fn update_position_valid(
       stop_loss_usd_price: new_stop_loss,
       take_profit_usd_price: new_take_profit,
     }
-
   let expected_output_datum_data: Data = expected_output_datum
-
   expect expected_output_datum_data == output_datum
 
   if side == Long {
@@ -819,7 +850,7 @@ test add_collateral() {
       treasury_donation: None,
     }
 
-  add_collateral_valid(transaction, Some(position_datum), 1_000_000)
+  add_collateral_valid(transaction, Some(position_datum), 1_000_000, 0)
 }
 
 test update_position() {
