@@ -51,7 +51,7 @@ pub fn reach_liquidation_price(
       }
 
     let current_margin: Int =
-      collateral_value_after_loss / current_position_value
+      collateral_value_after_loss * 1_000 / current_position_value
 
     current_margin <= maintain_margin_amount
   }
