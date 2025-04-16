@@ -386,7 +386,7 @@ fn withdraw_liquidy_valid(
       underlying_asset.asset_name,
     )
 
-  expect assets_sent <= expected_assets_sent
+  expect assets_sent == expected_assets_sent
 
   let owner_address =
     when owner_stake_key is {

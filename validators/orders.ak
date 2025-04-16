@@ -219,9 +219,8 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
         underlying_asset.policy_id,
         underlying_asset.asset_name,
       )
-
-    // The functions checks the inputs and its corresponding outputs. Making sure of things such as liquidity providers that withdraw liquidity get their tokens
-    // It also computes the expected pool output and datum. We then compare the expected pool output with the actual pool output to make sure the pool is in sync with the orders
+    // // The functions checks the inputs and its corresponding outputs. Making sure of things such as liquidity providers that withdraw liquidity get their tokens
+    // // It also computes the expected pool output and datum. We then compare the expected pool output with the actual pool output to make sure the pool is in sync with the orders
     let ExpectedPoolOutput {
       underlying_asset_amount: expected_underlying_asset_amount,
       datum: expected_pool_output_datum,

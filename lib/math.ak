@@ -134,12 +134,12 @@ pub fn calculate_assets_get_back(
   total_lp_minted_amount: Int,
   deposit_lp_assets_amount: Int,
 ) -> Int {
-  let deposit_lp_assets_amount_multiplier = deposit_lp_assets_amount * 10_000
+  let deposit_lp_assets_amount_multiplier = deposit_lp_assets_amount * 1_000_000
 
   let total_liquidity_ratio =
     deposit_lp_assets_amount_multiplier / total_lp_minted_amount
 
-  total_liquidity_ratio * total_asset_amount / 10_000
+  total_liquidity_ratio * total_asset_amount / 1_000_000
 }
 
 // Calculate the reblance method and amount of assets to sent back 
