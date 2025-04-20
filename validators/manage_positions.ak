@@ -2,7 +2,7 @@ use aiken/collection/dict
 use aiken/collection/list
 use aiken/interval.{Finite, Interval, IntervalBound}
 use cardano/address.{Script, from_script}
-use cardano/assets.{from_lovelace, quantity_of}
+use cardano/assets.{flatten, from_lovelace, quantity_of}
 use cardano/transaction.{
   InlineDatum, Input, Output, OutputReference, Transaction,
 }
@@ -267,7 +267,7 @@ pub fn add_collateral_valid(
     ..
   } = datum
 
-  let Transaction { outputs, .. } = transaction
+  let Transaction { outputs, mint, .. } = transaction
 
   let all_validators_inputs: List<Input> =
     get_all_validators_inputs(transaction)
@@ -298,6 +298,21 @@ pub fn add_collateral_valid(
       collateral_asset.policy_id,
       collateral_asset.asset_name,
     ) == input_collateral_asset_amount + collateral_asset_amount
+
+  expect
+    quantity_of(
+      output_to_positions_validator.value,
+      position_policy_id,
+      position_asset_name,
+    ) == 1
+
+  let expected_output_asset =
+    when collateral_asset.policy_id == "" is {
+      True -> 2
+      _ -> 3
+    }
+
+  expect list.length(flatten(mint)) == expected_output_asset
 
   let updated_datum =
     PositionDatum {
@@ -334,7 +349,7 @@ pub fn update_position_valid(
     ..
   } = datum
 
-  let Transaction { outputs, .. } = transaction
+  let Transaction { outputs, mint, .. } = transaction
 
   let all_validators_inputs: List<Input> =
     get_all_validators_inputs(transaction)
@@ -370,6 +385,14 @@ pub fn update_position_valid(
       collateral_asset.policy_id,
       collateral_asset.asset_name,
     )
+
+  let expected_output_asset =
+    when collateral_asset.policy_id == "" is {
+      True -> 2
+      _ -> 3
+    }
+
+  expect list.length(flatten(mint)) == expected_output_asset
 
   expect list.has(transaction.extra_signatories, owner_pkh)
 
