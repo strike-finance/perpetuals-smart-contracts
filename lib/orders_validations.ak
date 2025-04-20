@@ -6,9 +6,9 @@ use cardano/transaction.{InlineDatum, Input, Output, Transaction}
 use constants.{position_asset_name}
 use math.{calculate_assets_get_back, calculate_lp_assets_sent}
 use types.{
-  Asset, ClosePositionOrder, ExpectedPoolOutput, LiquidatePositionOrder,
-  OpenPositionOrder, OrderDatum, PoolDatum, PositionDatum, ProvideLiquidityOrder,
-  WithdrawLiquidityOrder,
+  Asset, ClosePositionOrder, ExpectedPoolOutput, LimitOrder,
+  LiquidatePositionOrder, Long, OpenPositionOrder, OrderDatum, PoolDatum,
+  PositionDatum, ProvideLiquidityOrder, WithdrawLiquidityOrder,
 }
 
 // Make distinction when closing position, if profit add to pool, if loss remove from pool
@@ -18,6 +18,7 @@ pub fn valid_orders(
   own_validator: ScriptHash,
   underlying_asset_amount: Int,
   pool_datum: PoolDatum,
+  current_usd_price: Int,
 ) -> ExpectedPoolOutput {
   let Transaction { inputs, outputs, .. } = transaction
   let script_input_count =
@@ -74,6 +75,7 @@ pub fn valid_orders(
               expected_underlying_asset_amount,
               expected_pool_output_datum,
               expected_mint,
+              current_usd_price,
             )
 
           (
@@ -108,6 +110,7 @@ pub fn validate_individual_order(
   underlying_asset_amount: Int,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
+  current_usd_price: Int,
 ) -> ExpectedPoolOutput {
   expect InlineDatum(input_datum) = input.datum
 
@@ -121,6 +124,7 @@ pub fn validate_individual_order(
         underlying_asset_amount,
         pool_output_datum,
         expected_mint,
+        current_usd_price,
       )
     ClosePositionOrder(..) ->
       close_position(
@@ -164,6 +168,7 @@ pub fn open_position(
   underlying_asset_amount: Int,
   pool_output_datum: PoolDatum,
   expected_mint: Value,
+  current_usd_price: Int,
 ) -> ExpectedPoolOutput {
   expect OpenPositionOrder {
     position_datum: PositionDatum {
@@ -182,7 +187,7 @@ pub fn open_position(
       position_asset_amount,
       owner_stake_key,
     },
-    ..
+    open_position_type,
   } = input_datum_typed.action
 
   let expected_output_datum =
@@ -216,6 +221,17 @@ pub fn open_position(
   expect Script(output_script_hash) = output.address.payment_credential
 
   expect output_script_hash == manage_positions_script_hash
+
+  expect
+    when open_position_type == LimitOrder is {
+      True ->
+        if side == Long {
+          current_usd_price <= entered_at_usd_price
+        } else {
+          current_usd_price >= entered_at_usd_price
+        }
+      _ -> True
+    }
 
   ExpectedPoolOutput {
     underlying_asset_amount,

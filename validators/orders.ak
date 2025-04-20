@@ -25,6 +25,7 @@ use utils.{
 }
 
 pub type OrdersWithdrawRedeemer {
+  current_usd_price: Int,
   indexer: List<(Int, Int)>,
   pool_utxo_index: (Int, Int),
   batcher_license_utxo_index: Int,
@@ -232,6 +233,7 @@ validator orders(pool_nft_policy_id: PolicyId, pool_nft_asset_name: AssetName) {
         own_validator,
         underlying_asset_amount,
         input_pool_datum_typed,
+        redeemer.current_usd_price,
       )
 
     expect
