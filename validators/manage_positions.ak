@@ -267,7 +267,7 @@ pub fn add_collateral_valid(
     ..
   } = datum
 
-  let Transaction { outputs, mint, .. } = transaction
+  let Transaction { outputs, .. } = transaction
 
   let all_validators_inputs: List<Input> =
     get_all_validators_inputs(transaction)
@@ -312,7 +312,8 @@ pub fn add_collateral_valid(
       _ -> 3
     }
 
-  expect list.length(flatten(mint)) == expected_output_asset
+  expect
+    list.length(flatten(output_to_positions_validator.value)) == expected_output_asset
 
   let updated_datum =
     PositionDatum {
@@ -349,7 +350,7 @@ pub fn update_position_valid(
     ..
   } = datum
 
-  let Transaction { outputs, mint, .. } = transaction
+  let Transaction { outputs, .. } = transaction
 
   let all_validators_inputs: List<Input> =
     get_all_validators_inputs(transaction)
@@ -392,7 +393,8 @@ pub fn update_position_valid(
       _ -> 3
     }
 
-  expect list.length(flatten(mint)) == expected_output_asset
+  expect
+    list.length(flatten(output_to_positions_validator.value)) == expected_output_asset
 
   expect list.has(transaction.extra_signatories, owner_pkh)
 
