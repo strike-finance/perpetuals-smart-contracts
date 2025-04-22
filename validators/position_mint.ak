@@ -10,7 +10,7 @@ use constants.{
 }
 use math.{calculate_hourly_usd_borrow_fee}
 use test_constants.{
-  orders_script_hash, out_ref, position_policy_id, protocol_nft_policy_id,
+  orders_script_hash, out_ref, protocol_nft_policy_id, test_position_policy_id,
   trader_pkh, underlying_asset,
 }
 use types.{
@@ -205,7 +205,7 @@ test enter_position_mint() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_policy_id,
+      position_policy_id: test_position_policy_id,
       manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
@@ -271,7 +271,7 @@ test enter_position_mint() {
       },
     }
 
-  let mint = assets.from_asset(position_policy_id, position_asset_name, 1)
+  let mint = assets.from_asset(test_position_policy_id, position_asset_name, 1)
 
   let orders_datum =
     OrderDatum {
@@ -285,7 +285,7 @@ test enter_position_mint() {
     Output {
       address: from_script(orders_script_hash),
       value: from_lovelace(1_000_000)
-        |> assets.add(position_policy_id, position_asset_name, 1),
+        |> assets.add(test_position_policy_id, position_asset_name, 1),
       datum: InlineDatum(orders_datum),
       reference_script: None,
     }
@@ -335,7 +335,7 @@ test enter_position_mint() {
     protocol_nft_policy_id,
     settings_nft_asset_name,
     redeemer,
-    position_policy_id,
+    test_position_policy_id,
     tx,
   )
 }

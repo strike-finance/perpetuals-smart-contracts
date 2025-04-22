@@ -10,7 +10,7 @@ pub const orders_script_hash =
 pub const manage_positions_script_hash =
   #"d2a71ed27acabbe919fb54dc84d4aff5b4357f6527dde0aeb7fd80c3"
 
-pub const position_policy_id =
+pub const test_position_policy_id =
   #"8467a48e5dc922bf25aca00a90ed055571c8c148831d3dcba5b4fecc"
 
 pub const trader_pkh =

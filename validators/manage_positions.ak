@@ -12,8 +12,8 @@ use math.{
   calculate_position_usd_value_based_on_side, reach_liquidation_price,
 }
 use test_constants.{
-  manage_positions_script_hash, orders_script_hash, out_ref, position_policy_id,
-  trader_pkh, underlying_asset,
+  manage_positions_script_hash, orders_script_hash, out_ref,
+  test_position_policy_id, trader_pkh, underlying_asset,
 }
 use types.{
   ClosePositionOrder, CloseType, LiquidateClose, LiquidatePositionOrder, Long,
@@ -264,6 +264,7 @@ pub fn add_collateral_valid(
     collateral_asset,
     collateral_asset_amount,
     manage_positions_script_hash,
+    position_policy_id,
     ..
   } = datum
 
@@ -424,7 +425,7 @@ test close_position() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 90,
-      position_policy_id,
+      position_policy_id: test_position_policy_id,
       manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
@@ -443,7 +444,7 @@ test close_position() {
       output: Output {
         address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_policy_id, position_asset_name, 1),
+          |> assets.add(test_position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
@@ -457,12 +458,12 @@ test close_position() {
         send_asset: underlying_asset,
         send_asset_amount: 1_900_000,
         pool_asset_profit_loss: -900_000,
-        position_policy_id,
+        position_policy_id: test_position_policy_id,
         borrowed_amount: 9_000_000,
       },
     }
 
-  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
+  let mint = assets.from_asset(test_position_policy_id, position_asset_name, -1)
 
   let orders_output =
     Output {
@@ -517,7 +518,7 @@ test liquidate_close() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 60_000,
-      position_policy_id,
+      position_policy_id: test_position_policy_id,
       manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
@@ -530,7 +531,7 @@ test liquidate_close() {
       side: Long,
     }
 
-  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
+  let mint = assets.from_asset(test_position_policy_id, position_asset_name, -1)
 
   let position_input =
     Input {
@@ -538,7 +539,7 @@ test liquidate_close() {
       output: Output {
         address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_policy_id, position_asset_name, 1),
+          |> assets.add(test_position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
@@ -549,7 +550,7 @@ test liquidate_close() {
       action: LiquidatePositionOrder {
         profit: 1_000_000,
         lended_amount: 9_000_000,
-        position_policy_id,
+        position_policy_id: test_position_policy_id,
       },
     }
 
@@ -606,7 +607,7 @@ test stop_loss() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_policy_id,
+      position_policy_id: test_position_policy_id,
       manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 920000,
@@ -625,13 +626,13 @@ test stop_loss() {
       output: Output {
         address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_policy_id, position_asset_name, 1),
+          |> assets.add(test_position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
     }
 
-  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
+  let mint = assets.from_asset(test_position_policy_id, position_asset_name, -1)
 
   let order_datum =
     OrderDatum {
@@ -641,7 +642,7 @@ test stop_loss() {
         send_asset: underlying_asset,
         send_asset_amount: 9999010,
         pool_asset_profit_loss: -8999010,
-        position_policy_id,
+        position_policy_id: test_position_policy_id,
         borrowed_amount: 9_000_000,
       },
     }
@@ -699,7 +700,7 @@ test take_profit() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_policy_id,
+      position_policy_id: test_position_policy_id,
       manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
@@ -718,13 +719,13 @@ test take_profit() {
       output: Output {
         address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_policy_id, position_asset_name, 1),
+          |> assets.add(test_position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
     }
 
-  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
+  let mint = assets.from_asset(test_position_policy_id, position_asset_name, -1)
 
   let order_datum =
     OrderDatum {
@@ -734,7 +735,7 @@ test take_profit() {
         send_asset: underlying_asset,
         send_asset_amount: 1176470,
         pool_asset_profit_loss: -176470,
-        position_policy_id,
+        position_policy_id: test_position_policy_id,
         borrowed_amount: 9_000_000,
       },
     }
@@ -792,7 +793,7 @@ test add_collateral() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_policy_id,
+      position_policy_id: test_position_policy_id,
       manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
@@ -811,20 +812,20 @@ test add_collateral() {
       output: Output {
         address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_policy_id, position_asset_name, 1),
+          |> assets.add(test_position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
     }
 
-  let mint = assets.from_asset(position_policy_id, position_asset_name, -1)
+  let mint = assets.from_asset(test_position_policy_id, position_asset_name, -1)
 
   let updated_position_datum =
     PositionDatum {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_policy_id,
+      position_policy_id: test_position_policy_id,
       manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
@@ -841,7 +842,7 @@ test add_collateral() {
     Output {
       address: from_script(manage_positions_script_hash),
       value: from_lovelace(2_000_000)
-        |> assets.add(position_policy_id, position_asset_name, 1),
+        |> assets.add(test_position_policy_id, position_asset_name, 1),
       datum: InlineDatum(updated_position_datum),
       reference_script: None,
     }
@@ -884,7 +885,7 @@ test update_position() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_policy_id,
+      position_policy_id: test_position_policy_id,
       manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 98,
@@ -903,7 +904,7 @@ test update_position() {
       output: Output {
         address: from_script(manage_positions_script_hash),
         value: from_lovelace(1_000_000)
-          |> assets.add(position_policy_id, position_asset_name, 1),
+          |> assets.add(test_position_policy_id, position_asset_name, 1),
         datum: InlineDatum(position_datum),
         reference_script: None,
       },
@@ -914,7 +915,7 @@ test update_position() {
       owner_pkh: trader_pkh,
       owner_stake_key: None,
       entered_at_usd_price: 100,
-      position_policy_id,
+      position_policy_id: test_position_policy_id,
       manage_positions_script_hash,
       position_asset_amount: 10_000_000,
       stop_loss_usd_price: 50,
@@ -931,7 +932,7 @@ test update_position() {
     Output {
       address: from_script(manage_positions_script_hash),
       value: from_lovelace(1_000_000)
-        |> assets.add(position_policy_id, position_asset_name, 1),
+        |> assets.add(test_position_policy_id, position_asset_name, 1),
       datum: InlineDatum(updated_position_datum),
       reference_script: None,
     }
