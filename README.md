@@ -3,18 +3,47 @@
 ## Structure
 
 - Main contracts:
-  - [Liquidity Validators](/validators/liquidity.ak)
+  - [Liquidity Validators](/validators/liquidity_mint.ak)
   - [Orders Validator](/validators/orders.ak)
-  - [Positions Validator](/validators/pools.ak)
-  - [Pool Validator](/validators/positions.ak)
+  - [Positions Validator](/validators/pool.ak)
+  - [Pool Validator](/validators/position_mint.ak)
 
 ### Prerequisites
 
 - Install [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 - Install [Aiken](https://aiken-lang.org/installation-instructions)
 
-## Testing
+#### Installing Aiken
 
+1. Install aikup (Aiken version manager):
+   ```bash
+   brew install aiken-lang/tap/aikup
+   ```
+
+2. Use aikup to install Aiken:
+   ```bash
+   aikup install
+   ```
+
+3. Add Aiken to your PATH by adding this line to your shell configuration file (`~/.zshrc` for zsh or `~/.bashrc` for bash):
+   ```bash
+   export PATH="$HOME/.aiken/bin:$PATH"
+   ```
+
+4. Reload your shell configuration:
+   ```bash
+   source ~/.zshrc  # for zsh
+   # or
+   source ~/.bashrc  # for bash
+   ```
+
+5. Verify the installation:
+   ```bash
+   aiken --version
+   ```
+
+
+## Testing
 - Run `aiken check` to run all unit tests of the contract
 
 ## What are Perpetuals
@@ -50,5 +79,5 @@ Opening a position does not involve buying or selling of the underlying asset. I
 
 ## References
 
-1. [Specification](/docs/specs.md)
-2. [Formula](/docs/formula.md)
+1. [Parameters](https://docs.strikefinance.org/perpetuals/parameters)
+2. [Formula](https://docs.strikefinance.org/perpetuals/position-settlement#calculation-formula)
